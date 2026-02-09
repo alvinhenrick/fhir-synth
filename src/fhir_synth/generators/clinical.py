@@ -140,21 +140,8 @@ def generate_encounters(ctx: GenerationContext) -> None:
                     )
                 ],
             )
-            # Set the 'class' field which is a FHIR keyword
-            setattr(
-                encounter,
-                "class",
-                [
-                    CodeableConcept(
-                        coding=[
-                            Coding(
-                                system="http://terminology.hl7.org/CodeSystem/v3-ActCode",
-                                code=enc_type_code,
-                            )
-                        ]
-                    )
-                ],
-            )
+            # Note: The 'class' field from FHIR R4 spec is not available in this fhir.resources version
+            # The 'type' field already captures the encounter classification
             ctx.graph.add(encounter)
             ctx.graph.track_reference(f"Encounter/{encounter_id}", f"Patient/{patient.id}")
 

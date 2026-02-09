@@ -29,6 +29,11 @@ ENV/
 env/
 .venv
 
+# Environment variables (NEVER commit .env files with secrets!)
+.env
+.env.local
+.env.*.local
+
 # IDE
 .vscode/
 .idea/

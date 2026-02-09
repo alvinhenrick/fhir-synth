@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 from typing import Any
 
 from fhir_synth.plan import DatasetPlan
@@ -126,7 +127,7 @@ def get_provider(
             - Bedrock: "bedrock/anthropic.claude-v2", "bedrock/anthropic.claude-instant-v1"
             - Azure: "azure/gpt-4"
             - And 100+ more providers
-        api_key: API key (optional, will use environment variables)
+        api_key: API key (optional, will use environment variables from .env or system)
         **kwargs: Additional arguments
 
     Returns:
@@ -134,8 +135,26 @@ def get_provider(
     """
     if provider_name == "mock":
         return MockLLMProvider(**kwargs)
-    else:
-        return LLMProvider(model=provider_name, api_key=api_key, **kwargs)
+
+    # If no api_key provided, check environment for common API key names
+    if not api_key:
+        # Map provider names to environment variable names
+        env_key_map = {
+            "gpt-4": "OPENAI_API_KEY",
+            "gpt-3.5-turbo": "OPENAI_API_KEY",
+            "claude": "ANTHROPIC_API_KEY",
+            "claude-3-opus": "ANTHROPIC_API_KEY",
+            "claude-3-sonnet": "ANTHROPIC_API_KEY",
+        }
+
+        # Check for matching environment variable
+        for provider_prefix, env_var in env_key_map.items():
+            if provider_name.startswith(provider_prefix):
+                api_key = os.getenv(env_var)
+                if api_key:
+                    break
+
+    return LLMProvider(model=provider_name, api_key=api_key, **kwargs)
 
 
 def prompt_to_plan(llm: LLMProvider | MockLLMProvider, prompt: str) -> DatasetPlan:

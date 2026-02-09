@@ -2,6 +2,10 @@
 
 Deterministic FHIR R4 synthetic data generator with LLM-assisted planning and multi-organization support.
 
+## Project Status
+
+🚀 **Alpha Release** - Feature-complete and actively developed. All core functionality works; additional optimizations and providers coming in upcoming releases.
+
 ## Overview
 
 FHIR Synth generates realistic, reproducible synthetic healthcare data for testing and development. It's perfect for:
@@ -50,21 +54,35 @@ pip install -e ".[dev,llm]"
 
 ## Quick Start
 
-### 1. Generate from a Natural Language Prompt
+### 1. Setup (Optional: API Keys for LLM)
+
+If you want to use LLM-assisted config generation, set up your API keys:
+
+```bash
+# Copy the example env file
+cp .env.example .env
+
+# Edit .env and add your API keys (or just use mock provider)
+# OPENAI_API_KEY=sk-...
+# ANTHROPIC_API_KEY=sk-ant-...
+```
+
+> **Note**: The project includes a `mock` LLM provider for testing without any API keys!
+
+### 2. Generate from a Natural Language Prompt
 
 ```bash
 # Using built-in mock LLM (no API key required)
 fhir-synth prompt "50 patients with diabetes across Baylor and Sutter health systems" --out config.yml
 
-# Using OpenAI
-export OPENAI_API_KEY="sk-..."
-fhir-synth prompt "100 patients with various conditions" --out config.yml --provider openai
+# Using OpenAI (API key from .env or OPENAI_API_KEY env var)
+fhir-synth prompt "100 patients with various conditions" --out config.yml --provider gpt-4
 
 # Then generate data from the created config
 fhir-synth generate -c config.yml -o ./output --seed 42
 ```
 
-### 2. Generate from Configuration File
+### 3. Generate from Configuration File
 
 ```bash
 # Initialize sample configs
@@ -101,30 +119,31 @@ fhir-synth init --output ./configs
 
 ### `fhir-synth prompt` - Generate Config from Text
 
-Convert natural language to a validated YAML configuration using an LLM.
+Convert natural language to a validated YAML configuration using an LLM. API keys are automatically loaded from `.env` file or environment variables.
 
 ```bash
 # Mock LLM (no API key needed)
 fhir-synth prompt "50 diabetes patients" --out config.yml
 
-# OpenAI
-export OPENAI_API_KEY="sk-..."
-fhir-synth prompt "pediatric asthma patients" --out config.yml --provider openai
+# OpenAI (requires OPENAI_API_KEY in .env or environment)
+fhir-synth prompt "pediatric asthma patients" --out config.yml --provider gpt-4
 
-# Anthropic
-export ANTHROPIC_API_KEY="sk-ant-..."
-fhir-synth prompt "ICU patients" --out config.yml --provider anthropic
+# Anthropic (requires ANTHROPIC_API_KEY in .env or environment)
+fhir-synth prompt "ICU patients" --out config.yml --provider claude-3-opus
 
 # AWS Bedrock
-export AWS_ACCESS_KEY_ID="..."
-export AWS_SECRET_ACCESS_KEY="..."
-fhir-synth prompt "chronic disease cohort" --out config.yml --provider bedrock
+fhir-synth prompt "chronic disease cohort" --out config.yml --provider bedrock/anthropic.claude-v2
 ```
+
+**API Key Setup:**
+1. Copy `.env.example` to `.env` in your project root
+2. Add your API key(s) to `.env`
+3. The CLI will automatically load them
 
 **Options:**
 - `PROMPT_TEXT` - Description of dataset to generate
 - `--out, -o PATH` - Output config file path (required)
-- `--provider` - LLM provider: `mock`, `openai`, `anthropic`, `bedrock` (default: `mock`)
+- `--provider` - LLM provider: `mock` (default), `gpt-4`, `claude-3-opus`, `bedrock/...`, etc.
 
 ### `fhir-synth generate` - Create Synthetic Data
 
@@ -288,6 +307,54 @@ validation:
 
 ## Development
 
+### Setup
+
+```bash
+# Clone and setup with development dependencies
+git clone <repo>
+cd fhir-synth
+pip install -e ".[dev]"
+
+# Create .env for local testing (if needed)
+cp .env.example .env
+```
+
+### Code Quality
+
+This project uses **Ruff** (linting/formatting) and **mypy** (type checking). Run these via hatch:
+
+```bash
+# Run all checks (lint + type checking)
+hatch run check
+
+# Format code automatically
+hatch run format
+
+# Fix linting issues automatically
+hatch run lint
+```
+
+### Testing
+
+```bash
+# Run all tests
+hatch run test
+
+# Run with coverage report
+hatch run cov
+
+# Fast parallel testing
+hatch run test-fast
+
+# Run specific test file
+pytest tests/test_generator.py
+
+# Run with verbose output
+pytest -v tests/
+```
+
+### Useful Commands
+
 ```bash
 # Run tests
 pytest tests/
@@ -303,6 +370,9 @@ mypy src
 
 # Linting
 ruff check src tests
+
+# Format code
+ruff format src tests
 ```
 
 ## Architecture

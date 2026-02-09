@@ -92,7 +92,7 @@ class GenerationContext:
         return datetime.now(UTC)
 
     def _parse_start_date(self) -> datetime:
-        """Parse or compute start date."""
+        """Parse or compute the start date."""
         if self.plan.time.start_date:
             dt = datetime.fromisoformat(self.plan.time.start_date)
             # Ensure timezone-aware

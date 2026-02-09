@@ -6,11 +6,16 @@ import sys
 from pathlib import Path
 
 import typer
+from dotenv import load_dotenv
 
 from fhir_synth.generator import DatasetGenerator
 from fhir_synth.plan import DatasetPlan
 from fhir_synth.validation import validate_dataset
 from fhir_synth.writers import write_output
+
+# Load environment variables from .env file at CLI entry point
+# This ensures all env vars are available throughout the application
+load_dotenv()
 
 app = typer.Typer()
 
@@ -50,10 +55,26 @@ def prompt(
     provider: str = typer.Option(
         "mock",
         "--provider",
-        help="LLM provider to use",
+        help="LLM provider to use (e.g., gpt-4, claude-3-opus, mock). API keys loaded from .env file or environment variables.",
     ),
 ) -> None:
-    """Convert prompt to validated config YAML."""
+    """Convert prompt to validated config YAML.
+
+    This command uses an LLM to convert natural language descriptions into structured
+    configuration files. API keys are automatically loaded from:
+    1. .env file in the project root (recommended)
+    2. Environment variables (e.g., OPENAI_API_KEY, ANTHROPIC_API_KEY)
+
+    Example:
+        # Create .env file with your API key
+        echo "OPENAI_API_KEY=sk-..." > .env
+
+        # Then use the prompt command
+        fhir-synth prompt "50 patients with diabetes" --out config.yml --provider gpt-4
+
+        # Or use the default mock provider (no API key needed)
+        fhir-synth prompt "50 patients with diabetes" --out config.yml
+    """
     try:
         from fhir_synth.llm import get_provider, prompt_to_plan
 
@@ -61,7 +82,7 @@ def prompt(
         plan = prompt_to_plan(llm, prompt_text)
 
         plan.to_yaml(out)
-        typer.echo(f"Generated config: {out}")
+        typer.echo(f"✓ Generated config: {out}")
 
     except ImportError:
         typer.echo(

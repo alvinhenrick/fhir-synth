@@ -127,19 +127,23 @@ def test_reference_integrity():
     # Check Person -> Patient references
     persons = graph.get_all("Person")
     for person in persons:
-        links = person.get("link", [])
+        links = getattr(person, "link", []) or []
         for link in links:
-            target_ref = link.get("target", {}).get("reference", "")
-            if target_ref.startswith("Patient/"):
-                patient_id = target_ref.split("/")[1]
-                patient = graph.get("Patient", patient_id)
-                assert patient is not None, f"Person/{person.id} references missing {target_ref}"
+            target = getattr(link, "target", None)
+            if target:
+                target_ref = getattr(target, "reference", "")
+                if target_ref and target_ref.startswith("Patient/"):
+                    patient_id = target_ref.split("/")[1]
+                    patient = graph.get("Patient", patient_id)
+                    assert patient is not None, f"Person/{person.id} references missing {target_ref}"
 
     # Check Encounter -> Patient references
     encounters = graph.get_all("Encounter")
     for encounter in encounters:
-        subject_ref = encounter.get("subject", {}).get("reference", "")
-        if subject_ref.startswith("Patient/"):
-            patient_id = subject_ref.split("/")[1]
-            patient = graph.get("Patient", patient_id)
-            assert patient is not None, f"Encounter/{encounter.id} references missing {subject_ref}"
+        subject = getattr(encounter, "subject", None)
+        if subject:
+            subject_ref = getattr(subject, "reference", "")
+            if subject_ref and subject_ref.startswith("Patient/"):
+                patient_id = subject_ref.split("/")[1]
+                patient = graph.get("Patient", patient_id)
+                assert patient is not None, f"Encounter/{encounter.id} references missing {subject_ref}"

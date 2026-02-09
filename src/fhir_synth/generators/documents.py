@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import base64
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from fhir_synth.resources import (
     Attachment,
@@ -32,7 +32,7 @@ def generate_document_references(ctx: GenerationContext) -> None:
     encounters = ctx.graph.get_all("Encounter")
 
     # Map encounters to patients
-    encounters_by_patient: dict[str, list] = {}
+    encounters_by_patient: dict[str, list[Any]] = {}
     for enc in encounters:
         # Access the subject reference properly from Pydantic model
         if hasattr(enc, "subject") and enc.subject:
