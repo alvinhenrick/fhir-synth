@@ -6,7 +6,7 @@ from fhir_synth.utils import DateGenerator, DeterministicRNG, IDGenerator
 
 
 def test_deterministic_rng_seed():
-    """Test that same seed produces same results."""
+    """Test that the same seed produces same results."""
     rng1 = DeterministicRNG(42)
     rng2 = DeterministicRNG(42)
 
