@@ -53,7 +53,7 @@ class BundleBuilder:
             resources: list[dict[str, Any]],
             method: str = "POST",
     ) -> None:
-        """Add multiple resources to bundle.
+        """Add multiple resources to the bundle.
 
         Args:
             resources: List of FHIR resource dictionaries

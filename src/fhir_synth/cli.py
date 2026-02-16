@@ -135,9 +135,9 @@ def bundle(
                     if line.strip():
                         builder.add_resource(json.loads(line))
 
-        bundle = builder.build()
-        Path(out).write_text(json.dumps(bundle, indent=2, default=str))
-        typer.echo(f"✓ Created bundle with {bundle['total']} entries: {out}")
+        _bundle = builder.build()
+        Path(out).write_text(json.dumps(_bundle, indent=2, default=str))
+        typer.echo(f"✓ Created bundle with {_bundle['total']} entries: {out}")
     except Exception as exc:
         typer.echo(f"Error: {exc}", err=True)
         sys.exit(1)

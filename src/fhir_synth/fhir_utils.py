@@ -337,8 +337,8 @@ class BundleFactory:
         Returns:
             Bundle as dictionary
         """
-        bundle = self.build()
-        return FHIRResourceFactory.to_dict(bundle)
+        _bundle = self.build()
+        return FHIRResourceFactory.to_dict(_bundle)
 
     def clear(self) -> None:
         """Clear all entries."""

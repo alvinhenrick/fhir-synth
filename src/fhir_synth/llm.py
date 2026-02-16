@@ -1,7 +1,4 @@
 """LLM provider interface and prompt-to-plan conversion using LiteLLM."""
-
-from __future__ import annotations
-
 import json
 import os
 from typing import Any
