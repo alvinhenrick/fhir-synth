@@ -84,7 +84,7 @@ Return JSON with this structure:
         return result
 
     def generate_bundle_code(
-        self, resource_types: list[str], count_per_resource: int = 10
+            self, resource_types: list[str], count_per_resource: int = 10
     ) -> str:
         """Generate code for creating a FHIR bundle with multiple resource types.
 
@@ -244,15 +244,19 @@ class PromptToRulesConverter:
         """
         # Try to identify from prompt
         resource_types = [
+            "Person"
             "Patient",
             "Condition",
             "Medication",
             "MedicationRequest",
+            "MedicationDispense",
             "Observation",
             "Procedure",
             "Encounter",
             "Organization",
+            "Location",
             "Practitioner",
+            "PractitionerRole"
             "DiagnosticReport",
             "DocumentReference",
         ]
