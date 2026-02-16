@@ -324,12 +324,12 @@ class BundleFactory:
         Returns:
             Complete FHIR Bundle resource
         """
-        bundle = FHIRResourceFactory.create_bundle(
+        _bundle = FHIRResourceFactory.create_bundle(
             bundle_type=self.bundle_type,
             entry=self.entries,
             total=len(self.entries),
         )
-        return bundle
+        return _bundle
 
     def build_dict(self) -> dict[str, Any]:
         """Build the bundle and return as dictionary.

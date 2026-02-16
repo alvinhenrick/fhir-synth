@@ -113,10 +113,10 @@ class BundleBuilder:
 
         Args:
             resource: Resource to add
-            references: Map of resource type to IDs
+            references: Map of a resource type to IDs
             primary_type: Primary resource type
         """
-        # Simple reference injection based on resource type
+        # Simple reference injection based on a resource type
         if primary_type == "Condition" and "Patient" in references:
             if references["Patient"]:
                 patient_id = references["Patient"][0]
@@ -253,6 +253,7 @@ class BundleManager:
         if resource.get("resourceType") in clinical_types:
             resource["subject"] = {"reference": f"Patient/{patient_id}"}
 
+    # noinspection PyMethodMayBeStatic
     def validate_bundle(self, bundle: dict[str, Any]) -> tuple[bool, list[str]]:
         """Validate bundle structure.
 

@@ -113,7 +113,8 @@ class RuleEngine:
                 return False
         return True
 
-    def _default_executor(self, rule: Rule, context: dict[str, Any]) -> dict[str, Any]:
+    @staticmethod
+    def _default_executor(rule: Rule, context: dict[str, Any]) -> dict[str, Any]:
         """Default executor that builds resource from rule actions."""
         resource = {"id": context.get("id"), "resourceType": context.get("resourceType")}
         resource.update(rule.actions)
@@ -128,13 +129,19 @@ class RuleEngine:
         """Create a FHIR Bundle from resources.
 
         Args:
-            resource_type: Primary resource type in bundle
+            resource_type: Expected resourceType for all bundled resources
             resources: List of resources to bundle
             bundle_type: Bundle type (transaction, batch, searchset, etc.)
 
         Returns:
             FHIR Bundle resource
         """
+        for resource in resources:
+            if resource.get("resourceType") != resource_type:
+                raise ValueError(
+                    "All resources must match resource_type; "
+                    f"expected '{resource_type}', got '{resource.get('resourceType')}'"
+                )
         bundle_id = self._generate_id()
         bundle_entries = []
 
@@ -296,4 +303,3 @@ class GenerationRules:
                 k: [Rule(**r) for r in v] for k, v in data.get("custom_rules", {}).items()
             },
         )
-

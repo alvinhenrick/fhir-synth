@@ -174,7 +174,7 @@ Code must:
     def _extract_code(response: str) -> str:
         """Extract Python code from LLM response.
 
-        Handles markdown code blocks and plain text responses.
+        Handles Markdown code blocks and plain text responses.
 
         Args:
             response: LLM response text
