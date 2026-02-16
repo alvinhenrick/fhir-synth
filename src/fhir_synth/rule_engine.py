@@ -106,7 +106,8 @@ class RuleEngine:
         weights = [rule.weight for rule in matching_rules]
         return random.choices(matching_rules, weights=weights, k=1)[0]
 
-    def _check_conditions(self, conditions: dict[str, Any], context: dict[str, Any]) -> bool:
+    @staticmethod
+    def _check_conditions(conditions: dict[str, Any], context: dict[str, Any]) -> bool:
         """Check if all conditions are met."""
         for key, expected_value in conditions.items():
             if context.get(key) != expected_value:
