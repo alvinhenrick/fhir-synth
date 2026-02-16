@@ -6,18 +6,16 @@ import json
 import os
 from typing import Any
 
-from fhir_synth.plan import DatasetPlan
-
 
 class LLMProvider:
     """LLM provider using LiteLLM for unified access to 100+ LLM providers."""
 
     def __init__(
-        self,
-        model: str = "gpt-4",
-        api_key: str | None = None,
-        api_base: str | None = None,
-        **kwargs: Any,
+            self,
+            model: str = "gpt-4",
+            api_key: str | None = None,
+            api_base: str | None = None,
+            **kwargs: Any,
     ) -> None:
         """Initialize LLM provider with LiteLLM.
 
@@ -33,7 +31,7 @@ class LLMProvider:
         self.extra_kwargs = kwargs
 
     def generate_text(
-        self, prompt: str, system: str | None = None, json_schema: dict[str, Any] | None = None
+            self, prompt: str, system: str | None = None, json_schema: dict[str, Any] | None = None
     ) -> str:
         """Generate text from prompt using LiteLLM."""
         import litellm
@@ -62,7 +60,7 @@ class LLMProvider:
         return response.choices[0].message.content or ""
 
     def generate_json(
-        self, prompt: str, system: str | None = None, schema: dict[str, Any] | None = None
+            self, prompt: str, system: str | None = None, schema: dict[str, Any] | None = None
     ) -> dict[str, Any]:
         """Generate JSON from prompt."""
         text = self.generate_text(prompt, system, schema)
@@ -89,7 +87,7 @@ class MockLLMProvider:
         self.calls: list[dict[str, Any]] = []
 
     def generate_text(
-        self, prompt: str, system: str | None = None, json_schema: dict[str, Any] | None = None
+            self, prompt: str, system: str | None = None, json_schema: dict[str, Any] | None = None
     ) -> str:
         """Generate mock text response."""
         self.calls.append({"prompt": prompt, "system": system, "schema": json_schema})
@@ -108,7 +106,7 @@ class MockLLMProvider:
             }"""
 
     def generate_json(
-        self, prompt: str, system: str | None = None, schema: dict[str, Any] | None = None
+            self, prompt: str, system: str | None = None, schema: dict[str, Any] | None = None
     ) -> dict[str, Any]:
         """Generate a mock JSON response."""
         text = self.generate_text(prompt, system, schema)
@@ -116,7 +114,7 @@ class MockLLMProvider:
 
 
 def get_provider(
-    provider_name: str = "gpt-4", api_key: str | None = None, **kwargs: Any
+        provider_name: str = "gpt-4", api_key: str | None = None, **kwargs: Any
 ) -> LLMProvider | MockLLMProvider:
     """Get LLM provider.
 
@@ -155,35 +153,3 @@ def get_provider(
                     break
 
     return LLMProvider(model=provider_name, api_key=api_key, **kwargs)
-
-
-def prompt_to_plan(llm: LLMProvider | MockLLMProvider, prompt: str) -> DatasetPlan:
-    """Convert user prompt to validated DatasetPlan."""
-    system_prompt = """You are a helpful assistant that converts user prompts into FHIR synthetic data generation plans.
-
-The user will describe what kind of synthetic healthcare data they want to generate. Your job is to convert this into a structured JSON configuration following the DatasetPlan schema.
-
-Guidelines:
-- Default to reasonable values if not specified (e.g., 50 persons, 3 years horizon)
-- If the user mentions multiple healthcare organizations/systems, use the multi-org "sources" format
-- If the user mentions specific conditions or scenarios, add them to the scenarios list
-- Always include comprehensive resource types unless the user asks for specific ones
-- Clamp large numbers to reasonable limits (max 1000 persons)
-
-Return ONLY valid JSON matching the DatasetPlan schema. Do not include explanations."""
-
-    try:
-        plan_dict = llm.generate_json(prompt, system=system_prompt)
-    except Exception:
-        # Fallback to text extraction
-        text = llm.generate_text(prompt, system=system_prompt)
-        plan_dict = json.loads(text)
-
-    # Validate and normalize
-    plan = DatasetPlan.model_validate(plan_dict)
-
-    # Apply guardrails
-    if plan.population.persons > 1000:
-        plan.population.persons = 1000
-
-    return plan

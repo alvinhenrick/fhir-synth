@@ -1,10 +1,6 @@
 """FHIR Synth - Deterministic FHIR R4 synthetic data generator."""
 
-from __future__ import annotations
-
 from dotenv import load_dotenv
-
-from fhir_synth.plan import DatasetPlan
 
 __version__ = "0.1.0"
 
@@ -13,4 +9,4 @@ __version__ = "0.1.0"
 load_dotenv()
 
 
-__all__ = ["DatasetPlan", "__version__"]
+__all__ = [ "__version__"]
