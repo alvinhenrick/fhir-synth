@@ -44,6 +44,22 @@ fhir-synth codegen "Create 50 realistic patients" --out code.py --execute
 fhir-synth bundle --resources data.ndjson --out bundle.json --type transaction
 ```
 
+### 4) EMPI (Person → Patients)
+
+```bash
+# Rules with EMPI metadata
+fhir-synth rules "EMPI dataset" --empi --out rules.json
+
+# Codegen with EMPI linkage
+fhir-synth codegen "EMPI dataset" --empi --out code.py --execute
+
+# Bundle with EMPI resources (1 person, emr1+emr2)
+fhir-synth bundle --empi --out empi_bundle.json
+
+# Custom EMPI parameters
+fhir-synth bundle --empi --persons 5 --systems emr1,emr2,emr3 --no-orgs --out empi_bundle.json
+```
+
 ## CLI Commands
 
 ### `fhir-synth rules`
@@ -64,11 +80,21 @@ fhir-synth codegen "Create 50 patients" --out code.py --execute
 ```
 
 ### `fhir-synth bundle`
-Create FHIR R4B bundles from NDJSON data.
+Create FHIR R4B bundles from NDJSON data or EMPI defaults.
 
 ```bash
+# NDJSON bundle
 fhir-synth bundle --resources data.ndjson --out bundle.json --type transaction
+
+# EMPI bundle (Person → Patients)
+fhir-synth bundle --empi --out empi_bundle.json
 ```
+
+**EMPI options (rules/codegen/bundle):**
+- `--empi` include EMPI Person → Patient linkage
+- `--persons` number of Persons (default: 1)
+- `--systems` comma-separated EMR systems (default: emr1,emr2)
+- `--no-orgs` skip Organization resources
 
 ## Python API
 

@@ -2,43 +2,62 @@
 
 from typing import Any, Type
 
+from pydantic import BaseModel
+
 from fhir.resources.R4B import (
     bundle,
     condition,
+    diagnosticreport,
+    documentreference,
     encounter,
+    location,
     medication,
+    medicationdispense,
     medicationrequest,
     observation,
     organization,
     patient,
     person,
     practitioner,
+    practitionerrole,
+    procedure,
 )
 
 # Create resource classes from R4B modules
 Bundle = bundle.Bundle
 Condition = condition.Condition
+DiagnosticReport = diagnosticreport.DiagnosticReport
+DocumentReference = documentreference.DocumentReference
 Encounter = encounter.Encounter
+Location = location.Location
 Medication = medication.Medication
+MedicationDispense = medicationdispense.MedicationDispense
 MedicationRequest = medicationrequest.MedicationRequest
 Observation = observation.Observation
 Organization = organization.Organization
 Patient = patient.Patient
 Person = person.Person
 Practitioner = practitioner.Practitioner
-from pydantic import BaseModel
+PractitionerRole = practitionerrole.PractitionerRole
+Procedure = procedure.Procedure
 
 # Map resource type names to their FHIR resource classes
 FHIR_RESOURCE_CLASSES: dict[str, Type[BaseModel]] = {
-    "Patient": Patient,
     "Person": Person,
+    "Patient": Patient,
     "Condition": Condition,
-    "Observation": Observation,
-    "Encounter": Encounter,
     "Medication": Medication,
     "MedicationRequest": MedicationRequest,
+    "MedicationDispense": MedicationDispense,
+    "Observation": Observation,
+    "Procedure": Procedure,
+    "Encounter": Encounter,
     "Organization": Organization,
+    "Location": Location,
     "Practitioner": Practitioner,
+    "PractitionerRole": PractitionerRole,
+    "DiagnosticReport": DiagnosticReport,
+    "DocumentReference": DocumentReference,
     "Bundle": Bundle,
 }
 
@@ -324,4 +343,3 @@ class BundleFactory:
     def clear(self) -> None:
         """Clear all entries."""
         self.entries = []
-

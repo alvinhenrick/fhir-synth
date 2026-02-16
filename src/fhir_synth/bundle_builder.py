@@ -83,7 +83,7 @@ class BundleBuilder:
             self,
             resources_by_type: dict[str, list[dict[str, Any]]],
     ) -> dict[str, Any]:
-        """Build bundle with automatic reference linking between resources.
+        """Build a bundle with automatic reference linking between resources.
 
         Args:
             resources_by_type: Dict mapping resource type to list of resources
@@ -91,7 +91,7 @@ class BundleBuilder:
         Returns:
             Bundle with established references
         """
-        # Create references map
+        # Create a references map
         references: dict[str, list[str]] = {}
         for resource_type, resources in resources_by_type.items():
             references[resource_type] = [r.get("id") for r in resources if r.get("id")]
