@@ -19,9 +19,10 @@ import importlib
 import os
 from dataclasses import dataclass, field
 from functools import cache
-from typing import Any
+from typing import Any, cast
 
 import fhir.resources.R4B as _r4b
+from pydantic import BaseModel
 
 # ── Data-type modules to skip (not top-level FHIR resources) ──────────────
 _DATA_TYPE_MODULES: frozenset[str] = frozenset(
@@ -162,7 +163,7 @@ _MODULE_MAP: dict[str, str] = _discover_module_names()
 
 
 @cache
-def get_resource_class(name: str) -> type:
+def get_resource_class(name: str) -> type[BaseModel]:
     """Import and return the Pydantic model class for a resource type.
 
     Results are cached so each module is only imported once.
@@ -185,7 +186,7 @@ def get_resource_class(name: str) -> type:
                 break
     if cls is None:
         raise ValueError(f"Could not find class {name!r} in fhir.resources.R4B.{modname}")
-    return cls  # type: ignore[return-value]
+    return cast(type[BaseModel], cls)
 
 
 @cache

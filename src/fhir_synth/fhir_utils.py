@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterator
 from datetime import UTC
 from typing import Any
 
@@ -12,11 +13,11 @@ from fhir_synth.fhir_spec import get_resource_class, resource_names
 
 def _get_fhir_class(name: str) -> type[BaseModel]:
     """Lazy wrapper — only imports the module when first accessed."""
-    return get_resource_class(name)  # type: ignore[return-value]
+    return get_resource_class(name)
 
 
 # Dynamic map — resolves on first access via __getitem__, not at import time
-class _LazyResourceMap(dict):  # type: ignore[type-arg]
+class _LazyResourceMap(dict[str, type[BaseModel]]):
     """Dict that lazily loads FHIR resource classes on first access."""
 
     def __init__(self) -> None:
@@ -33,17 +34,17 @@ class _LazyResourceMap(dict):  # type: ignore[type-arg]
             super().__setitem__(key, _get_fhir_class(key))
         return super().__getitem__(key)
 
-    def keys(self):  # type: ignore[override]
+    def keys(self) -> set[str]:  # type: ignore[override]
         return self._names
 
-    def __iter__(self):  # type: ignore[override]
+    def __iter__(self) -> Iterator[str]:
         return iter(self._names)
 
     def __len__(self) -> int:
         return len(self._names)
 
 
-FHIR_RESOURCE_CLASSES: dict[str, type[BaseModel]] = _LazyResourceMap()  # type: ignore[assignment]
+FHIR_RESOURCE_CLASSES: dict[str, type[BaseModel]] = _LazyResourceMap()
 
 
 class FHIRResourceFactory:
@@ -67,7 +68,7 @@ class FHIRResourceFactory:
         Returns:
             FHIR resource Pydantic model instance
         """
-        cls = get_resource_class(resource_type)
+        cls: type[BaseModel] = get_resource_class(resource_type)
         data.setdefault("resourceType", resource_type)
         return cls(**data)
 
@@ -80,7 +81,7 @@ class FHIRResourceFactory:
         **kwargs: Any,
     ) -> BaseModel:
         """Create a FHIR Patient resource."""
-        data = {
+        data: dict[str, Any] = {
             "id": id,
             "resourceType": "Patient",
             "name": [{"given": [given_name], "family": family_name}],
@@ -88,7 +89,8 @@ class FHIRResourceFactory:
         }
         if birth_date:
             data["birthDate"] = birth_date
-        return get_resource_class("Patient")(**data)
+        cls: type[BaseModel] = get_resource_class("Patient")
+        return cls(**data)
 
     @staticmethod
     def create_condition(
@@ -99,14 +101,15 @@ class FHIRResourceFactory:
         **kwargs: Any,
     ) -> BaseModel:
         """Create a FHIR Condition resource."""
-        data = {
+        data: dict[str, Any] = {
             "id": id,
             "resourceType": "Condition",
             "code": {"coding": [{"code": code, "system": system}]},
             "subject": {"reference": f"Patient/{patient_id}"},
             **kwargs,
         }
-        return get_resource_class("Condition")(**data)
+        cls: type[BaseModel] = get_resource_class("Condition")
+        return cls(**data)
 
     @staticmethod
     def create_observation(
@@ -118,7 +121,7 @@ class FHIRResourceFactory:
         **kwargs: Any,
     ) -> BaseModel:
         """Create a FHIR Observation resource."""
-        data = {
+        data: dict[str, Any] = {
             "id": id,
             "resourceType": "Observation",
             "status": "final",
@@ -128,7 +131,8 @@ class FHIRResourceFactory:
         }
         if value is not None:
             data["valueQuantity"] = {"value": value}
-        return get_resource_class("Observation")(**data)
+        cls: type[BaseModel] = get_resource_class("Observation")
+        return cls(**data)
 
     @staticmethod
     def create_medication_request(
@@ -139,7 +143,7 @@ class FHIRResourceFactory:
         **kwargs: Any,
     ) -> BaseModel:
         """Create a FHIR MedicationRequest resource."""
-        data = {
+        data: dict[str, Any] = {
             "id": id,
             "resourceType": "MedicationRequest",
             "status": status,
@@ -155,7 +159,8 @@ class FHIRResourceFactory:
             "subject": {"reference": f"Patient/{patient_id}"},
             **kwargs,
         }
-        return get_resource_class("MedicationRequest")(**data)
+        cls: type[BaseModel] = get_resource_class("MedicationRequest")
+        return cls(**data)
 
     @staticmethod
     def create_bundle(
@@ -176,25 +181,16 @@ class FHIRResourceFactory:
         }
         if entries:
             data["entry"] = entries
-        return get_resource_class("Bundle")(**data)
+        cls: type[BaseModel] = get_resource_class("Bundle")
+        return cls(**data)
 
     @staticmethod
     def from_dict(resource_type: str, data: dict[str, Any]) -> BaseModel:
         """Create any FHIR resource from a type name and data dict.
 
         Supports all 141 R4B resource types via auto-discovery.
-
-        Args:
-            resource_type: FHIR resource type name (e.g. "Patient", "Immunization")
-            data: Resource data dictionary
-
-        Returns:
-            FHIR resource instance
-
-        Raises:
-            ValueError: If resource type is not a known FHIR R4B type
         """
-        cls = get_resource_class(resource_type)
+        cls: type[BaseModel] = get_resource_class(resource_type)
         return cls(**data)
 
     @staticmethod

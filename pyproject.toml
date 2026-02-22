@@ -7,7 +7,7 @@ name = "fhir-synth"
 version = "0.1.0"
 description = "Deterministic FHIR R4 synthetic data generator with LLM-assisted planning"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 license = "MIT"
 authors = [
     { name = "Alvin Henrick", email = "share.code@aol.com" },
@@ -91,7 +91,7 @@ ignore = [
 "tests/*" = ["B011"]  # assert False
 
 [tool.mypy]
-python_version = "3.11"
+python_version = "3.12"
 strict = true
 warn_return_any = true
 warn_unused_configs = true

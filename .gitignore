@@ -57,3 +57,4 @@ examples/*.yaml
 # OS
 .DS_Store
 Thumbs.db
+uv.lock

@@ -99,7 +99,9 @@ class BundleBuilder:
         # Create a references map
         references: dict[str, list[str]] = {}
         for resource_type, resources in resources_by_type.items():
-            references[resource_type] = [r.get("id") for r in resources if r.get("id")]
+            references[resource_type] = [
+                str(rid) for r in resources if (rid := r.get("id")) is not None
+            ]
 
         # Add resources and establish relationships
         for resource_type, resources in resources_by_type.items():
@@ -221,7 +223,10 @@ class BundleManager:
         # Generate related resources
         for patient in patients:
             patient_id = patient.get("id")
-            context = {"patient_id": patient_id}
+            if patient_id is None:
+                continue
+            patient_id_str = str(patient_id)
+            context: dict[str, Any] = {"patient_id": patient_id_str}
 
             for resource_type, count in resources_per_patient.items():
                 if resource_type in self.rule_engine.rulesets:
@@ -229,7 +234,7 @@ class BundleManager:
 
                     # Inject patient reference
                     for resource in resources:
-                        self._add_patient_reference(resource, patient_id)
+                        self._add_patient_reference(resource, patient_id_str)
 
                     builder.add_resources(resources)
 
