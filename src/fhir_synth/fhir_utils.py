@@ -1,7 +1,5 @@
 """FHIR resource utilities for working with fhir.resources library."""
 
-from __future__ import annotations
-
 from collections.abc import Iterator
 from datetime import UTC
 from typing import Any

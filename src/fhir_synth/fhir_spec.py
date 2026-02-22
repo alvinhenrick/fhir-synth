@@ -13,13 +13,11 @@ Public API
 - ``spec_summary`` – compact text summary suitable for LLM prompts
 """
 
-from __future__ import annotations
-
 import importlib
 import os
 from dataclasses import dataclass, field
 from functools import cache
-from typing import Any, cast
+from typing import Any
 
 import fhir.resources.R4B as _r4b
 from pydantic import BaseModel
@@ -186,7 +184,7 @@ def get_resource_class(name: str) -> type[BaseModel]:
                 break
     if cls is None:
         raise ValueError(f"Could not find class {name!r} in fhir.resources.R4B.{modname}")
-    return cast(type[BaseModel], cls)
+    return cls  # type: ignore[no-any-return]
 
 
 @cache
