@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "fhir-synth"
 version = "0.1.0"
-description = "Deterministic FHIR R4 synthetic data generator with LLM-assisted planning"
+description = "Dynamic FHIR R4B synthetic data generator using LLM-powered code generation and declarative rules"
 readme = "README.md"
 requires-python = ">=3.12"
 license = "MIT"
@@ -17,8 +17,8 @@ classifiers = [
     "Intended Audience :: Developers",
     "Intended Audience :: Healthcare Industry",
     "License :: OSI Approved :: MIT License",
-    "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Topic :: Scientific/Engineering :: Medical Science Apps.",
 ]
 dependencies = [
@@ -68,7 +68,7 @@ lint = "ruff check src tests --fix"
 
 [tool.ruff]
 line-length = 100
-target-version = "py311"
+target-version = "py312"
 src = ["src", "tests"]
 
 [tool.ruff.lint]

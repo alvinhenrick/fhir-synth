@@ -20,82 +20,65 @@ FHIR R4B Bundles
 
 ```bash
 pip install fhir-synth
-pip install fhir-synth[llm]
 ```
 
 ## Quick Start
 
-### Generate Data from a Prompt (main command)
+### 1. Set up your LLM provider
+
+```bash
+echo "OPENAI_API_KEY=sk-..." > .env
+```
+
+### 2. Generate data from a prompt
 
 Describe what you need in plain English → get a valid FHIR R4B Bundle:
 
 ```bash
-# 10 diabetic patients with labs
+# 10 diabetic patients with labs (uses gpt-4 by default)
 fhir-synth generate "10 diabetic patients with HbA1c observations" -o diabetes.json
 
 # 5 patients with hypertension, encounters, and meds
-fhir-synth generate "5 patients with hypertension, office encounters, and antihypertensive medications" \
-  --provider gpt-4 -o hypertension.json
+fhir-synth generate "5 patients with hypertension, office encounters, and antihypertensive medications" -o hypertension.json
 
 # Save the generated code for inspection
 fhir-synth generate "20 patients with conditions and observations" -o data.json --save-code generated.py
 
 # EMPI: Person → Patients across EMR systems
 fhir-synth generate "EMPI dataset" --empi --persons 3 -o empi.json
+
+# Try without an API key (mock LLM for testing)
+fhir-synth generate "5 patients" --provider mock -o test.json
 ```
 
-What happens under the hood:
+**What happens under the hood:**
 1. Your prompt goes to the LLM
 2. LLM generates Python code using `fhir.resources` (Pydantic FHIR models)
 3. Code is executed in a sandbox
 4. If it fails, the error is sent back to the LLM for self-healing (up to 2 retries)
-5. Resources are wrapped in a FHIR Bundle and saved
+5. Resources are wrapped in a FHIR R4B Bundle and saved
 
-### Other Commands
+## CLI Reference
 
-#### Rules from Prompt
-
-```bash
-fhir-synth rules "100 diabetic patients with HbA1c monitoring" --out rules.json
-```
-
-#### Code from Prompt (without bundling)
-
-```bash
-fhir-synth codegen "Create 50 realistic patients" --out code.py
-fhir-synth codegen "Create 50 realistic patients" --out code.py --execute
-```
-
-#### Bundle from NDJSON
-
-```bash
-fhir-synth bundle --resources data.ndjson --out bundle.json --type transaction
-```
-
-#### EMPI (Person → Patients)
-
-```bash
-fhir-synth bundle --empi --out empi_bundle.json
-fhir-synth bundle --empi --persons 5 --systems emr1,emr2,emr3 --no-orgs --out empi_bundle.json
-```
-
-## CLI Commands
-
-### `fhir-synth generate` (primary)
+### `fhir-synth generate` — primary command
 End-to-end: prompt → LLM → code → execute → FHIR Bundle.
 
-```bash
-fhir-synth generate "10 diabetic patients with HbA1c labs" -o diabetes.json
-fhir-synth generate "5 ER encounters with vitals" --provider gpt-4 -o er.json --save-code er.py
-```
+| Flag | Default | Description |
+|------|---------|-------------|
+| `-o / --out` | `output.json` | Output file |
+| `-p / --provider` | `gpt-4` | LLM model/provider |
+| `-t / --type` | `transaction` | Bundle type |
+| `--save-code` | — | Save generated Python code |
+| `--empi` | off | Include EMPI Person→Patient linkage |
+| `--persons` | `1` | Number of Persons (EMPI) |
+| `--systems` | `emr1,emr2` | EMR system ids (EMPI) |
+| `--no-orgs` | off | Skip Organization resources (EMPI) |
 
 ### `fhir-synth rules`
 Generate structured rule definitions from natural language.
 
 ```bash
-fhir-synth rules "100 diabetic patients with insulin therapy" \
-  --out rules.json \
-  --provider gpt-4
+fhir-synth rules "100 diabetic patients with insulin therapy" --out rules.json --provider gpt-4
 ```
 
 ### `fhir-synth codegen`
@@ -107,18 +90,12 @@ fhir-synth codegen "Create 50 patients" --out code.py --execute
 ```
 
 ### `fhir-synth bundle`
-Create FHIR R4B bundles from NDJSON data or EMPI defaults.
+Create FHIR R4B Bundles from NDJSON data or EMPI defaults.
 
 ```bash
 fhir-synth bundle --resources data.ndjson --out bundle.json --type transaction
-fhir-synth bundle --empi --out empi_bundle.json
+fhir-synth bundle --empi --persons 5 --systems emr1,emr2,emr3 --no-orgs --out empi_bundle.json
 ```
-
-**EMPI options (rules/codegen/bundle):**
-- `--empi` include EMPI Person → Patient linkage
-- `--persons` number of Persons (default: 1)
-- `--systems` comma-separated EMR systems (default: emr1,emr2)
-- `--no-orgs` skip Organization resources
 
 ## Python API
 
@@ -156,19 +133,38 @@ patient = FHIRResourceFactory.create_patient("p1", "Jane", "Doe", "1990-01-01")
 
 ## LLM Providers
 
-Create a `.env` file with your API key:
+The `generate` command defaults to `gpt-4`. Set your API key in a `.env` file:
 
 ```bash
-echo "OPENAI_API_KEY=sk-..." > .env
+OPENAI_API_KEY=sk-...
+ANTHROPIC_API_KEY=sk-ant-...
 ```
 
-Supported providers: OpenAI, Anthropic, AWS Bedrock, and 100+ via LiteLLM. Default is `mock`.
+Supported via [LiteLLM](https://docs.litellm.ai/): OpenAI, Anthropic, AWS Bedrock, Azure, and 100+ providers.
+
+Use `--provider mock` for testing without an API key.
 
 ## Architecture
 
-See `ARCHITECTURE.md` for system design and data flows.
+See [ARCHITECTURE.md](ARCHITECTURE.md) for system design and data flows.
 
 ## Development
+
+```bash
+# Install dev dependencies
+hatch env create
+
+# Run tests
+hatch run test
+
+# Type checking & linting
+hatch run check
+
+# Format
+hatch run format
+```
+
+Or manually:
 
 ```bash
 pytest -q
