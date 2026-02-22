@@ -1,7 +1,13 @@
 """Rule engine for declarative FHIR resource generation."""
 
+from __future__ import annotations
+
+import random
+import uuid
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any, Callable
+from datetime import UTC, datetime
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -17,16 +23,22 @@ class Rule(BaseModel):
 
 
 class RuleSet(BaseModel):
-    """Collection of rules for a resource type."""
+    """Collection of rules for a resource type.
+
+    ``resource_type`` is validated against all known FHIR R4B types.
+    """
 
     resource_type: str = Field(description="FHIR resource type (e.g., Patient, Condition)")
     description: str = Field(description="What resources this ruleset generates")
     rules: list[Rule] = Field(default_factory=list, description="List of rules")
-    default_rule: Rule | None = Field(default=None, description="Default rule if no conditions match")
+    default_rule: Rule | None = Field(
+        default=None, description="Default rule if no conditions match"
+    )
     bundle_config: dict[str, Any] = Field(
         default_factory=dict,
         description="Config for bundling multiple resources",
     )
+
 
 
 class RuleEngine:
@@ -78,7 +90,7 @@ class RuleEngine:
             if executor:
                 resource = executor(rule, context)
             else:
-                resource = self._default_executor(rule, context)
+                resource = self._default_executor(rule, context, resource_type)
 
             results.append(resource)
 
@@ -86,7 +98,6 @@ class RuleEngine:
 
     def _select_rule(self, ruleset: RuleSet, context: dict[str, Any]) -> Rule:
         """Select the appropriate rule based on conditions."""
-        import random
 
         # Filter rules that match conditions
         matching_rules = []
@@ -115,9 +126,18 @@ class RuleEngine:
         return True
 
     @staticmethod
-    def _default_executor(rule: Rule, context: dict[str, Any]) -> dict[str, Any]:
-        """Default executor that builds resource from rule actions."""
-        resource = {"id": context.get("id"), "resourceType": context.get("resourceType")}
+    def _default_executor(
+        rule: Rule, context: dict[str, Any], resource_type: str
+    ) -> dict[str, Any]:
+        """Default executor — builds a resource dict from rule actions.
+
+        Always sets ``resourceType`` from the ruleset so the output is a
+        valid FHIR resource skeleton regardless of what the rule specifies.
+        """
+        resource: dict[str, Any] = {
+            "resourceType": resource_type,
+            "id": context.get("id", str(uuid.uuid4())),
+        }
         resource.update(rule.actions)
         return resource
 
@@ -170,16 +190,13 @@ class RuleEngine:
     @staticmethod
     def _generate_id() -> str:
         """Generate a unique ID."""
-        import uuid
-
         return str(uuid.uuid4())
 
     @staticmethod
     def _current_timestamp() -> str:
         """Get the current timestamp in ISO format."""
-        from datetime import datetime, timezone
 
-        return datetime.now(timezone.utc).isoformat()
+        return datetime.now(UTC).isoformat()
 
     @staticmethod
     def generate_empi_resources(
@@ -228,9 +245,7 @@ class RuleEngine:
                 patient_resource: dict[str, Any] = {
                     "resourceType": "Patient",
                     "id": patient_id,
-                    "identifier": [
-                        {"system": f"urn:emr:{system}", "value": patient_id}
-                    ],
+                    "identifier": [{"system": f"urn:emr:{system}", "value": patient_id}],
                 }
                 if include_organizations:
                     patient_resource["managingOrganization"] = {
@@ -253,54 +268,68 @@ class RuleEngine:
 
 @dataclass
 class GenerationRules:
-    """Declarative rules for synthetic data generation."""
+    """Generic declarative rules for synthetic data generation.
+
+    Rules are stored in a single ``rules_by_type`` dict keyed by FHIR
+    resource type name (e.g. ``"Patient"``, ``"Immunization"``).
+    This replaces the old design that hardcoded ``conditions``,
+    ``medications``, ``observations``, etc.
+    """
 
     population: dict[str, Any] = field(default_factory=dict)
-    """Rules for population characteristics"""
+    """High-level population config (e.g. count, demographics)."""
 
-    conditions: list[Rule] = field(default_factory=list)
-    """Rules for medical conditions"""
+    rules_by_type: dict[str, list[Rule]] = field(default_factory=dict)
+    """Rules keyed by FHIR resource type — works for any of the 141 R4B types."""
 
-    medications: list[Rule] = field(default_factory=list)
-    """Rules for medication prescriptions"""
+    def add_rules(self, resource_type: str, rules: list[Rule]) -> None:
+        """Add rules for a resource type."""
+        self.rules_by_type.setdefault(resource_type, []).extend(rules)
 
-    observations: list[Rule] = field(default_factory=list)
-    """Rules for clinical observations"""
+    def get_rules(self, resource_type: str) -> list[Rule]:
+        """Get rules for a resource type."""
+        return self.rules_by_type.get(resource_type, [])
 
-    procedures: list[Rule] = field(default_factory=list)
-    """Rules for medical procedures"""
-
-    documents: list[Rule] = field(default_factory=list)
-    """Rules for clinical documents"""
-
-    custom_rules: dict[str, list[Rule]] = field(default_factory=dict)
-    """Custom rules for other resource types"""
+    @property
+    def resource_types(self) -> list[str]:
+        """Return all resource types that have rules defined."""
+        return list(self.rules_by_type.keys())
 
     def to_dict(self) -> dict[str, Any]:
         """Convert rules to dictionary."""
         return {
             "population": self.population,
-            "conditions": [r.model_dump() for r in self.conditions],
-            "medications": [r.model_dump() for r in self.medications],
-            "observations": [r.model_dump() for r in self.observations],
-            "procedures": [r.model_dump() for r in self.procedures],
-            "documents": [r.model_dump() for r in self.documents],
-            "custom_rules": {
-                k: [r.model_dump() for r in v] for k, v in self.custom_rules.items()
+            "rules_by_type": {
+                rt: [r.model_dump() for r in rules]
+                for rt, rules in self.rules_by_type.items()
             },
         }
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> GenerationRules:
         """Create rules from a dictionary."""
+        rules_by_type: dict[str, list[Rule]] = {}
+        for rt, rule_list in data.get("rules_by_type", {}).items():
+            rules_by_type[rt] = [Rule(**r) for r in rule_list]
+
+        # Backwards compatibility: migrate old category-style keys
+        for old_key in ("conditions", "medications", "observations",
+                        "procedures", "documents"):
+            if old_key in data and data[old_key]:
+                # Map old key to FHIR resource type
+                type_map = {
+                    "conditions": "Condition",
+                    "medications": "MedicationRequest",
+                    "observations": "Observation",
+                    "procedures": "Procedure",
+                    "documents": "DocumentReference",
+                }
+                rt = type_map.get(old_key, old_key)
+                rules_by_type.setdefault(rt, []).extend(
+                    [Rule(**r) for r in data[old_key]]
+                )
+
         return cls(
             population=data.get("population", {}),
-            conditions=[Rule(**r) for r in data.get("conditions", [])],
-            medications=[Rule(**r) for r in data.get("medications", [])],
-            observations=[Rule(**r) for r in data.get("observations", [])],
-            procedures=[Rule(**r) for r in data.get("procedures", [])],
-            documents=[Rule(**r) for r in data.get("documents", [])],
-            custom_rules={
-                k: [Rule(**r) for r in v] for k, v in data.get("custom_rules", {}).items()
-            },
+            rules_by_type=rules_by_type,
         )

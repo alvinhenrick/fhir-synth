@@ -18,4 +18,3 @@ def test_generate_empi_resources_links_person_to_patients():
 
     patient_refs = {link["target"]["reference"] for link in persons[0]["link"]}
     assert patient_refs == {"Patient/emr1-patient-1", "Patient/emr2-patient-1"}
-

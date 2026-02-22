@@ -1,9 +1,14 @@
 """FHIR Bundle builder for combining multiple resources."""
+
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
+from fhir_synth.fhir_spec import reference_targets
 from fhir_synth.rule_engine import RuleEngine
+
+# Fields that typically hold a Patient reference (subject, patient, etc.)
+_PATIENT_REF_FIELDS = ("subject", "patient")
 
 
 class BundleBuilder:
@@ -19,10 +24,10 @@ class BundleBuilder:
         self.entries: list[dict[str, Any]] = []
 
     def add_resource(
-            self,
-            resource: dict[str, Any],
-            method: str = "POST",
-            url: str | None = None,
+        self,
+        resource: dict[str, Any],
+        method: str = "POST",
+        url: str | None = None,
     ) -> None:
         """Add a resource to the bundle.
 
@@ -49,9 +54,9 @@ class BundleBuilder:
         self.entries.append(entry)
 
     def add_resources(
-            self,
-            resources: list[dict[str, Any]],
-            method: str = "POST",
+        self,
+        resources: list[dict[str, Any]],
+        method: str = "POST",
     ) -> None:
         """Add multiple resources to the bundle.
 
@@ -80,8 +85,8 @@ class BundleBuilder:
         return bundle
 
     def build_with_relationships(
-            self,
-            resources_by_type: dict[str, list[dict[str, Any]]],
+        self,
+        resources_by_type: dict[str, list[dict[str, Any]]],
     ) -> dict[str, Any]:
         """Build a bundle with automatic reference linking between resources.
 
@@ -111,31 +116,21 @@ class BundleBuilder:
     ) -> None:
         """Add resource and inject references where appropriate.
 
-        Args:
-            resource: Resource to add
-            references: Map of a resource type to IDs
-            primary_type: Primary resource type
+        Uses ``fhir_spec.reference_targets`` to discover which fields on
+        *primary_type* accept references, then auto-links to Patient (or
+        other available resources) if IDs exist.
         """
-        # Simple reference injection based on a resource type
-        if primary_type == "Condition" and "Patient" in references:
-            if references["Patient"]:
-                patient_id = references["Patient"][0]
-                resource["subject"] = {"reference": f"Patient/{patient_id}"}
-
-        elif primary_type == "MedicationRequest" and "Patient" in references:
-            if references["Patient"]:
-                patient_id = references["Patient"][0]
-                resource["subject"] = {"reference": f"Patient/{patient_id}"}
-
-        elif primary_type == "Observation" and "Patient" in references:
-            if references["Patient"]:
-                patient_id = references["Patient"][0]
-                resource["subject"] = {"reference": f"Patient/{patient_id}"}
-
-        elif primary_type == "Procedure" and "Patient" in references:
-            if references["Patient"]:
-                patient_id = references["Patient"][0]
-                resource["subject"] = {"reference": f"Patient/{patient_id}"}
+        if primary_type != "Patient" and "Patient" in references and references["Patient"]:
+            patient_id = references["Patient"][0]
+            # Check if this resource type has subject/patient reference fields
+            try:
+                ref_fields = reference_targets(primary_type)
+                for ref_field in _PATIENT_REF_FIELDS:
+                    if ref_field in ref_fields and ref_field not in resource:
+                        resource[ref_field] = {"reference": f"Patient/{patient_id}"}
+                        break
+            except ValueError:
+                pass
 
         self.add_resource(resource)
 
@@ -151,7 +146,7 @@ class BundleBuilder:
     @staticmethod
     def _current_timestamp() -> str:
         """Get current timestamp in ISO format."""
-        return datetime.now(timezone.utc).isoformat() + "Z"
+        return datetime.now(UTC).isoformat() + "Z"
 
 
 class BundleManager:
@@ -166,10 +161,10 @@ class BundleManager:
         self.rule_engine = rule_engine or RuleEngine()
 
     def create_bundle_from_rules(
-            self,
-            rules: dict[str, Any],
-            context: dict[str, Any],
-            bundle_type: str = "transaction",
+        self,
+        rules: dict[str, Any],
+        context: dict[str, Any],
+        bundle_type: str = "transaction",
     ) -> dict[str, Any]:
         """Create a bundle by executing rules.
 
@@ -184,7 +179,7 @@ class BundleManager:
         builder = BundleBuilder(bundle_type=bundle_type)
 
         # Execute each rule type
-        for rule_key, rule_config in rules.items():
+        for _rule_key, rule_config in rules.items():
             if isinstance(rule_config, dict) and "count" in rule_config:
                 resource_type = rule_config.get("resourceType")
                 count = rule_config.get("count", 1)
@@ -196,10 +191,10 @@ class BundleManager:
         return builder.build()
 
     def create_multi_patient_bundle(
-            self,
-            patient_count: int = 5,
-            resources_per_patient: dict[str, int] | None = None,
-            bundle_type: str = "transaction",
+        self,
+        patient_count: int = 5,
+        resources_per_patient: dict[str, int] | None = None,
+        bundle_type: str = "transaction",
     ) -> dict[str, Any]:
         """Create a bundle with multiple patients and associated resources.
 
@@ -244,14 +239,18 @@ class BundleManager:
     def _add_patient_reference(resource: dict[str, Any], patient_id: str) -> None:
         """Add patient reference to a resource.
 
-        Args:
-            resource: Resource to modify
-            patient_id: ID of the patient
+        Uses ``fhir_spec.reference_targets`` to discover if the resource
+        type has a ``subject`` or ``patient`` field that accepts a reference.
         """
-        # Add subject reference for clinical resources
-        clinical_types = ["Condition", "Observation", "Procedure", "MedicationRequest"]
-        if resource.get("resourceType") in clinical_types:
-            resource["subject"] = {"reference": f"Patient/{patient_id}"}
+        rt = resource.get("resourceType", "")
+        try:
+            ref_fields = reference_targets(rt)
+            for ref_field in _PATIENT_REF_FIELDS:
+                if ref_field in ref_fields:
+                    resource[ref_field] = {"reference": f"Patient/{patient_id}"}
+                    break
+        except ValueError:
+            pass
 
     # noinspection PyMethodMayBeStatic
     def validate_bundle(self, bundle: dict[str, Any]) -> tuple[bool, list[str]]:

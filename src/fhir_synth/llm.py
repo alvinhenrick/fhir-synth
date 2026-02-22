@@ -1,4 +1,5 @@
 """LLM provider interface and prompt-to-plan conversion using LiteLLM."""
+
 import json
 import os
 from typing import Any
@@ -8,11 +9,11 @@ class LLMProvider:
     """LLM provider using LiteLLM for unified access to 100+ LLM providers."""
 
     def __init__(
-            self,
-            model: str = "gpt-4",
-            api_key: str | None = None,
-            api_base: str | None = None,
-            **kwargs: Any,
+        self,
+        model: str = "gpt-4",
+        api_key: str | None = None,
+        api_base: str | None = None,
+        **kwargs: Any,
     ) -> None:
         """Initialize LLM provider with LiteLLM.
 
@@ -28,7 +29,7 @@ class LLMProvider:
         self.extra_kwargs = kwargs
 
     def generate_text(
-            self, prompt: str, system: str | None = None, json_schema: dict[str, Any] | None = None
+        self, prompt: str, system: str | None = None, json_schema: dict[str, Any] | None = None
     ) -> str:
         """Generate text from prompt using LiteLLM."""
         import litellm
@@ -57,7 +58,7 @@ class LLMProvider:
         return response.choices[0].message.content or ""
 
     def generate_json(
-            self, prompt: str, system: str | None = None, schema: dict[str, Any] | None = None
+        self, prompt: str, system: str | None = None, schema: dict[str, Any] | None = None
     ) -> dict[str, Any]:
         """Generate JSON from prompt."""
         text = self.generate_text(prompt, system, schema)
@@ -75,16 +76,17 @@ class LLMProvider:
         return json.loads(text)  # type: ignore[no-any-return]
 
 
-class MockLLMProvider:
+class MockLLMProvider(LLMProvider):
     """Mock LLM provider for testing (no LiteLLM dependency)."""
 
     def __init__(self, response: str | dict[str, Any] | None = None) -> None:
         """Initialize with an optional fixed response."""
+        super().__init__(model="mock")
         self.response = response
         self.calls: list[dict[str, Any]] = []
 
     def generate_text(
-            self, prompt: str, system: str | None = None, json_schema: dict[str, Any] | None = None
+        self, prompt: str, system: str | None = None, json_schema: dict[str, Any] | None = None
     ) -> str:
         """Generate mock text response."""
         self.calls.append({"prompt": prompt, "system": system, "schema": json_schema})
@@ -103,7 +105,7 @@ class MockLLMProvider:
             }"""
 
     def generate_json(
-            self, prompt: str, system: str | None = None, schema: dict[str, Any] | None = None
+        self, prompt: str, system: str | None = None, schema: dict[str, Any] | None = None
     ) -> dict[str, Any]:
         """Generate a mock JSON response."""
         text = self.generate_text(prompt, system, schema)
@@ -111,8 +113,8 @@ class MockLLMProvider:
 
 
 def get_provider(
-        provider_name: str = "gpt-4", api_key: str | None = None, **kwargs: Any
-) -> LLMProvider | MockLLMProvider:
+    provider_name: str = "gpt-4", api_key: str | None = None, **kwargs: Any
+) -> LLMProvider:
     """Get LLM provider.
 
     Args:

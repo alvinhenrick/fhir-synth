@@ -1,7 +1,5 @@
 """FHIR Synth CLI - Generate synthetic FHIR R4B data from natural language prompts."""
 
-from __future__ import annotations
-
 import json
 import sys
 from pathlib import Path
@@ -12,7 +10,84 @@ from dotenv import load_dotenv
 # Load environment variables from .env
 load_dotenv()
 
-app = typer.Typer(help="Dynamic FHIR R4B synthetic data generator")
+app = typer.Typer(help="Dynamic FHIR R4B synthetic data generator — prompt → code → data")
+
+
+@app.command()
+def generate(
+    prompt: str = typer.Argument(..., help="Natural language description of data to generate"),
+    out: str = typer.Option("output.json", "--out", "-o", help="Output file (JSON bundle)"),
+    provider: str = typer.Option("gpt-4", "--provider", "-p", help="LLM model/provider"),
+    bundle_type: str = typer.Option("transaction", "--type", "-t", help="Bundle type"),
+    save_code: str | None = typer.Option(
+        None, "--save-code", help="Also save generated code to this file"
+    ),
+    empi: bool = typer.Option(False, "--empi", help="Include EMPI Person/Patient linkage"),
+    persons: int = typer.Option(1, "--persons", help="Number of Persons for EMPI"),
+    systems: str = typer.Option("emr1,emr2", "--systems", help="Comma-separated EMR system ids"),
+    no_orgs: bool = typer.Option(False, "--no-orgs", help="Do not create Organization resources"),
+) -> None:
+    """Generate synthetic FHIR data end-to-end: prompt → LLM → code → execute → bundle.
+
+    This is the main command. Describe what data you need in plain English
+    and get a valid FHIR R4B Bundle back.
+
+    Examples:
+
+      fhir-synth generate "10 diabetic patients with HbA1c labs" -o diabetes.json
+
+      fhir-synth generate "5 patients with hypertension and encounters" --provider gpt-4 -o hypertension.json
+
+      fhir-synth generate "EMPI dataset" --empi --persons 3 -o empi.json
+    """
+    try:
+        from fhir_synth.bundle_builder import BundleBuilder
+        from fhir_synth.code_generator import CodeGenerator
+        from fhir_synth.llm import get_provider
+
+        llm = get_provider(provider)
+        code_gen = CodeGenerator(llm)
+
+        # Augment prompt with EMPI hints if requested
+        prompt_text = prompt
+        if empi:
+            system_list = [s.strip() for s in systems.split(",") if s.strip()]
+            orgs_hint = (
+                "Do not create Organization resources."
+                if no_orgs
+                else "Create Organization resources for each system and link Patients via managingOrganization."
+            )
+            empi_hint = (
+                "Include EMPI linkage: generate Person resources, each linked to "
+                "one Patient per system via Person.link.target. "
+                f"Systems: {', '.join(system_list or ['emr1', 'emr2'])}. "
+                f"Persons: {persons}. {orgs_hint}"
+            )
+            prompt_text = f"{empi_hint}\n\n{prompt}"
+
+        # Step 1 — generate code
+        typer.echo("⚙  Generating code from prompt …")
+        code = code_gen.generate_code_from_prompt(prompt_text)
+
+        if save_code:
+            Path(save_code).write_text(code)
+            typer.echo(f"   Saved code → {save_code}")
+
+        # Step 2 — execute code (self-healing retries built-in)
+        typer.echo("▶  Executing generated code …")
+        resources = code_gen.execute_generated_code(code)
+        typer.echo(f"   Got {len(resources)} resources")
+
+        # Step 3 — wrap in a bundle
+        builder = BundleBuilder(bundle_type=bundle_type)
+        builder.add_resources(resources)
+        bundle_dict = builder.build()
+
+        Path(out).write_text(json.dumps(bundle_dict, indent=2, default=str))
+        typer.echo(f"✓  Bundle with {bundle_dict['total']} entries → {out}")
+    except Exception as exc:
+        typer.echo(f"Error: {exc}", err=True)
+        sys.exit(1)
 
 
 @app.command()
@@ -70,11 +145,15 @@ def codegen(
         from fhir_synth.llm import get_provider
 
         llm = get_provider(provider)
-        code_gen = CodeGenerator(llm)
+        code_gen = CodeGenerator(llm, max_retries=2)
         prompt_text = prompt
         if empi:
             system_list = [s.strip() for s in systems.split(",") if s.strip()]
-            orgs_hint = "Do not create Organization resources." if no_orgs else "Create Organization resources for each system and link Patients via managingOrganization."
+            orgs_hint = (
+                "Do not create Organization resources."
+                if no_orgs
+                else "Create Organization resources for each system and link Patients via managingOrganization."
+            )
             empi_hint = (
                 "Include EMPI linkage: generate Person resources, each linked to one Patient per system via Person.link.target. "
                 f"Systems: {', '.join(system_list or ['emr1', 'emr2'])}. "
@@ -102,9 +181,7 @@ def codegen(
 
 @app.command()
 def bundle(
-    resources: str | None = typer.Option(
-        None, "--resources", "-r", help="Input NDJSON file"
-    ),
+    resources: str | None = typer.Option(None, "--resources", "-r", help="Input NDJSON file"),
     out: str = typer.Option(..., "--out", "-o", help="Output Bundle JSON file"),
     bundle_type: str = typer.Option("transaction", "--type", help="Bundle type"),
     empi: bool = typer.Option(False, "--empi", help="Generate EMPI Person/Patient bundle"),

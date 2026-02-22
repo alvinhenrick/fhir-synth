@@ -2,30 +2,63 @@
 
 from typing import Any
 
+from fhir_synth.fhir_spec import resource_names
 from fhir_synth.llm import LLMProvider
+
+# Auto-discovered from fhir.resources — covers ALL R4B resource types (~141)
+SUPPORTED_RESOURCE_TYPES: list[str] = resource_names()
 
 
 class CodeGenerator:
     """Generates Python code for FHIR resource creation from natural language."""
 
-    SYSTEM_PROMPT = """You are an expert FHIR R4 resource generator. Convert natural language 
-descriptions into Python code that generates FHIR resources using the fhir.resources library.
+    SYSTEM_PROMPT = """You are an expert FHIR R4B synthetic data engineer. You generate Python code
+that produces clinically realistic, diverse, and valid FHIR R4B resources using the
+fhir.resources library (Pydantic models).
 
-Guidelines:
-1. Use fhir.resources library (Patient, Condition, Observation, etc.)
-2. Generate realistic, diverse, and valid FHIR R4 data
-3. Return clean, executable Python code
-4. Always import from fhir.resources: from fhir.resources import [ResourceType]
-5. Create a function: def generate_resources() -> list[dict]:
-6. Use proper FHIR data types and structures
-7. Return list of resource dictionaries (use .model_dump() on Pydantic models)
-8. Include realistic IDs, dates, and relationships between resources
-9. Add docstring explaining what the code generates
-10. Ensure all FHIR required fields are present (id, resourceType, status where required)"""
+HARD RULES — every response MUST follow these:
+1. Define exactly one function: def generate_resources() -> list[dict]:
+2. Import from fhir.resources.R4B (e.g. from fhir.resources.R4B.patient import Patient).
+3. Use uuid4 for all resource IDs.
+4. Call .model_dump(exclude_none=True) on every Pydantic model before appending to results.
+5. Return a flat list[dict] of resource dictionaries.
+6. Do NOT use external data files — generate everything inline with random/faker.
+7. All dates must be valid ISO-8601 strings.
+8. Use standard code systems: ICD-10-CM, SNOMED CT, LOINC, RxNorm, CPT where appropriate.
+9. Every clinical resource (Condition, Observation, MedicationRequest, Procedure, Encounter,
+   DiagnosticReport) MUST reference a Patient via "subject" or "patient".
+10. Use Python standard library only (random, uuid, datetime, decimal) plus fhir.resources.
+11. Wrap numeric FHIR values with Decimal (from decimal import Decimal) not float.
+12. Generate diverse data: vary names, genders, dates, codes across records.
 
-    def __init__(self, llm: LLMProvider) -> None:
-        """Initialize code generator with LLM."""
+REALISM GUIDELINES — make data look like a real EHR:
+- Patients: realistic names, genders (male/female/other), birth dates spanning 0-90 years,
+  addresses with city/state/zip, phone numbers, MRN identifiers.
+- Conditions: use real ICD-10 codes (E11.9 Type 2 DM, I10 Hypertension, J06.9 URI, etc.).
+- Observations: use real LOINC codes (e.g. 4548-4 HbA1c, 2339-0 Glucose, 8867-4 Heart rate).
+  Include valueQuantity with unit, system, code.
+- MedicationRequests: use real RxNorm codes. Include dosageInstruction with timing and route.
+- Encounters: use proper class codes (AMB, IMP, EMER), realistic periods.
+- Procedures: use SNOMED CT or CPT codes.
+- Bundles: link all resources via proper references (Patient/uuid).
+
+RELATIONSHIP PATTERNS:
+- Person 1──* Patient (EMPI: one person across multiple EMR systems)
+- Patient 1──* Encounter 1──* Condition, Observation, Procedure, MedicationRequest
+- Encounter references Patient, Practitioner, Location, Organization
+- Condition, Observation, Procedure reference Patient + Encounter
+
+Return ONLY the Python code, no explanation text."""
+
+    def __init__(self, llm: LLMProvider, max_retries: int = 2) -> None:
+        """Initialize code generator with LLM.
+
+        Args:
+            llm: LLM provider for code generation
+            max_retries: Number of times to retry if generated code fails execution
+        """
         self.llm = llm
+        self.max_retries = max_retries
 
     def generate_code_from_prompt(self, prompt: str) -> str:
         """Generate Python code from natural language prompt.
@@ -36,18 +69,17 @@ Guidelines:
         Returns:
             Generated Python code as string
         """
-        user_prompt = f"""Generate Python code to create FHIR R4 resources using fhir.resources library.
+        user_prompt = f"""Generate Python code to create FHIR R4B resources.
 
 Requirement: {prompt}
 
-Code requirements:
-- Use fhir.resources library (from fhir.resources import Patient, Condition, etc.)
-- Generate realistic, diverse data
-- Function signature: def generate_resources() -> list[dict]:
-- Return list of dictionaries (call .model_dump() on Pydantic models)
-- Ensure all required FHIR fields are included
-- Use proper FHIR data types and coding systems
-- Add meaningful comments explaining the generation logic"""
+Remember:
+- def generate_resources() -> list[dict]:
+- import from fhir.resources.R4B (e.g. from fhir.resources.R4B.patient import Patient)
+- .model_dump(exclude_none=True) on every resource
+- uuid4 for IDs, Decimal for numeric values
+- real clinical codes (ICD-10, LOINC, RxNorm, SNOMED)
+- diverse, realistic data"""
 
         code = self.llm.generate_text(self.SYSTEM_PROMPT, user_prompt)
         return self._extract_code(code)
@@ -83,9 +115,7 @@ Return JSON with this structure:
         result = self.llm.generate_json(self.SYSTEM_PROMPT, user_prompt)
         return result
 
-    def generate_bundle_code(
-            self, resource_types: list[str], count_per_resource: int = 10
-    ) -> str:
+    def generate_bundle_code(self, resource_types: list[str], count_per_resource: int = 10) -> str:
         """Generate code for creating a FHIR bundle with multiple resource types.
 
         Args:
@@ -96,22 +126,17 @@ Return JSON with this structure:
             Generated Python code
         """
         resources_str = ", ".join(resource_types)
-        user_prompt = f"""Generate Python code that creates a FHIR R4 Bundle using fhir.resources library.
+        user_prompt = f"""Generate Python code that creates FHIR R4B resources and returns them as a flat list.
 
 Requirements:
-- Resource types: {resources_str}
+- Resource types to generate: {resources_str}
 - Count per type: {count_per_resource}
-- Create realistic relationships (e.g., Conditions reference Patients)
-- Use fhir.resources library classes
-- Return complete Bundle as dictionary
-
-Code must:
-1. Import from fhir.resources: from fhir.resources import Bundle, {resources_str}
-2. Define function: def generate_bundle() -> dict:
-3. Create {count_per_resource} of each resource type
-4. Link clinical resources to patients (Condition.subject, Observation.subject, etc.)
-5. Return Bundle.model_dump() as the result
-6. Ensure all IDs are unique and valid"""
+- Link clinical resources to Patients (subject references)
+- Link Encounters to Patients and Practitioners
+- Use real clinical codes (ICD-10, LOINC, RxNorm, SNOMED)
+- def generate_resources() -> list[dict]:
+- .model_dump(exclude_none=True) on every resource
+- uuid4 for IDs, Decimal for numeric values"""
 
         code = self.llm.generate_text(self.SYSTEM_PROMPT, user_prompt)
         return self._extract_code(code)
@@ -132,7 +157,10 @@ Code must:
             return False
 
     def execute_generated_code(self, code: str, timeout: int = 30) -> list[dict[str, Any]]:
-        """Execute generated code safely.
+        """Execute generated code safely, with self-healing retry on failure.
+
+        If execution fails, the error is sent back to the LLM to produce a
+        corrected version. This repeats up to ``max_retries`` times.
 
         Args:
             code: Generated Python code
@@ -141,10 +169,31 @@ Code must:
         Returns:
             List of generated resources
         """
-        if not self.validate_code(code):
-            raise ValueError("Generated code is not valid Python")
+        last_error: Exception | None = None
 
-        # Create safe execution environment
+        for attempt in range(1 + self.max_retries):
+            if not self.validate_code(code):
+                last_error = ValueError("Generated code is not valid Python")
+                code = self._retry_with_error(code, str(last_error))
+                continue
+
+            try:
+                return self._exec_code(code)
+            except Exception as exc:
+                last_error = exc
+                if attempt < self.max_retries:
+                    code = self._retry_with_error(code, str(exc))
+
+        raise RuntimeError(
+            f"Code execution failed after {self.max_retries + 1} attempts: {last_error}"
+        ) from last_error
+
+    # ------------------------------------------------------------------
+    # Internal helpers
+    # ------------------------------------------------------------------
+
+    def _exec_code(self, code: str) -> list[dict[str, Any]]:
+        """Run ``code`` in a sandboxed namespace and return resources."""
         safe_globals: dict[str, Any] = {
             "__builtins__": {
                 "dict": dict,
@@ -155,20 +204,46 @@ Code must:
                 "bool": bool,
                 "len": len,
                 "range": range,
+                "enumerate": enumerate,
+                "zip": zip,
+                "isinstance": isinstance,
+                "print": print,
                 "__import__": __import__,
             }
         }
 
-        try:
-            exec(code, safe_globals)
-            if "generate_resources" in safe_globals:
-                func = safe_globals["generate_resources"]
-                result = func()
-                return result if isinstance(result, list) else [result]
-            else:
-                raise ValueError("Generated code must define generate_resources() function")
-        except Exception as e:
-            raise RuntimeError(f"Error executing generated code: {e}") from e
+        exec(code, safe_globals)  # noqa: S102
+
+        if "generate_resources" in safe_globals:
+            result = safe_globals["generate_resources"]()
+            return result if isinstance(result, list) else [result]
+
+        raise ValueError("Generated code must define generate_resources() function")
+
+    def _retry_with_error(self, code: str, error: str) -> str:
+        """Ask the LLM to fix broken generated code.
+
+        Args:
+            code: The code that failed
+            error: The error message / traceback
+
+        Returns:
+            Corrected Python code
+        """
+        fix_prompt = f"""The following Python code failed with this error:
+
+ERROR:
+{error}
+
+CODE:
+{code}
+
+Fix the code so it runs without errors. Keep the same function signature:
+  def generate_resources() -> list[dict]:
+Return ONLY the corrected Python code, no explanation."""
+
+        fixed = self.llm.generate_text(self.SYSTEM_PROMPT, fix_prompt)
+        return self._extract_code(fixed)
 
     @staticmethod
     def _extract_code(response: str) -> str:
@@ -196,7 +271,11 @@ Code must:
                 code = response[start:end].strip()
                 # Remove language specifier if present
                 lines = code.split("\n")
-                if lines[0] and not lines[0].startswith("def ") and not lines[0].startswith("import"):
+                if (
+                    lines[0]
+                    and not lines[0].startswith("def ")
+                    and not lines[0].startswith("import")
+                ):
                     code = "\n".join(lines[1:])
                 return code
 
@@ -242,29 +321,8 @@ class PromptToRulesConverter:
         Returns:
             List of resource types
         """
-        # Try to identify from prompt
-        resource_types = [
-            "Person"
-            "Patient",
-            "Condition",
-            "Medication",
-            "MedicationRequest",
-            "MedicationDispense",
-            "Observation",
-            "Procedure",
-            "Encounter",
-            "Organization",
-            "Location",
-            "Practitioner",
-            "PractitionerRole"
-            "DiagnosticReport",
-            "DocumentReference",
-        ]
-
-        found = []
-        for rt in resource_types:
-            if rt.lower() in prompt.lower():
-                found.append(rt)
+        prompt_lower = prompt.lower()
+        found = [rt for rt in SUPPORTED_RESOURCE_TYPES if rt.lower() in prompt_lower]
 
         # Default to Patient if none found
         return found or ["Patient"]

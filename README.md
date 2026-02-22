@@ -25,42 +25,69 @@ pip install fhir-synth[llm]
 
 ## Quick Start
 
-### 1) Rules from Prompt
+### Generate Data from a Prompt (main command)
+
+Describe what you need in plain English → get a valid FHIR R4B Bundle:
+
+```bash
+# 10 diabetic patients with labs
+fhir-synth generate "10 diabetic patients with HbA1c observations" -o diabetes.json
+
+# 5 patients with hypertension, encounters, and meds
+fhir-synth generate "5 patients with hypertension, office encounters, and antihypertensive medications" \
+  --provider gpt-4 -o hypertension.json
+
+# Save the generated code for inspection
+fhir-synth generate "20 patients with conditions and observations" -o data.json --save-code generated.py
+
+# EMPI: Person → Patients across EMR systems
+fhir-synth generate "EMPI dataset" --empi --persons 3 -o empi.json
+```
+
+What happens under the hood:
+1. Your prompt goes to the LLM
+2. LLM generates Python code using `fhir.resources` (Pydantic FHIR models)
+3. Code is executed in a sandbox
+4. If it fails, the error is sent back to the LLM for self-healing (up to 2 retries)
+5. Resources are wrapped in a FHIR Bundle and saved
+
+### Other Commands
+
+#### Rules from Prompt
 
 ```bash
 fhir-synth rules "100 diabetic patients with HbA1c monitoring" --out rules.json
 ```
 
-### 2) Code from Prompt
+#### Code from Prompt (without bundling)
 
 ```bash
 fhir-synth codegen "Create 50 realistic patients" --out code.py
 fhir-synth codegen "Create 50 realistic patients" --out code.py --execute
 ```
 
-### 3) Bundle from NDJSON
+#### Bundle from NDJSON
 
 ```bash
 fhir-synth bundle --resources data.ndjson --out bundle.json --type transaction
 ```
 
-### 4) EMPI (Person → Patients)
+#### EMPI (Person → Patients)
 
 ```bash
-# Rules with EMPI metadata
-fhir-synth rules "EMPI dataset" --empi --out rules.json
-
-# Codegen with EMPI linkage
-fhir-synth codegen "EMPI dataset" --empi --out code.py --execute
-
-# Bundle with EMPI resources (1 person, emr1+emr2)
 fhir-synth bundle --empi --out empi_bundle.json
-
-# Custom EMPI parameters
 fhir-synth bundle --empi --persons 5 --systems emr1,emr2,emr3 --no-orgs --out empi_bundle.json
 ```
 
 ## CLI Commands
+
+### `fhir-synth generate` (primary)
+End-to-end: prompt → LLM → code → execute → FHIR Bundle.
+
+```bash
+fhir-synth generate "10 diabetic patients with HbA1c labs" -o diabetes.json
+fhir-synth generate "5 ER encounters with vitals" --provider gpt-4 -o er.json --save-code er.py
+```
 
 ### `fhir-synth rules`
 Generate structured rule definitions from natural language.
@@ -72,7 +99,7 @@ fhir-synth rules "100 diabetic patients with insulin therapy" \
 ```
 
 ### `fhir-synth codegen`
-Generate executable Python code from prompts.
+Generate executable Python code from prompts (without bundling).
 
 ```bash
 fhir-synth codegen "Create 50 patients" --out code.py
@@ -83,10 +110,7 @@ fhir-synth codegen "Create 50 patients" --out code.py --execute
 Create FHIR R4B bundles from NDJSON data or EMPI defaults.
 
 ```bash
-# NDJSON bundle
 fhir-synth bundle --resources data.ndjson --out bundle.json --type transaction
-
-# EMPI bundle (Person → Patients)
 fhir-synth bundle --empi --out empi_bundle.json
 ```
 

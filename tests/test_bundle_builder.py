@@ -24,4 +24,3 @@ def test_bundle_builder_adds_request_url():
     bundle = builder.build()
 
     assert bundle["entry"][0]["request"]["url"] == "Patient/p2"
-
