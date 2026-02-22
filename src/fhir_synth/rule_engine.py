@@ -40,7 +40,6 @@ class RuleSet(BaseModel):
     )
 
 
-
 class RuleEngine:
     """Executes rules to generate FHIR resources."""
 
@@ -300,8 +299,7 @@ class GenerationRules:
         return {
             "population": self.population,
             "rules_by_type": {
-                rt: [r.model_dump() for r in rules]
-                for rt, rules in self.rules_by_type.items()
+                rt: [r.model_dump() for r in rules] for rt, rules in self.rules_by_type.items()
             },
         }
 
@@ -313,8 +311,7 @@ class GenerationRules:
             rules_by_type[rt] = [Rule(**r) for r in rule_list]
 
         # Backwards compatibility: migrate old category-style keys
-        for old_key in ("conditions", "medications", "observations",
-                        "procedures", "documents"):
+        for old_key in ("conditions", "medications", "observations", "procedures", "documents"):
             if old_key in data and data[old_key]:
                 # Map old key to FHIR resource type
                 type_map = {
@@ -325,9 +322,7 @@ class GenerationRules:
                     "documents": "DocumentReference",
                 }
                 rt = type_map.get(old_key, old_key)
-                rules_by_type.setdefault(rt, []).extend(
-                    [Rule(**r) for r in data[old_key]]
-                )
+                rules_by_type.setdefault(rt, []).extend([Rule(**r) for r in data[old_key]])
 
         return cls(
             population=data.get("population", {}),

@@ -1,6 +1,5 @@
 """Tests for rule engine."""
 
-
 from fhir_synth.rule_engine import GenerationRules, Rule, RuleEngine, RuleSet
 
 
@@ -147,4 +146,3 @@ def test_generation_rules_backwards_compat():
 
     assert len(gr.get_rules("Condition")) == 1
     assert len(gr.get_rules("MedicationRequest")) == 1
-

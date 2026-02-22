@@ -24,28 +24,67 @@ from typing import Any
 import fhir.resources.R4B as _r4b
 
 # ── Data-type modules to skip (not top-level FHIR resources) ──────────────
-_DATA_TYPE_MODULES: frozenset[str] = frozenset({
-    "fhirtypes", "codeableconcept", "codeablereference", "coding",
-    "backboneelement", "element", "extension", "meta", "narrative",
-    "reference", "resource", "domainresource", "quantity",
-    "contactpoint", "contactdetail", "address", "humanname",
-    "identifier", "period", "attachment", "annotation",
-    "age", "count", "distance", "duration", "money",
-    "range", "ratio", "ratiorange", "sampleddata", "signature", "timing",
-    "triggerdefinition", "usagecontext", "dosage",
-    "expression", "parameterdefinition", "relatedartifact",
-    "contributor", "datarequirement", "marketingstatus",
-    "population", "prodcharacteristic", "productshelflife",
-    "substanceamount", "elementdefinition",
-    "fhirprimitiveextension", "fhirresourcemodel",
-})
+_DATA_TYPE_MODULES: frozenset[str] = frozenset(
+    {
+        "fhirtypes",
+        "codeableconcept",
+        "codeablereference",
+        "coding",
+        "backboneelement",
+        "element",
+        "extension",
+        "meta",
+        "narrative",
+        "reference",
+        "resource",
+        "domainresource",
+        "quantity",
+        "contactpoint",
+        "contactdetail",
+        "address",
+        "humanname",
+        "identifier",
+        "period",
+        "attachment",
+        "annotation",
+        "age",
+        "count",
+        "distance",
+        "duration",
+        "money",
+        "range",
+        "ratio",
+        "ratiorange",
+        "sampleddata",
+        "signature",
+        "timing",
+        "triggerdefinition",
+        "usagecontext",
+        "dosage",
+        "expression",
+        "parameterdefinition",
+        "relatedartifact",
+        "contributor",
+        "datarequirement",
+        "marketingstatus",
+        "population",
+        "prodcharacteristic",
+        "productshelflife",
+        "substanceamount",
+        "elementdefinition",
+        "fhirprimitiveextension",
+        "fhirresourcemodel",
+    }
+)
 
 
 # ── Data classes ──────────────────────────────────────────────────────────
 
+
 @dataclass(frozen=True)
 class FieldMeta:
     """Metadata about a single field on a FHIR resource."""
+
     name: str
     required: bool
     type_annotation: str
@@ -56,6 +95,7 @@ class FieldMeta:
 @dataclass(frozen=True)
 class ResourceMeta:
     """Metadata about a FHIR R4B resource type."""
+
     name: str
     module: str
     required_fields: tuple[str, ...]
@@ -71,6 +111,7 @@ class ResourceMeta:
 
 
 # ── Lightweight name discovery (filesystem only, no imports) ──────────────
+
 
 def _discover_module_names() -> dict[str, str]:
     """Return ``{ClassName: module_name}`` by scanning filenames only.
@@ -119,6 +160,7 @@ _MODULE_MAP: dict[str, str] = _discover_module_names()
 
 # ── Lazy loaders (import + introspect on first access, then cached) ───────
 
+
 @cache
 def get_resource_class(name: str) -> type:
     """Import and return the Pydantic model class for a resource type.
@@ -131,8 +173,7 @@ def get_resource_class(name: str) -> type:
     modname = _MODULE_MAP.get(name)
     if modname is None:
         raise ValueError(
-            f"Unknown FHIR resource type: {name!r}. "
-            f"Known: {', '.join(sorted(_MODULE_MAP)[:20])} …"
+            f"Unknown FHIR resource type: {name!r}. Known: {', '.join(sorted(_MODULE_MAP)[:20])} …"
         )
     mod = importlib.import_module(f"fhir.resources.R4B.{modname}")
     cls = getattr(mod, name, None)
@@ -162,21 +203,28 @@ def _introspect(name: str) -> ResourceMeta:
         ann = str(finfo.annotation) if finfo.annotation else "Any"
         is_ref = "ReferenceType" in ann
         is_list = "List" in ann or "list" in ann
-        fields.append(FieldMeta(
-            name=fname, required=is_req,
-            type_annotation=ann, is_reference=is_ref, is_list=is_list,
-        ))
+        fields.append(
+            FieldMeta(
+                name=fname,
+                required=is_req,
+                type_annotation=ann,
+                is_reference=is_ref,
+                is_list=is_list,
+            )
+        )
         if is_req:
             required.append(fname)
 
     return ResourceMeta(
-        name=name, module=modname,
+        name=name,
+        module=modname,
         required_fields=tuple(required),
         all_fields=tuple(fields),
     )
 
 
 # ── Public helpers ────────────────────────────────────────────────────────
+
 
 def resource_names() -> list[str]:
     """Sorted list of all known FHIR R4B resource type names."""
@@ -192,8 +240,13 @@ def field_schema(name: str) -> list[dict[str, Any]]:
     """Field metadata as plain dicts (JSON-safe)."""
     meta = _introspect(name)
     return [
-        {"name": f.name, "required": f.required, "type": f.type_annotation,
-         "is_reference": f.is_reference, "is_list": f.is_list}
+        {
+            "name": f.name,
+            "required": f.required,
+            "type": f.type_annotation,
+            "is_reference": f.is_reference,
+            "is_list": f.is_list,
+        }
         for f in meta.all_fields
     ]
 
@@ -207,18 +260,40 @@ def reference_targets(name: str) -> dict[str, str]:
 # ── Commonly used clinical resource types ─────────────────────────────────
 
 CLINICAL_RESOURCES: list[str] = [
-    rt for rt in [
-        "Patient", "Person", "Practitioner", "PractitionerRole",
-        "Organization", "Location", "Encounter",
-        "Condition", "Observation", "Procedure",
-        "MedicationRequest", "MedicationDispense", "MedicationAdministration",
-        "Medication", "MedicationStatement",
-        "DiagnosticReport", "DocumentReference",
-        "Immunization", "AllergyIntolerance",
-        "CarePlan", "CareTeam", "Goal", "ServiceRequest",
-        "FamilyMemberHistory", "Specimen", "ImagingStudy",
-        "Consent", "Coverage", "Claim", "ExplanationOfBenefit",
-    ] if rt.lower() in {m.lower() for m in _MODULE_MAP}
+    rt
+    for rt in [
+        "Patient",
+        "Person",
+        "Practitioner",
+        "PractitionerRole",
+        "Organization",
+        "Location",
+        "Encounter",
+        "Condition",
+        "Observation",
+        "Procedure",
+        "MedicationRequest",
+        "MedicationDispense",
+        "MedicationAdministration",
+        "Medication",
+        "MedicationStatement",
+        "DiagnosticReport",
+        "DocumentReference",
+        "Immunization",
+        "AllergyIntolerance",
+        "CarePlan",
+        "CareTeam",
+        "Goal",
+        "ServiceRequest",
+        "FamilyMemberHistory",
+        "Specimen",
+        "ImagingStudy",
+        "Consent",
+        "Coverage",
+        "Claim",
+        "ExplanationOfBenefit",
+    ]
+    if rt.lower() in {m.lower() for m in _MODULE_MAP}
 ]
 
 
@@ -248,4 +323,3 @@ def spec_summary(resource_types: list[str] | None = None) -> str:
         lines.append("")
 
     return "\n".join(lines)
-

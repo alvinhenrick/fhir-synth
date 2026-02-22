@@ -65,4 +65,3 @@ def test_no_concatenation_bugs_in_resource_names():
     for name in resource_names():
         assert name[0].isupper(), f"{name} does not start with uppercase"
         assert len(name) < 40, f"{name} looks like a concatenation bug"
-

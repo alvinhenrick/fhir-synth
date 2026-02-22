@@ -109,10 +109,10 @@ class BundleBuilder:
         return self.build()
 
     def _add_resource_with_refs(
-            self,
-            resource: dict[str, Any],
-            references: dict[str, list[str]],
-            primary_type: str,
+        self,
+        resource: dict[str, Any],
+        references: dict[str, list[str]],
+        primary_type: str,
     ) -> None:
         """Add resource and inject references where appropriate.
 
@@ -145,7 +145,7 @@ class BundleBuilder:
 
     @staticmethod
     def _current_timestamp() -> str:
-        """Get current timestamp in ISO format."""
+        """Get the current timestamp in ISO format."""
         return datetime.now(UTC).isoformat() + "Z"
 
 
