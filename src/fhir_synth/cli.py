@@ -41,7 +41,7 @@ def generate(
       fhir-synth generate "EMPI dataset" --empi --persons 3 -o empi.json
     """
     try:
-        from fhir_synth.bundle_builder import BundleBuilder
+        from fhir_synth.bundle import BundleBuilder
         from fhir_synth.code_generator import CodeGenerator
         from fhir_synth.llm import get_provider
 
@@ -190,15 +190,15 @@ def bundle(
     no_orgs: bool = typer.Option(False, "--no-orgs", help="Do not create Organization resources"),
 ) -> None:
     """Create a FHIR Bundle from NDJSON resources or EMPI defaults."""
-    from fhir_synth.bundle_builder import BundleBuilder
-    from fhir_synth.rule_engine import RuleEngine
+    from fhir_synth.bundle import BundleBuilder
+    from fhir_synth.rule_engine import RuleEngine, generate_empi_resources
 
     try:
         builder = BundleBuilder(bundle_type=bundle_type)
 
         if empi:
             system_list = [s.strip() for s in systems.split(",") if s.strip()]
-            resources_list = RuleEngine.generate_empi_resources(
+            resources_list = generate_empi_resources(
                 persons=persons,
                 systems=system_list or None,
                 include_organizations=not no_orgs,

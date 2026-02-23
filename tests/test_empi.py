@@ -1,11 +1,10 @@
 """Tests for EMPI-style Person/Patient generation."""
 
-from fhir_synth.rule_engine import RuleEngine
+from fhir_synth.rule_engine import generate_empi_resources
 
 
 def test_generate_empi_resources_links_person_to_patients():
-    engine = RuleEngine()
-    resources = engine.generate_empi_resources(persons=1, systems=["emr1", "emr2"])
+    resources = generate_empi_resources(persons=1, systems=["emr1", "emr2"])
 
     persons = [r for r in resources if r.get("resourceType") == "Person"]
     patients = [r for r in resources if r.get("resourceType") == "Patient"]

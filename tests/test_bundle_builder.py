@@ -1,6 +1,6 @@
 """Tests for bundle builder."""
 
-from fhir_synth.bundle_builder import BundleBuilder
+from fhir_synth.bundle import BundleBuilder
 
 
 def test_bundle_builder_creates_bundle():

@@ -103,7 +103,7 @@ fhir-synth bundle --empi --persons 5 --systems emr1,emr2,emr3 --no-orgs --out em
 from fhir_synth.llm import get_provider
 from fhir_synth.code_generator import CodeGenerator
 from fhir_synth.rule_engine import RuleEngine, Rule, RuleSet
-from fhir_synth.bundle_builder import BundleBuilder
+from fhir_synth.bundle import BundleBuilder
 from fhir_synth.fhir_utils import FHIRResourceFactory
 
 llm = get_provider("mock")
