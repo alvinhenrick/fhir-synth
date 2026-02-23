@@ -34,9 +34,9 @@ def generate(
 
     Examples:
 
-      fhir-synth generate "10 diabetic patients with HbA1c labs" -o diabetes.json
+      fhir-synth generates "10 diabetic patients with HbA1c labs" -o diabetes.json
 
-      fhir-synth generate "5 patients with hypertension and encounters" --provider gpt-4 -o hypertension.json
+      fhir-synth generates "5 patients with hypertension and encounters" --provider gpt-4 -o hypertension.json
 
       fhir-synth generate "EMPI dataset" --empi --persons 3 -o empi.json
     """
