@@ -134,15 +134,3 @@ def test_generation_rules_roundtrip():
     assert len(restored.get_rules("Immunization")) == 1
     assert restored.get_rules("Patient")[0].name == "p"
 
-
-def test_generation_rules_backwards_compat():
-    """Old-style keys (conditions, medications, etc.) should still load."""
-    old_data = {
-        "population": {},
-        "conditions": [{"name": "c", "description": "cond"}],
-        "medications": [{"name": "m", "description": "med"}],
-    }
-    gr = GenerationRules.from_dict(old_data)
-
-    assert len(gr.get_rules("Condition")) == 1
-    assert len(gr.get_rules("MedicationRequest")) == 1

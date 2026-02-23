@@ -12,8 +12,7 @@ class GenerationRules:
 
     Rules are stored in a single ``rules_by_type`` dict keyed by FHIR
     resource type name (e.g. ``"Patient"``, ``"Immunization"``).
-    This replaces the old design that hardcoded ``conditions``,
-    ``medications``, ``observations``, etc.
+    This supports any of the 141 FHIR R4B resource types.
     """
 
     population: dict[str, Any] = field(default_factory=dict)
@@ -51,19 +50,6 @@ class GenerationRules:
         for rt, rule_list in data.get("rules_by_type", {}).items():
             rules_by_type[rt] = [Rule(**r) for r in rule_list]
 
-        # Backwards compatibility: migrate old category-style keys
-        for old_key in ("conditions", "medications", "observations", "procedures", "documents"):
-            if old_key in data and data[old_key]:
-                # Map old key to FHIR resource type
-                type_map = {
-                    "conditions": "Condition",
-                    "medications": "MedicationRequest",
-                    "observations": "Observation",
-                    "procedures": "Procedure",
-                    "documents": "DocumentReference",
-                }
-                rt = type_map.get(old_key, old_key)
-                rules_by_type.setdefault(rt, []).extend([Rule(**r) for r in data[old_key]])
 
         return cls(
             population=data.get("population", {}),
