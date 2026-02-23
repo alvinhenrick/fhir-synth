@@ -1,48 +1,10 @@
-"""FHIR resource utilities for working with fhir.resources library."""
+"""FHIR resource factory for creating resources from dictionaries."""
 
-from collections.abc import Iterator
-from datetime import UTC
 from typing import Any
 
 from pydantic import BaseModel
 
-from fhir_synth.fhir_spec import get_resource_class, resource_names
-
-
-def _get_fhir_class(name: str) -> type[BaseModel]:
-    """Lazy wrapper — only imports the module when first accessed."""
-    return get_resource_class(name)
-
-
-# Dynamic map — resolves on first access via __getitem__, not at import time
-class _LazyResourceMap(dict[str, type[BaseModel]]):
-    """Dict that lazily loads FHIR resource classes on first access."""
-
-    def __init__(self) -> None:
-        super().__init__()
-        self._names = set(resource_names())
-
-    def __contains__(self, key: object) -> bool:
-        return key in self._names
-
-    def __getitem__(self, key: str) -> type[BaseModel]:
-        if key not in self._names:
-            raise KeyError(key)
-        if not super().__contains__(key):
-            super().__setitem__(key, _get_fhir_class(key))
-        return super().__getitem__(key)
-
-    def keys(self) -> set[str]:  # type: ignore[override]
-        return self._names
-
-    def __iter__(self) -> Iterator[str]:
-        return iter(self._names)
-
-    def __len__(self) -> int:
-        return len(self._names)
-
-
-FHIR_RESOURCE_CLASSES: dict[str, type[BaseModel]] = _LazyResourceMap()
+from fhir_synth.fhir_spec import get_resource_class
 
 
 class FHIRResourceFactory:
@@ -168,7 +130,7 @@ class FHIRResourceFactory:
     ) -> BaseModel:
         """Create a FHIR Bundle resource."""
         import uuid
-        from datetime import datetime
+        from datetime import UTC, datetime
 
         data: dict[str, Any] = {
             "id": str(uuid.uuid4()),
@@ -203,87 +165,3 @@ class FHIRResourceFactory:
         """
         return resource.model_dump(exclude_none=True, by_alias=True)
 
-
-class BundleFactory:
-    """Factory for building FHIR Bundles with multiple resources."""
-
-    def __init__(self, bundle_type: str = "transaction") -> None:
-        """Initialize bundle factory.
-
-        Args:
-            bundle_type: Type of bundle to create
-        """
-        self.bundle_type = bundle_type
-        self.entries: list[dict[str, Any]] = []
-
-    def add_resource(
-        self,
-        resource: BaseModel | dict[str, Any],
-        method: str = "POST",
-    ) -> None:
-        """Add a resource to the bundle.
-
-        Args:
-            resource: FHIR resource (Pydantic model or dict)
-            method: HTTP method (POST, PUT, DELETE, GET)
-        """
-        # Convert Pydantic model to dict if needed
-        if isinstance(resource, BaseModel):
-            resource_dict = FHIRResourceFactory.to_dict(resource)
-        else:
-            resource_dict = resource
-
-        resource_type = resource_dict.get("resourceType")
-        resource_id = resource_dict.get("id")
-
-        url = f"{resource_type}" + (f"/{resource_id}" if resource_id else "")
-
-        entry = {
-            "fullUrl": f"urn:uuid:{resource_id}",
-            "resource": resource_dict,
-            "request": {
-                "method": method,
-                "url": url,
-            },
-        }
-        self.entries.append(entry)
-
-    def add_resources(
-        self,
-        resources: list[BaseModel | dict[str, Any]],
-        method: str = "POST",
-    ) -> None:
-        """Add multiple resources to the bundle.
-
-        Args:
-            resources: List of FHIR resources
-            method: HTTP method for all resources
-        """
-        for resource in resources:
-            self.add_resource(resource, method)
-
-    def build(self) -> BaseModel:
-        """Build the FHIR Bundle.
-
-        Returns:
-            Complete FHIR Bundle resource
-        """
-        _bundle = FHIRResourceFactory.create_bundle(
-            bundle_type=self.bundle_type,
-            entry=self.entries,
-            total=len(self.entries),
-        )
-        return _bundle
-
-    def build_dict(self) -> dict[str, Any]:
-        """Build the bundle and return as dictionary.
-
-        Returns:
-            Bundle as dictionary
-        """
-        _bundle = self.build()
-        return FHIRResourceFactory.to_dict(_bundle)
-
-    def clear(self) -> None:
-        """Clear all entries."""
-        self.entries = []
