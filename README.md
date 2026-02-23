@@ -103,14 +103,16 @@ fhir-synth bundle --empi --persons 5 --systems emr1,emr2,emr3 --no-orgs --out em
 from fhir_synth.llm import get_provider
 from fhir_synth.code_generator import CodeGenerator
 from fhir_synth.rule_engine import RuleEngine, Rule, RuleSet
-from fhir_synth.bundle import BundleBuilder
+from fhir_synth.bundle import BundleBuilder, BundleManager
 from fhir_synth.fhir_utils import FHIRResourceFactory
 
+# Generate code from prompts
 llm = get_provider("mock")
 code_gen = CodeGenerator(llm)
 code = code_gen.generate_code_from_prompt("Create 20 patients")
 resources = code_gen.execute_generated_code(code)
 
+# Use rule-based generation
 engine = RuleEngine()
 engine.register_ruleset(
     RuleSet(
@@ -128,7 +130,13 @@ engine.register_ruleset(
     )
 )
 
+# Create FHIR resources directly
 patient = FHIRResourceFactory.create_patient("p1", "Jane", "Doe", "1990-01-01")
+
+# Build bundles
+builder = BundleBuilder(bundle_type="transaction")
+builder.add_resources(resources)
+bundle = builder.build()
 ```
 
 ## LLM Providers
@@ -146,7 +154,14 @@ Use `--provider mock` for testing without an API key.
 
 ## Architecture
 
-See [ARCHITECTURE.md](ARCHITECTURE.md) for system design and data flows.
+FHIR Synth is organized into focused packages:
+
+- **`bundle/`** — Bundle creation and management (BundleBuilder, BundleManager, BundleFactory)
+- **`code_generator/`** — LLM-powered code generation with self-healing execution
+- **`rule_engine/`** — Declarative rule engine and EMPI logic
+- **`fhir_utils/`** — FHIR resource factory utilities
+
+See [ARCHITECTURE.md](ARCHITECTURE.md) for complete system design, data flows, and class diagrams.
 
 ## Development
 

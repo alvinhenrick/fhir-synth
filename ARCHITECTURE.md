@@ -11,10 +11,10 @@ graph TB
     end
 
     subgraph CORE["⚙️ Core Modules"]
-        CG["<b>code_generator.py</b><br/>CodeGenerator<br/>PromptToRulesConverter"]
-        RE["<b>rule_engine.py</b><br/>RuleEngine<br/>Rule · RuleSet · GenerationRules"]
-        BB["<b>bundle_builder.py</b><br/>BundleBuilder · BundleManager"]
-        FU["<b>fhir_utils.py</b><br/>FHIRResourceFactory<br/>BundleFactory"]
+        CG["<b>code_generator/</b><br/>CodeGenerator · PromptToRulesConverter<br/>executor · prompts · utils"]
+        RE["<b>rule_engine/</b><br/>RuleEngine · Rule · RuleSet<br/>GenerationRules · EMPI"]
+        BB["<b>bundle/</b><br/>BundleBuilder · BundleManager<br/>BundleFactory"]
+        FU["<b>fhir_utils/</b><br/>FHIRResourceFactory<br/>LazyResourceMap"]
         FS["<b>fhir_spec.py</b><br/>Auto-discovery of all<br/>141 R4B resource types"]
     end
 
@@ -153,10 +153,10 @@ graph LR
 %%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#fff9c4', 'primaryTextColor': '#333', 'primaryBorderColor': '#555', 'lineColor': '#555', 'fontFamily': 'Comic Sans MS, cursive, sans-serif'}}}%%
 graph TD
     CLI["🖥️ <b>cli.py</b><br/>Typer commands"]
-    CG["⚙️ <b>code_generator.py</b><br/>LLM code gen + execution"]
-    RE["📐 <b>rule_engine.py</b><br/>Declarative rules + EMPI"]
-    BB["📦 <b>bundle_builder.py</b><br/>Bundle construction"]
-    FU["🏗️ <b>fhir_utils.py</b><br/>Resource factory"]
+    CG["⚙️ <b>code_generator/</b><br/>generator · converter<br/>executor · prompts"]
+    RE["📐 <b>rule_engine/</b><br/>engine · models · rules<br/>empi"]
+    BB["📦 <b>bundle/</b><br/>builder · manager<br/>factory"]
+    FU["🏗️ <b>fhir_utils/</b><br/>factory · lazy_map"]
     FS["🔍 <b>fhir_spec.py</b><br/>Spec auto-discovery"]
     LLM["🤖 <b>llm.py</b><br/>LLM providers"]
     FR["🏥 <b>fhir.resources.R4B</b>"]
@@ -176,6 +176,7 @@ graph TD
     RE --> FS
 
     FU --> FS
+    BB --> FU
 
     FS --> FR
     LLM --> LITE
@@ -535,12 +536,35 @@ fhir-synth/
 ├── src/fhir_synth/
 │   ├── __init__.py            # Package exports, .env loading
 │   ├── cli.py                 # Typer CLI: generate, rules, codegen, bundle
-│   ├── code_generator.py      # CodeGenerator, PromptToRulesConverter
-│   ├── rule_engine.py         # Rule, RuleSet, RuleEngine, GenerationRules
-│   ├── bundle_builder.py      # BundleBuilder, BundleManager
-│   ├── fhir_utils.py          # FHIRResourceFactory, BundleFactory
 │   ├── fhir_spec.py           # Auto-discovery of 141 R4B resource types
-│   └── llm.py                 # LLMProvider, MockLLMProvider, get_provider()
+│   ├── llm.py                 # LLMProvider, MockLLMProvider, get_provider()
+│   │
+│   ├── bundle/                # 📦 Bundle creation and management
+│   │   ├── __init__.py
+│   │   ├── builder.py         # BundleBuilder (resource collection)
+│   │   ├── manager.py         # BundleManager (rule integration)
+│   │   └── factory.py         # BundleFactory (Pydantic models)
+│   │
+│   ├── code_generator/        # ⚙️ LLM-powered code generation
+│   │   ├── __init__.py
+│   │   ├── generator.py       # CodeGenerator (main entry point)
+│   │   ├── converter.py       # PromptToRulesConverter
+│   │   ├── executor.py        # Sandboxed code execution
+│   │   ├── prompts.py         # LLM system/user prompts
+│   │   ├── constants.py       # Supported resource types
+│   │   └── utils.py           # Code extraction utilities
+│   │
+│   ├── rule_engine/           # 📐 Declarative rule engine
+│   │   ├── __init__.py
+│   │   ├── engine.py          # RuleEngine (execution)
+│   │   ├── models.py          # Rule, RuleSet (Pydantic)
+│   │   ├── rules.py           # GenerationRules (dataclass)
+│   │   └── empi.py            # EMPI Person→Patient linkage
+│   │
+│   └── fhir_utils/            # 🏗️ FHIR resource utilities
+│       ├── __init__.py
+│       ├── factory.py         # FHIRResourceFactory (static methods)
+│       └── lazy_map.py        # FHIR_RESOURCE_CLASSES (lazy loading)
 │
 ├── tests/
 │   ├── test_bundle_builder.py
@@ -555,3 +579,43 @@ fhir-synth/
 ├── README.md                  # Usage docs and quick start
 └── ARCHITECTURE.md            # This file
 ```
+
+---
+
+## Package Organization
+
+The codebase is organized into focused packages following separation of concerns:
+
+### **`bundle/`** — Bundle Creation & Management
+- **`builder.py`**: `BundleBuilder` for collecting and wrapping resources
+- **`manager.py`**: `BundleManager` integrates with RuleEngine for rule-based bundles
+- **`factory.py`**: `BundleFactory` creates Pydantic FHIR Bundle models
+
+### **`code_generator/`** — LLM-Powered Code Generation
+- **`generator.py`**: Main `CodeGenerator` class for prompt→code→resources
+- **`converter.py`**: `PromptToRulesConverter` for prompt→rules conversion
+- **`executor.py`**: Sandboxed code execution with self-healing retry logic
+- **`prompts.py`**: System and user prompts for LLM interactions
+- **`constants.py`**: Supported FHIR resource types and configurations
+- **`utils.py`**: Code extraction and validation utilities
+
+### **`rule_engine/`** — Declarative Rule Engine
+- **`engine.py`**: `RuleEngine` executes rules and generates resources
+- **`models.py`**: Pydantic models for `Rule` and `RuleSet`
+- **`rules.py`**: `GenerationRules` dataclass for organizing rules
+- **`empi.py`**: EMPI-specific logic for Person→Patient linkage
+
+### **`fhir_utils/`** — FHIR Resource Utilities
+- **`factory.py`**: `FHIRResourceFactory` static methods for creating resources
+- **`lazy_map.py`**: Lazy-loaded resource class registry for performance
+
+### Top-Level Modules
+- **`cli.py`**: Command-line interface (generate, rules, codegen, bundle)
+- **`fhir_spec.py`**: Auto-discovery of 141 R4B resource types
+- **`llm.py`**: LLM provider abstraction (OpenAI, Anthropic, Mock, etc.)
+
+**Design Principles:**
+- **Package exports**: All packages expose clean `__all__` interfaces
+- **Dependency flow**: Top-level modules depend on packages, not vice versa
+- **Single responsibility**: Each module has a clear, focused purpose
+
