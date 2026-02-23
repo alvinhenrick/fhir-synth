@@ -44,7 +44,7 @@ class RuleEngine:
     """Executes rules to generate FHIR resources."""
 
     def __init__(self) -> None:
-        """Initialize rule engine."""
+        """Initialize the rule engine."""
         self.rulesets: dict[str, RuleSet] = {}
         self.executors: dict[str, Callable[[Rule, dict[str, Any]], Any]] = {}
 
