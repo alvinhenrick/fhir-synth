@@ -73,6 +73,25 @@ End-to-end: prompt → LLM → code → execute → FHIR Bundle.
 | `--persons` | `1` | Number of Persons (EMPI) |
 | `--systems` | `emr1,emr2` | EMR system ids (EMPI) |
 | `--no-orgs` | off | Skip Organization resources (EMPI) |
+| `--security` | — | Add security label (format: `system\|code\|display`) |
+| `--tag` | — | Add tag (format: `system\|code\|display`) |
+| `--profile` | — | Add profile URL |
+| `--source` | — | Add source system URI |
+
+**Examples with metadata:**
+```bash
+# Add security label to all resources
+fhir-synth generate "10 patients" \
+  --security "http://terminology.hl7.org/CodeSystem/v3-Confidentiality|R|Restricted" \
+  -o restricted.json
+
+# Add multiple metadata elements
+fhir-synth generate "5 diabetic patients with labs" \
+  --tag "http://example.org/tags|synthetic|Synthetic Data" \
+  --profile "http://hl7.org/fhir/us/core/StructureDefinition/us-core-patient" \
+  --source "http://example.org/fhir-synth" \
+  -o tagged.json
+```
 
 ### `fhir-synth rules`
 Generate structured rule definitions from natural language.
@@ -102,7 +121,7 @@ fhir-synth bundle --empi --persons 5 --systems emr1,emr2,emr3 --no-orgs --out em
 ```python
 from fhir_synth.llm import get_provider
 from fhir_synth.code_generator import CodeGenerator
-from fhir_synth.rule_engine import RuleEngine, Rule, RuleSet
+from fhir_synth.rule_engine import RuleEngine, Rule, RuleSet, MetaConfig
 from fhir_synth.bundle import BundleBuilder, BundleManager
 from fhir_synth.fhir_utils import FHIRResourceFactory
 
@@ -112,12 +131,17 @@ code_gen = CodeGenerator(llm)
 code = code_gen.generate_code_from_prompt("Create 20 patients")
 resources = code_gen.execute_generated_code(code)
 
-# Use rule-based generation
+# Use rule-based generation with custom metadata
 engine = RuleEngine()
 engine.register_ruleset(
     RuleSet(
         resource_type="Patient",
         description="Diabetic patients",
+        # Global metadata applied to all Patient resources
+        global_meta=MetaConfig(
+            tag=[{"system": "http://example.org/tags", "code": "synthetic"}],
+            source="http://example.org/fhir-synth",
+        ),
         rules=[
             Rule(
                 name="type_2",
@@ -125,6 +149,15 @@ engine.register_ruleset(
                 conditions={"type": 2},
                 actions={"resourceType": "Patient", "id": "p1"},
                 weight=1.0,
+                # Rule-specific metadata (merged with global_meta)
+                meta=MetaConfig(
+                    security=[{
+                        "system": "http://terminology.hl7.org/CodeSystem/v3-Confidentiality",
+                        "code": "N",
+                        "display": "Normal",
+                    }],
+                    profile=["http://hl7.org/fhir/us/core/StructureDefinition/us-core-patient"],
+                ),
             )
         ],
     )
@@ -138,6 +171,45 @@ builder = BundleBuilder(bundle_type="transaction")
 builder.add_resources(resources)
 bundle = builder.build()
 ```
+
+## Custom Metadata
+
+Add security labels, tags, profiles, and other FHIR metadata to your generated resources using a YAML configuration file:
+
+**metadata.yaml:**
+```yaml
+meta:
+  security:
+    - system: "http://terminology.hl7.org/CodeSystem/v3-Confidentiality"
+      code: "N"
+      display: "Normal"
+  tag:
+    - system: "http://example.org/tags"
+      code: "synthetic-data"
+      display: "Synthetic Test Data"
+  profile:
+    - "http://hl7.org/fhir/us/core/StructureDefinition/us-core-patient"
+  source: "http://example.org/fhir-synth"
+```
+
+**Usage:**
+```bash
+fhir-synth generate "20 patients with conditions" \
+  --meta-config metadata.yaml \
+  -o output.json
+```
+
+**Supported metadata fields:**
+- `security` — Security labels (confidentiality, sensitivity, etc.)
+- `tag` — Tags for operational/workflow purposes
+- `profile` — Profile URLs the resource conforms to
+- `source` — Source system URI
+
+**Example configs:**
+- `examples/metadata.yaml` - Normal confidentiality, synthetic data tags
+- `examples/metadata-restricted.yaml` - Restricted security for sensitive data
+
+See [examples/metadata_example.yaml](examples/metadata_example.yaml) for rule-based metadata (used with RuleEngine).
 
 ## LLM Providers
 

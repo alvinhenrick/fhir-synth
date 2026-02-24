@@ -6,7 +6,7 @@ from collections.abc import Callable
 from datetime import UTC, datetime
 from typing import Any
 
-from fhir_synth.rule_engine.models import Rule, RuleSet
+from fhir_synth.rule_engine.models import MetaConfig, Rule, RuleSet
 
 
 class RuleEngine:
@@ -59,6 +59,9 @@ class RuleEngine:
                 resource = executor(rule, context)
             else:
                 resource = self._default_executor(rule, context, resource_type)
+
+            # Apply metadata from ruleset and rule
+            self._apply_metadata(resource, ruleset, rule)
 
             results.append(resource)
 
@@ -165,4 +168,57 @@ class RuleEngine:
         """Get the current timestamp in ISO format."""
 
         return datetime.now(UTC).isoformat()
+
+    @staticmethod
+    def _apply_metadata(
+        resource: dict[str, Any], ruleset: RuleSet, rule: Rule
+    ) -> None:
+        """Apply metadata configuration to a resource.
+
+        Merges global_meta from ruleset and meta from rule.
+        Rule-level metadata takes precedence over ruleset-level.
+
+        Args:
+            resource: The resource dict to modify
+            ruleset: The ruleset containing global_meta
+            rule: The rule containing rule-specific meta
+        """
+        # Collect all metadata configs (global first, then rule-specific)
+        meta_configs: list[MetaConfig] = []
+        if ruleset.global_meta:
+            meta_configs.append(ruleset.global_meta)
+        if rule.meta:
+            meta_configs.append(rule.meta)
+
+        if not meta_configs:
+            return
+
+        # Initialize meta if it doesn't exist
+        meta = resource.setdefault("meta", {})
+
+        # Apply each config in order (later ones override earlier ones)
+        for config in meta_configs:
+            if config.security:
+                # Merge security labels
+                existing = meta.get("security", [])
+                meta["security"] = existing + config.security
+
+            if config.tag:
+                # Merge tags
+                existing = meta.get("tag", [])
+                meta["tag"] = existing + config.tag
+
+            if config.profile:
+                # Merge profiles
+                existing = meta.get("profile", [])
+                meta["profile"] = existing + config.profile
+
+            if config.source:
+                meta["source"] = config.source
+
+            if config.versionId:
+                meta["versionId"] = config.versionId
+
+            if config.lastUpdated:
+                meta["lastUpdated"] = config.lastUpdated
 

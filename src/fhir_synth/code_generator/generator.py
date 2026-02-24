@@ -124,3 +124,46 @@ class CodeGenerator:
         fixed = self.llm.generate_text(SYSTEM_PROMPT, fix_prompt)
         return extract_code(fixed)
 
+    @staticmethod
+    def apply_metadata_to_resources(
+        resources: list[dict[str, Any]],
+        security: list[dict[str, Any]] | None = None,
+        tag: list[dict[str, Any]] | None = None,
+        profile: list[str] | None = None,
+        source: str | None = None,
+    ) -> list[dict[str, Any]]:
+        """Apply metadata to a list of resources.
+
+        Args:
+            resources: List of FHIR resource dicts
+            security: Security labels to add
+            tag: Tags to add
+            profile: Profile URLs to add
+            source: Source system URI
+
+        Returns:
+            Modified resources with metadata
+        """
+        for resource in resources:
+            if not any([security, tag, profile, source]):
+                continue
+
+            meta = resource.setdefault("meta", {})
+
+            if security:
+                existing = meta.get("security", [])
+                meta["security"] = existing + security
+
+            if tag:
+                existing = meta.get("tag", [])
+                meta["tag"] = existing + tag
+
+            if profile:
+                existing = meta.get("profile", [])
+                meta["profile"] = existing + profile
+
+            if source:
+                meta["source"] = source
+
+        return resources
+

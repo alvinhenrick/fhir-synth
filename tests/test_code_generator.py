@@ -1,7 +1,36 @@
-"""Tests for code generator."""
+"""Tests for code generation."""
 
-from fhir_synth.code_generator import SUPPORTED_RESOURCE_TYPES, CodeGenerator
+from fhir_synth.code_generator import CodeGenerator
+from fhir_synth.code_generator.constants import SUPPORTED_RESOURCE_TYPES
 from fhir_synth.llm import MockLLMProvider
+
+
+def test_apply_metadata_to_resources():
+    """Test that metadata can be applied to generated resources."""
+    resources = [
+        {"resourceType": "Patient", "id": "p1"},
+        {"resourceType": "Condition", "id": "c1"},
+    ]
+
+    security = [{"system": "http://security.org", "code": "N", "display": "Normal"}]
+    tag = [{"system": "http://tags.org", "code": "test"}]
+    profile = ["http://example.org/StructureDefinition/test"]
+    source = "http://test-system.org"
+
+    CodeGenerator.apply_metadata_to_resources(
+        resources,
+        security=security,
+        tag=tag,
+        profile=profile,
+        source=source,
+    )
+
+    for resource in resources:
+        assert "meta" in resource
+        assert resource["meta"]["security"] == security
+        assert resource["meta"]["tag"] == tag
+        assert resource["meta"]["profile"] == profile
+        assert resource["meta"]["source"] == source
 
 
 def test_code_generator_extracts_code_block():

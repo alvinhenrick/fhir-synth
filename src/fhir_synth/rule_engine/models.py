@@ -5,6 +5,38 @@ from typing import Any
 from pydantic import BaseModel, Field
 
 
+class MetaConfig(BaseModel):
+    """Configuration for FHIR resource metadata.
+
+    Allows setting security labels, tags, profiles, and other metadata elements.
+    """
+
+    security: list[dict[str, Any]] | None = Field(
+        default=None,
+        description="Security labels (e.g., confidentiality, sensitivity)",
+    )
+    tag: list[dict[str, Any]] | None = Field(
+        default=None,
+        description="Tags for operational/workflow purposes",
+    )
+    profile: list[str] | None = Field(
+        default=None,
+        description="Profile URLs this resource claims to conform to",
+    )
+    source: str | None = Field(
+        default=None,
+        description="Source system URI",
+    )
+    versionId: str | None = Field(
+        default=None,
+        description="Version-specific identifier",
+    )
+    lastUpdated: str | None = Field(
+        default=None,
+        description="Last updated timestamp (ISO 8601)",
+    )
+
+
 class Rule(BaseModel):
     """Single rule for resource generation."""
 
@@ -13,6 +45,10 @@ class Rule(BaseModel):
     conditions: dict[str, Any] = Field(default_factory=dict, description="Conditions to check")
     actions: dict[str, Any] = Field(default_factory=dict, description="Actions to execute")
     weight: float = Field(default=1.0, ge=0.0, description="Probability weight for this rule")
+    meta: MetaConfig | None = Field(
+        default=None,
+        description="Custom metadata (security tags, profiles, etc.)",
+    )
 
 
 class RuleSet(BaseModel):
@@ -30,5 +66,9 @@ class RuleSet(BaseModel):
     bundle_config: dict[str, Any] = Field(
         default_factory=dict,
         description="Config for bundling multiple resources",
+    )
+    global_meta: MetaConfig | None = Field(
+        default=None,
+        description="Global metadata applied to all resources from this ruleset",
     )
 

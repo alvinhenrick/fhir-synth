@@ -26,6 +26,9 @@ def generate(
     persons: int = typer.Option(1, "--persons", help="Number of Persons for EMPI"),
     systems: str = typer.Option("emr1,emr2", "--systems", help="Comma-separated EMR system ids"),
     no_orgs: bool = typer.Option(False, "--no-orgs", help="Do not create Organization resources"),
+    meta_config: str | None = typer.Option(
+        None, "--meta-config", help="YAML file with metadata configuration"
+    ),
 ) -> None:
     """Generate synthetic FHIR data end-to-end: prompt → LLM → code → execute → bundle.
 
@@ -48,8 +51,48 @@ def generate(
         llm = get_provider(provider)
         code_gen = CodeGenerator(llm)
 
-        # Augment prompt with EMPI hints if requested
+        # Load metadata configuration from YAML if provided
         prompt_text = prompt
+        metadata_config = None
+
+        if meta_config:
+            import yaml
+
+            with open(meta_config) as f:
+                metadata_config = yaml.safe_load(f)
+
+            # Build prompt hints from YAML config
+            metadata_hints = []
+            meta = metadata_config.get("meta", {})
+
+            if meta.get("security"):
+                for sec in meta["security"]:
+                    metadata_hints.append(
+                        f"Add security label: system={sec.get('system')}, "
+                        f"code={sec.get('code')}, display={sec.get('display', sec.get('code'))}"
+                    )
+
+            if meta.get("tag"):
+                for tag in meta["tag"]:
+                    metadata_hints.append(
+                        f"Add tag: system={tag.get('system')}, "
+                        f"code={tag.get('code')}, display={tag.get('display', tag.get('code'))}"
+                    )
+
+            if meta.get("profile"):
+                for prof in meta["profile"]:
+                    metadata_hints.append(f"Add profile: {prof}")
+
+            if meta.get("source"):
+                metadata_hints.append(f"Set meta.source to: {meta['source']}")
+
+            if metadata_hints:
+                metadata_instructions = (
+                    "METADATA REQUIREMENTS:\n" + "\n".join(f"- {hint}" for hint in metadata_hints)
+                )
+                prompt_text = f"{metadata_instructions}\n\n{prompt_text}"
+
+        # Augment prompt with EMPI hints if requested
         if empi:
             system_list = [s.strip() for s in systems.split(",") if s.strip()]
             orgs_hint = (
@@ -77,6 +120,18 @@ def generate(
         typer.echo("▶  Executing generated code …")
         resources = code_gen.execute_generated_code(code)
         typer.echo(f"   Got {len(resources)} resources")
+
+        # Step 2.5 — apply metadata from YAML config if specified
+        if metadata_config and "meta" in metadata_config:
+            meta = metadata_config["meta"]
+            code_gen.apply_metadata_to_resources(
+                resources,
+                security=meta.get("security"),
+                tag=meta.get("tag"),
+                profile=meta.get("profile"),
+                source=meta.get("source"),
+            )
+            typer.echo("   Applied metadata from config")
 
         # Step 3 — wrap in a bundle
         builder = BundleBuilder(bundle_type=bundle_type)
@@ -191,7 +246,7 @@ def bundle(
 ) -> None:
     """Create a FHIR Bundle from NDJSON resources or EMPI defaults."""
     from fhir_synth.bundle import BundleBuilder
-    from fhir_synth.rule_engine import RuleEngine, generate_empi_resources
+    from fhir_synth.rule_engine import generate_empi_resources
 
     try:
         builder = BundleBuilder(bundle_type=bundle_type)

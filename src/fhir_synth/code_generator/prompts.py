@@ -18,6 +18,8 @@ HARD RULES — every response MUST follow these:
 10. Use Python standard library only (random, uuid, datetime, decimal) plus fhir.resources.
 11. Wrap numeric FHIR values with Decimal (from decimal import Decimal) not float.
 12. Generate diverse data: vary names, genders, dates, codes across records.
+13. When adding metadata (security, tags, profiles), use the Meta model from fhir.resources.R4B.meta
+    and set it on resources before calling .model_dump().
 
 REALISM GUIDELINES — make data look like a real EHR:
 - Patients: realistic names, genders (male/female/other), birth dates spanning 0-90 years,
@@ -29,6 +31,11 @@ REALISM GUIDELINES — make data look like a real EHR:
 - Encounters: use proper class codes (AMB, IMP, EMER), realistic periods.
 - Procedures: use SNOMED CT or CPT codes.
 - Bundles: link all resources via proper references (Patient/uuid).
+- Metadata: when security/tags/profiles are requested, use FHIR Meta model:
+  * Security labels: http://terminology.hl7.org/CodeSystem/v3-Confidentiality (N=Normal, R=Restricted, V=Very restricted)
+  * Tags: custom systems like http://example.org/tags with workflow codes
+  * Profiles: US Core profiles (http://hl7.org/fhir/us/core/StructureDefinition/us-core-*)
+  * Source: system URIs like http://example.org/fhir-system
 
 RELATIONSHIP PATTERNS:
 - Person 1──* Patient (EMPI: one person across multiple EMR systems)

@@ -353,5 +353,149 @@ graph TD
     style GEN_JSON fill:#fff9c4,stroke:#ffb74d,color:#333,stroke-width:2px
 ```
 
+---
+
+## Custom Metadata Support
+
+FHIR Synth supports adding custom metadata to generated resources including security labels, tags, profiles, and other FHIR `meta` elements.
+
+### Metadata Configuration Model
+
+```python
+class MetaConfig(BaseModel):
+    security: list[dict[str, Any]] | None      # Security labels
+    tag: list[dict[str, Any]] | None           # Tags for workflow/ops
+    profile: list[str] | None                  # Profile URLs
+    source: str | None                         # Source system URI
+    versionId: str | None                      # Version identifier
+    lastUpdated: str | None                    # ISO 8601 timestamp
+```
+
+### Two Levels of Metadata
+
+1. **Global Metadata** (RuleSet level) — Applied to all resources from the ruleset
+2. **Rule Metadata** (Rule level) — Applied to specific resources, merged with global
+
+```mermaid
+%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#fff9c4', 'primaryTextColor': '#333', 'lineColor': '#555', 'fontFamily': 'Comic Sans MS, cursive, sans-serif'}}}%%
+flowchart LR
+    subgraph RULESET["RuleSet"]
+        GM["global_meta:<br/>tags, source, etc."]
+        R1["Rule 1<br/>meta: security"]
+        R2["Rule 2<br/>meta: profiles"]
+        R3["Rule 3<br/>(no meta)"]
+    end
+
+    subgraph OUTPUT["Generated Resources"]
+        RES1["Resource 1<br/>global + rule1"]
+        RES2["Resource 2<br/>global + rule2"]
+        RES3["Resource 3<br/>global only"]
+    end
+
+    GM --> RES1
+    GM --> RES2
+    GM --> RES3
+    R1 --> RES1
+    R2 --> RES2
+
+    style RULESET fill:#e3f2fd,stroke:#90caf9,color:#333,stroke-width:2px
+    style OUTPUT fill:#e8f5e9,stroke:#a5d6a7,color:#333,stroke-width:2px
+    style GM fill:#fff9c4,stroke:#ffb74d,color:#333,stroke-width:2px
+    style R1 fill:#ffe0b2,stroke:#ffb74d,color:#333,stroke-width:2px
+    style R2 fill:#ffe0b2,stroke:#ffb74d,color:#333,stroke-width:2px
+    style R3 fill:#e0e0e0,stroke:#bdbdbd,color:#333,stroke-width:2px
+    style RES1 fill:#c8e6c9,stroke:#81c784,color:#333,stroke-width:2px
+    style RES2 fill:#c8e6c9,stroke:#81c784,color:#333,stroke-width:2px
+    style RES3 fill:#c8e6c9,stroke:#81c784,color:#333,stroke-width:2px
+```
+
+### Metadata Application Flow
+
+```mermaid
+%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#fff9c4', 'primaryTextColor': '#333', 'lineColor': '#555', 'fontFamily': 'Comic Sans MS, cursive, sans-serif'}}}%%
+sequenceDiagram
+    participant RE as RuleEngine
+    participant RS as RuleSet
+    participant R as Rule
+    participant RES as Resource
+
+    RE->>RS: Select rule based on conditions
+    RS-->>RE: Selected Rule
+    RE->>R: Execute rule actions
+    R-->>RE: Resource dict
+    
+    Note over RE: _apply_metadata()
+    
+    alt RuleSet has global_meta
+        RE->>RES: Apply global security, tags, profiles, etc.
+    end
+    
+    alt Rule has meta
+        RE->>RES: Merge rule security, tags, profiles, etc.
+    end
+    
+    Note over RES: Final resource with<br/>complete metadata
+    
+    RE-->>RE: Return resource
+```
+
+### Example Usage
+
+**YAML Configuration:**
+```yaml
+rules:
+  Condition:
+    resource_type: Condition
+    global_meta:
+      tag:
+        - system: "http://example.org/tags"
+          code: "synthetic"
+      source: "http://example.org/fhir-synth"
+    
+    rules:
+      - name: "hiv_diagnosis"
+        actions:
+          code:
+            coding:
+              - system: "http://snomed.info/sct"
+                code: "86406008"
+        meta:
+          security:
+            - system: "http://terminology.hl7.org/CodeSystem/v3-Confidentiality"
+              code: "R"
+              display: "Restricted"
+          profile:
+            - "http://hl7.org/fhir/us/core/StructureDefinition/us-core-condition"
+```
+
+**Python API:**
+```python
+from fhir_synth.rule_engine import RuleEngine, RuleSet, Rule, MetaConfig
+
+engine = RuleEngine()
+engine.register_ruleset(
+    RuleSet(
+        resource_type="Patient",
+        global_meta=MetaConfig(
+            tag=[{"system": "http://example.org", "code": "test"}],
+            source="http://test-system.org",
+        ),
+        rules=[
+            Rule(
+                name="patient_rule",
+                description="Patient with security",
+                actions={},
+                meta=MetaConfig(
+                    security=[{"system": "http://security.org", "code": "N"}],
+                ),
+            )
+        ],
+    )
+)
+
+resources = engine.execute("Patient", {}, count=1)
+# Resource will have both global and rule-specific metadata
+```
+
 
 
