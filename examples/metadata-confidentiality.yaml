@@ -1,0 +1,21 @@
+# Example metadata configuration for FHIR-Synth
+#
+# Use with: fhir-synth generate "your prompt" --meta-config metadata-security.yaml -o output.json
+#
+# This file defines metadata that will be applied to ALL generated resources
+
+meta:
+  security:
+    - system: "http://terminology.hl7.org/CodeSystem/v3-Confidentiality"
+      code: "N"
+      display: "Normal"
+  tag:
+    - system: "http://example.org/tags"
+      code: "synthetic-data"
+      display: "Synthetic Test Data"
+    - system: "http://example.org/environment"
+      code: "test"
+      display: "Test Environment"
+  profile:
+    - "http://hl7.org/fhir/us/core/StructureDefinition/us-core-patient"
+  source: "http://example.org/fhir-synth"
