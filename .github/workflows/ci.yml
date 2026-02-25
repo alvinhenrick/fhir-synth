@@ -35,6 +35,7 @@ jobs:
 
   test:
     name: Test (Python ${{ matrix.python-version }})
+    needs: lint
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
