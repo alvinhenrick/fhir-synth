@@ -21,10 +21,6 @@ fhir-synth generate "10 diabetic patients with HbA1c observations" -o diabetes.j
 | `--systems` | `emr1,emr2` | EMR system ids (EMPI) |
 | `--no-orgs` | off | Skip Organization resources (EMPI) |
 | `--meta-config` | — | Path to metadata YAML config file |
-| `--security` | — | Add security label (`system\|code\|display`) |
-| `--tag` | — | Add tag (`system\|code\|display`) |
-| `--profile` | — | Add profile URL |
-| `--source` | — | Add source system URI |
 
 ### Examples
 
@@ -36,14 +32,7 @@ fhir-synth generate "10 diabetic patients with HbA1c observations" -o diabetes.j
 fhir-synth generate "EMPI dataset" --empi --persons 3 -o empi.json
 
 # With metadata from YAML
-fhir-synth generate "20 patients" --meta-config metadata.yaml -o output.json
-
-# With inline metadata flags
-fhir-synth generate "10 patients" \
-  --security "http://terminology.hl7.org/CodeSystem/v3-Confidentiality|R|Restricted" \
-  --tag "http://example.org/tags|synthetic|Synthetic Data" \
-  --source "http://example.org/fhir-synth" \
-  -o tagged.json
+fhir-synth generate "20 patients" --meta-config examples/meta-normal.yaml -o output.json
 
 # Save generated code for inspection
 fhir-synth generate "20 patients with conditions" -o data.json --save-code generated.py

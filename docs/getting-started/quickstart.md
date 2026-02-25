@@ -60,7 +60,7 @@ bundle = builder.build()
 Apply security labels, tags, and profiles via YAML:
 
 ```yaml
-# metadata.yaml
+# meta-normal.yaml
 meta:
   security:
     - system: "http://terminology.hl7.org/CodeSystem/v3-Confidentiality"
@@ -73,7 +73,7 @@ meta:
 ```
 
 ```bash
-fhir-synth generate "20 patients" --meta-config metadata.yaml -o output.json
+fhir-synth generate "20 patients" --meta-config examples/meta-normal.yaml -o output.json
 ```
 
 ## Test Without an API Key

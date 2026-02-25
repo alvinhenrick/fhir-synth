@@ -73,24 +73,13 @@ End-to-end: prompt → LLM → code → execute → FHIR Bundle.
 | `--persons` | `1` | Number of Persons (EMPI) |
 | `--systems` | `emr1,emr2` | EMR system ids (EMPI) |
 | `--no-orgs` | off | Skip Organization resources (EMPI) |
-| `--security` | — | Add security label (format: `system\|code\|display`) |
-| `--tag` | — | Add tag (format: `system\|code\|display`) |
-| `--profile` | — | Add profile URL |
-| `--source` | — | Add source system URI |
+| `--meta-config` | — | YAML file with metadata configuration |
 
-**Examples with metadata:**
+**Example with metadata:**
 ```bash
-# Add security label to all resources
 fhir-synth generate "10 patients" \
-  --security "http://terminology.hl7.org/CodeSystem/v3-Confidentiality|R|Restricted" \
-  -o restricted.json
-
-# Add multiple metadata elements
-fhir-synth generate "5 diabetic patients with labs" \
-  --tag "http://example.org/tags|synthetic|Synthetic Data" \
-  --profile "http://hl7.org/fhir/us/core/StructureDefinition/us-core-patient" \
-  --source "http://example.org/fhir-synth" \
-  -o tagged.json
+  --meta-config examples/meta-normal.yaml \
+  -o output.json
 ```
 
 ### `fhir-synth rules`
@@ -176,7 +165,7 @@ bundle = builder.build()
 
 Add security labels, tags, profiles, and other FHIR metadata to your generated resources using a YAML configuration file:
 
-**metadata.yaml:**
+**meta-normal.yaml:**
 ```yaml
 meta:
   security:
@@ -195,7 +184,7 @@ meta:
 **Usage:**
 ```bash
 fhir-synth generate "20 patients with conditions" \
-  --meta-config metadata.yaml \
+  --meta-config examples/meta-normal.yaml \
   -o output.json
 ```
 
@@ -206,10 +195,8 @@ fhir-synth generate "20 patients with conditions" \
 - `source` — Source system URI
 
 **Example configs:**
-- `examples/metadata.yaml` - Normal confidentiality, synthetic data tags
-- `examples/metadata-restricted.yaml` - Restricted security for sensitive data
-
-See [examples/metadata_example.yaml](examples/metadata_example.yaml) for rule-based metadata (used with RuleEngine).
+- [`examples/meta-normal.yaml`](examples/meta-normal.yaml) — Normal confidentiality, synthetic data tags
+- [`examples/meta-restricted.yaml`](examples/meta-restricted.yaml) — Restricted security for sensitive data
 
 ## LLM Providers
 

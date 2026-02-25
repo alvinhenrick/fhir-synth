@@ -7,7 +7,7 @@ Add security labels, tags, profiles, and other FHIR metadata to generated resour
 Create a metadata YAML file and pass it to the `generate` command:
 
 ```yaml
-# metadata.yaml
+# meta-normal.yaml
 meta:
   security:
     - system: "http://terminology.hl7.org/CodeSystem/v3-Confidentiality"
@@ -23,35 +23,22 @@ meta:
 ```
 
 ```bash
-fhir-synth generate "20 patients with conditions" --meta-config metadata.yaml -o output.json
-```
-
-## CLI Flags
-
-Add metadata directly from the command line:
-
-```bash
-fhir-synth generate "10 patients" \
-  --security "http://terminology.hl7.org/CodeSystem/v3-Confidentiality|R|Restricted" \
-  --tag "http://example.org/tags|synthetic|Synthetic Data" \
-  --profile "http://hl7.org/fhir/us/core/StructureDefinition/us-core-patient" \
-  --source "http://example.org/fhir-synth" \
-  -o output.json
+fhir-synth generate "20 patients with conditions" --meta-config examples/meta-normal.yaml -o output.json
 ```
 
 ## Supported Fields
 
-| Field | Description | Format |
-|-------|-------------|--------|
-| `security` | Security labels (confidentiality, sensitivity) | `system\|code\|display` |
-| `tag` | Tags for operational/workflow purposes | `system\|code\|display` |
-| `profile` | Profile URLs the resource conforms to | URL string |
-| `source` | Source system URI | URI string |
+| YAML Key | Description |
+|----------|-------------|
+| `security` | Security labels (confidentiality, sensitivity) — list of `{system, code, display}` |
+| `tag` | Tags for operational/workflow purposes — list of `{system, code, display}` |
+| `profile` | Profile URLs the resource conforms to — list of URL strings |
+| `source` | Source system URI — string |
 
 ## Restricted Data Example
 
 ```yaml
-# metadata-restricted.yaml
+# meta-restricted.yaml
 meta:
   security:
     - system: "http://terminology.hl7.org/CodeSystem/v3-Confidentiality"
