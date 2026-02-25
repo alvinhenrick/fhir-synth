@@ -1,7 +1,9 @@
 name: Docs
 
 on:
-  push:
+  workflow_run:
+    workflows: [Release]
+    types: [completed]
     branches: [main]
   workflow_dispatch:
 
@@ -12,6 +14,7 @@ permissions:
 jobs:
   deploy-docs:
     name: Build & Deploy MkDocs
+    if: github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -28,3 +31,4 @@ jobs:
 
       - name: Build and deploy docs
         run: hatch run docs:deploy
+
