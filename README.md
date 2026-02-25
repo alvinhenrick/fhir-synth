@@ -183,9 +183,10 @@ meta:
 
 **Usage:**
 ```bash
-fhir-synth generate "20 patients with conditions" \
-  --meta-config examples/meta-normal.yaml \
-  -o output.json
+fhir-synth generate "10 diabetic patients with labs" --split -o patients/
+
+# With metadata
+fhir-synth generate "10 patients" --meta-config examples/meta-normal.yaml -o output.json
 ```
 
 **Supported metadata fields:**

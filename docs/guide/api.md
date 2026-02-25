@@ -57,13 +57,30 @@ engine.register_ruleset(
 ```python
 from fhir_synth.bundle import BundleBuilder, BundleManager
 
-# Build a bundle from resources
+# Build a single bundle from resources
 builder = BundleBuilder(bundle_type="transaction")
 builder.add_resources(resources)
 bundle = builder.build()
 
 # Save to file
 BundleManager.save(bundle, "output.json")
+```
+
+## Split Per Patient & NDJSON
+
+```python
+from pathlib import Path
+from fhir_synth.bundle import split_resources_by_patient, write_split_bundles, write_ndjson
+
+# Split resources into one bundle per patient
+per_patient = split_resources_by_patient(resources)
+
+# Write one JSON file per patient
+write_split_bundles(per_patient, Path("patients/"))
+# → patients/patient_001.json, patients/patient_002.json, ...
+
+# Write NDJSON (one bundle per line)
+write_ndjson(per_patient, Path("patients.ndjson"))
 ```
 
 ## FHIR Resource Factory

@@ -29,6 +29,11 @@ def generate(
     meta_config: str | None = typer.Option(
         None, "--meta-config", help="YAML file with metadata configuration"
     ),
+    split: bool = typer.Option(
+        False,
+        "--split",
+        help="Split output into one JSON file per patient (default: single bundle)",
+    ),
 ) -> None:
     """Generate synthetic FHIR data end-to-end: prompt → LLM → code → execute → bundle.
 
@@ -133,13 +138,31 @@ def generate(
             )
             typer.echo("   Applied metadata from config")
 
-        # Step 3 — wrap in a bundle
-        builder = BundleBuilder(bundle_type=bundle_type)
-        builder.add_resources(resources)
-        bundle_dict = builder.build()
+        # Step 3 — build per-patient bundles (used for both modes + NDJSON)
+        from fhir_synth.bundle import split_resources_by_patient, write_ndjson, write_split_bundles
 
-        Path(out).write_text(json.dumps(bundle_dict, indent=2, default=str))
-        typer.echo(f"✓  Bundle with {bundle_dict['total']} entries → {out}")
+        per_patient_bundles = split_resources_by_patient(resources)
+
+        if split:
+            # --split: one JSON file per patient + NDJSON
+            out_dir = Path(out)
+            paths = write_split_bundles(per_patient_bundles, out_dir)
+            ndjson_path = write_ndjson(per_patient_bundles, out_dir / "all_patients.ndjson")
+            typer.echo(f"✓  {len(paths)} patient bundles → {out_dir}/")
+            typer.echo(f"✓  NDJSON → {ndjson_path}")
+        else:
+            # Default: single combined bundle + NDJSON
+            builder = BundleBuilder(bundle_type=bundle_type)
+            builder.add_resources(resources)
+            bundle_dict = builder.build()
+
+            out_path = Path(out)
+            out_path.parent.mkdir(parents=True, exist_ok=True)
+            out_path.write_text(json.dumps(bundle_dict, indent=2, default=str))
+
+            ndjson_path = write_ndjson(per_patient_bundles, out_path.with_suffix(".ndjson"))
+            typer.echo(f"✓  Bundle with {bundle_dict['total']} entries → {out}")
+            typer.echo(f"✓  NDJSON → {ndjson_path}")
     except Exception as exc:
         typer.echo(f"Error: {exc}", err=True)
         sys.exit(1)

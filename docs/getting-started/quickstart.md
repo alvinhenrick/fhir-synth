@@ -5,8 +5,11 @@
 Describe what you need in plain English — FHIR Synth generates the code and executes it:
 
 ```bash
-# 10 diabetic patients with labs
+# 10 diabetic patients with labs → single bundle + NDJSON
 fhir-synth generate "10 diabetic patients with HbA1c observations" -o diabetes.json
+
+# Split: one file per patient + NDJSON
+fhir-synth generate "10 diabetic patients with HbA1c observations" --split -o patients/
 
 # 5 patients with hypertension, encounters, and meds
 fhir-synth generate "5 patients with hypertension, office encounters, and antihypertensive medications" -o hypertension.json

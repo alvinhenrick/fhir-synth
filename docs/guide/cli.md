@@ -12,9 +12,10 @@ fhir-synth generate "10 diabetic patients with HbA1c observations" -o diabetes.j
 
 | Flag | Default | Description |
 |------|---------|-------------|
-| `-o / --out` | `output.json` | Output file |
+| `-o / --out` | `output.json` | Output file (or directory with `--split`) |
 | `-p / --provider` | `gpt-4` | LLM model/provider |
 | `-t / --type` | `transaction` | Bundle type |
+| `--split` | off | Split output: one JSON file per patient |
 | `--save-code` | — | Save generated Python code |
 | `--empi` | off | Include EMPI Person→Patient linkage |
 | `--persons` | `1` | Number of Persons (EMPI) |
@@ -22,11 +23,16 @@ fhir-synth generate "10 diabetic patients with HbA1c observations" -o diabetes.j
 | `--no-orgs` | off | Skip Organization resources (EMPI) |
 | `--meta-config` | — | Path to metadata YAML config file |
 
+NDJSON output (one patient bundle per line) is always generated alongside the JSON output.
+
 ### Examples
 
 ```bash
-# Basic generation
+# Single bundle (default) → output.json + output.ndjson
 fhir-synth generate "10 diabetic patients with HbA1c observations" -o diabetes.json
+
+# Split per patient → patients/patient_001.json ... + patients/all_patients.ndjson
+fhir-synth generate "10 diabetic patients with HbA1c observations" --split -o patients/
 
 # With EMPI
 fhir-synth generate "EMPI dataset" --empi --persons 3 -o empi.json
