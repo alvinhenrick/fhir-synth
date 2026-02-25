@@ -96,13 +96,23 @@ class MockLLMProvider(LLMProvider):
         elif isinstance(self.response, dict):
             return json.dumps(self.response)
         else:
-            # Return minimal valid plan
-            return """{
-                "version": 1,
-                "seed": 42,
-                "population": {"persons": 10},
-                "time": {"horizon": {"years": 1}, "timezone": "UTC"}
-            }"""
+            # Default mock: return Python code that generates sample resources.
+            # This allows `fhir-synth generate --provider mock` to work end-to-end.
+            return """
+from fhir.resources.R4B import patient as patient_mod
+
+def generate_resources():
+    resources = []
+    for i in range(1, 6):
+        p = patient_mod.Patient(
+            id=f"mock-patient-{i}",
+            name=[{"given": [f"Mock{i}"], "family": "Patient"}],
+            gender="unknown",
+            birthDate=f"199{i}-01-01",
+        )
+        resources.append(p.model_dump())
+    return resources
+"""
 
     def generate_json(
         self, prompt: str, system: str | None = None, schema: dict[str, Any] | None = None
