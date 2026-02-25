@@ -50,9 +50,7 @@ class GenerationRules:
         for rt, rule_list in data.get("rules_by_type", {}).items():
             rules_by_type[rt] = [Rule(**r) for r in rule_list]
 
-
         return cls(
             population=data.get("population", {}),
             rules_by_type=rules_by_type,
         )
-

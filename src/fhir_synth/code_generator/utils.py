@@ -26,13 +26,8 @@ def extract_code(response: str) -> str:
             code = response[start:end].strip()
             # Remove language specifier if present
             lines = code.split("\n")
-            if (
-                lines[0]
-                and not lines[0].startswith("def ")
-                and not lines[0].startswith("import")
-            ):
+            if lines[0] and not lines[0].startswith("def ") and not lines[0].startswith("import"):
                 code = "\n".join(lines[1:])
             return code
 
     return response.strip()
-

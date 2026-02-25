@@ -166,4 +166,3 @@ class CodeGenerator:
                 meta["source"] = source
 
         return resources
-

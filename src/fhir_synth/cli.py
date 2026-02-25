@@ -87,8 +87,8 @@ def generate(
                 metadata_hints.append(f"Set meta.source to: {meta['source']}")
 
             if metadata_hints:
-                metadata_instructions = (
-                    "METADATA REQUIREMENTS:\n" + "\n".join(f"- {hint}" for hint in metadata_hints)
+                metadata_instructions = "METADATA REQUIREMENTS:\n" + "\n".join(
+                    f"- {hint}" for hint in metadata_hints
                 )
                 prompt_text = f"{metadata_instructions}\n\n{prompt_text}"
 

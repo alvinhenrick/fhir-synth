@@ -233,7 +233,7 @@ FHIR Synth is organized into focused packages:
 - **`rule_engine/`** — Declarative rule engine and EMPI logic
 - **`fhir_utils/`** — FHIR resource factory utilities
 
-See [ARCHITECTURE.md](ARCHITECTURE.md) for complete system design, data flows, and class diagrams.
+See [ARCHITECTURE.md](docs/architecture.md) for complete system design, data flows, and class diagrams.
 
 ## Development
 

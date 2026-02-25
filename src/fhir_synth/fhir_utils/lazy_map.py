@@ -40,4 +40,3 @@ class _LazyResourceMap(dict[str, type[BaseModel]]):
 
 
 FHIR_RESOURCE_CLASSES: dict[str, type[BaseModel]] = _LazyResourceMap()
-

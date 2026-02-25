@@ -164,4 +164,3 @@ class FHIRResourceFactory:
             Dictionary representation
         """
         return resource.model_dump(exclude_none=True, by_alias=True)
-

@@ -148,4 +148,3 @@ class BundleManager:
                     errors.append(f"Entry {i} resource missing 'resourceType'")
 
         return len(errors) == 0, errors
-

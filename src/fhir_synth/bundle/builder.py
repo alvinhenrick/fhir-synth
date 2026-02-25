@@ -148,4 +148,3 @@ class BundleBuilder:
     def _current_timestamp() -> str:
         """Get the current timestamp in ISO format."""
         return datetime.now(UTC).isoformat() + "Z"
-

@@ -71,4 +71,3 @@ class RuleSet(BaseModel):
         default=None,
         description="Global metadata applied to all resources from this ruleset",
     )
-

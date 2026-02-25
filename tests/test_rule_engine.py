@@ -282,6 +282,3 @@ def test_metadata_with_all_fields():
     assert meta["source"] == "http://source-system.org"
     assert meta["versionId"] == "v1.0"
     assert meta["lastUpdated"] == "2026-02-23T12:00:00Z"
-
-
-

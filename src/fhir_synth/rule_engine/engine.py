@@ -170,9 +170,7 @@ class RuleEngine:
         return datetime.now(UTC).isoformat()
 
     @staticmethod
-    def _apply_metadata(
-        resource: dict[str, Any], ruleset: RuleSet, rule: Rule
-    ) -> None:
+    def _apply_metadata(resource: dict[str, Any], ruleset: RuleSet, rule: Rule) -> None:
         """Apply metadata configuration to a resource.
 
         Merges global_meta from ruleset and meta from rule.
@@ -221,4 +219,3 @@ class RuleEngine:
 
             if config.lastUpdated:
                 meta["lastUpdated"] = config.lastUpdated
-

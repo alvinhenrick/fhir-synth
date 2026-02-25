@@ -42,6 +42,19 @@ dev = [
     "types-pyyaml",
     "types-python-dateutil",
 ]
+docs = [
+    "mkdocs>=1.6,<2",
+    "mkdocs-material>=9.0",
+    "mkdocstrings[python]>=0.24",
+    "pymdown-extensions>=10.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/alvinhenrick/fhir-synth"
+Documentation = "https://alvinhenrick.github.io/fhir-synth/"
+Repository = "https://github.com/alvinhenrick/fhir-synth"
+Changelog = "https://alvinhenrick.github.io/fhir-synth/changelog/"
+Issues = "https://github.com/alvinhenrick/fhir-synth/issues"
 
 [project.scripts]
 fhir-synth = "fhir_synth.cli:app"
@@ -56,6 +69,10 @@ dependencies = [
     "pytest-cov>=4.0",
     "pytest-xdist>=3.0",
     "freezegun>=1.2",
+    "ruff>=0.1",
+    "mypy>=1.0",
+    "types-pyyaml",
+    "types-python-dateutil",
 ]
 
 [tool.hatch.envs.default.scripts]
@@ -65,6 +82,32 @@ test-fast = "pytest -n auto {args}"
 check = ["ruff check src tests", "mypy src"]
 format = "ruff format src tests"
 lint = "ruff check src tests --fix"
+
+[tool.hatch.envs.docs]
+installer = "uv"
+dependencies = [
+    "mkdocs>=1.6,<2",
+    "mkdocs-material>=9.0",
+    "mkdocstrings[python]>=0.24",
+    "pymdown-extensions>=10.0",
+]
+
+[tool.hatch.envs.docs.scripts]
+build = "mkdocs build --strict"
+serve = "mkdocs serve"
+deploy = "mkdocs gh-deploy --force"
+
+[tool.hatch.envs.release]
+installer = "uv"
+dependencies = [
+    "python-semantic-release>=9.0",
+    "build",
+]
+
+[tool.hatch.envs.release.scripts]
+version = "semantic-release version"
+publish = "semantic-release publish"
+build-pkg = "python -m build"
 
 [tool.ruff]
 line-length = 100
@@ -116,3 +159,21 @@ markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
     "llm: marks tests that require LLM providers",
 ]
+
+[tool.semantic_release]
+version_toml = ["pyproject.toml:project.version"]
+version_variables = ["src/fhir_synth/__init__.py:__version__"]
+branch = "main"
+build_command = "hatch build"
+commit_message = "chore(release): {version}"
+tag_format = "v{version}"
+upload_to_pypi = false
+upload_to_vcs_release = true
+
+[tool.semantic_release.changelog]
+changelog_file = "CHANGELOG.md"
+
+[tool.semantic_release.remote]
+type = "github"
+
+
