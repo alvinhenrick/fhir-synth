@@ -100,4 +100,3 @@ class BundleFactory:
     def clear(self) -> None:
         """Clear all entries."""
         self.entries = []
-

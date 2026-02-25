@@ -68,4 +68,3 @@ def generate_empi_resources(
         resources.extend(patient_resources)
 
     return resources
-

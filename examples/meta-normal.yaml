@@ -1,8 +1,7 @@
-# Example metadata configuration for FHIR-Synth
+# Normal confidentiality metadata — applied to ALL generated resources
 #
-# Use with: fhir-synth generate "your prompt" --meta-config metadata-security.yaml -o output.json
-#
-# This file defines metadata that will be applied to ALL generated resources
+# Usage:
+#   fhir-synth generate "10 diabetic patients" --meta-config examples/meta-normal.yaml -o output.json
 
 meta:
   security:

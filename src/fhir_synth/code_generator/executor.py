@@ -56,4 +56,3 @@ def execute_code(code: str) -> list[dict[str, Any]]:
         return result if isinstance(result, list) else [result]
 
     raise ValueError("Generated code must define generate_resources() function")
-

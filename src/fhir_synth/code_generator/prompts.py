@@ -143,4 +143,3 @@ CODE:
 Fix the code so it runs without errors. Keep the same function signature:
   def generate_resources() -> list[dict]:
 Return ONLY the corrected Python code, no explanation."""
-

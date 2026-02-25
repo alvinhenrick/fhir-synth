@@ -50,9 +50,9 @@ htmlcov/
 # Output
 output/
 *.ndjson
-*.json
-examples/*.yml
-examples/*.yaml
+
+# MkDocs
+site/
 
 # OS
 .DS_Store

@@ -1,12 +1,10 @@
 # Metadata Quick Reference
 
-## Two Ways to Add Metadata to FHIR Resources
+## YAML Config File
 
-### 🚀 1. YAML Config File (Recommended)
+Create a reusable YAML config file and use it with `--meta-config`:
 
-Create a reusable YAML config file and use it with any prompt:
-
-**metadata.yaml:**
+**meta-normal.yaml:**
 ```yaml
 meta:
   security:
@@ -24,19 +22,12 @@ meta:
 
 **Usage:**
 ```bash
-fhir-synth generate "10 diabetic patients" --meta-config metadata.yaml -o output.json
+fhir-synth generate "10 diabetic patients" --meta-config examples/meta-normal.yaml -o output.json
 ```
 
-### 💬 2. Natural Language Prompts (LLM-Powered)
-
-```bash
-fhir-synth generate \
-  "10 HIV patients with restricted security labels and tag as sensitive data" \
-  --provider gpt-4 \
-  -o hiv.json
-```
-
-The LLM understands metadata requests and generates code with `Meta` and `Coding` models.
+!!! tip "LLM-Powered Metadata"
+    You can also describe metadata in your prompt — the LLM understands requests like
+    "10 HIV patients with restricted security labels" and generates code with `Meta` and `Coding` models.
 
 ---
 
@@ -130,7 +121,7 @@ lastUpdated: "2026-02-23T12:00:00Z"
 
 ## Example Metadata Configs
 
-### examples/metadata.yaml (Normal Confidentiality)
+### examples/meta-normal.yaml (Normal Confidentiality)
 ```yaml
 meta:
   security:
@@ -148,10 +139,10 @@ meta:
 
 **Usage:**
 ```bash
-fhir-synth generate "20 patients with diabetes" --meta-config examples/metadata.yaml -o output.json
+fhir-synth generate "20 patients with diabetes" --meta-config examples/meta-normal.yaml -o output.json
 ```
 
-### examples/metadata-restricted.yaml (Sensitive Data)
+### examples/meta-restricted.yaml (Sensitive Data)
 ```yaml
 meta:
   security:
@@ -172,7 +163,7 @@ meta:
 
 **Usage:**
 ```bash
-fhir-synth generate "10 HIV patients" --meta-config examples/metadata-restricted.yaml -o hiv.json
+fhir-synth generate "10 HIV patients" --meta-config examples/meta-restricted.yaml -o hiv.json
 ```
 
 ## Output Example
@@ -208,7 +199,6 @@ fhir-synth generate "10 HIV patients" --meta-config examples/metadata-restricted
 ## More Examples
 
 See:
-- `examples/metadata-confidentiality.yaml` - Normal confidentiality config
-- `examples/metadata-restricted.yaml` - Restricted security for sensitive data
-- `examples/metadata_example.yaml` - Rule-based metadata (for RuleEngine)
+- `examples/meta-normal.yaml` — Normal confidentiality config
+- `examples/meta-restricted.yaml` — Restricted security for sensitive data
 

@@ -1,5 +1,7 @@
-# Restricted metadata for sensitive data
-# For HIV, mental health, substance abuse, etc.
+# Restricted confidentiality metadata — for sensitive data (HIV, mental health, etc.)
+#
+# Usage:
+#   fhir-synth generate "10 HIV patients" --meta-config examples/meta-restricted.yaml -o output.json
 
 meta:
   security:

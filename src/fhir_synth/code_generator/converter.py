@@ -55,4 +55,3 @@ class PromptToRulesConverter:
 
         # Default to Patient if none found
         return found or ["Patient"]
-
