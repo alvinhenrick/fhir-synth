@@ -1,8 +1,15 @@
 """Main code generation engine."""
 
+import logging
 from typing import Any
 
-from fhir_synth.code_generator.executor import execute_code, validate_code
+from fhir_synth.code_generator.executor import (
+    execute_code,
+    fix_common_imports,
+    validate_code,
+    validate_imports,
+)
+from fhir_synth.code_generator.metrics import calculate_code_quality_score
 from fhir_synth.code_generator.prompts import (
     SYSTEM_PROMPT,
     build_bundle_code_prompt,
@@ -13,19 +20,25 @@ from fhir_synth.code_generator.prompts import (
 from fhir_synth.code_generator.utils import extract_code
 from fhir_synth.llm import LLMProvider
 
+logger = logging.getLogger(__name__)
+
 
 class CodeGenerator:
     """Generates Python code for FHIR resource creation from natural language."""
 
-    def __init__(self, llm: LLMProvider, max_retries: int = 2) -> None:
+    def __init__(
+        self, llm: LLMProvider, max_retries: int = 2, enable_scoring: bool = False
+    ) -> None:
         """Initialize code generator with LLM.
 
         Args:
             llm: LLM provider for code generation
             max_retries: Number of times to retry if generated code fails execution
+            enable_scoring: Enable code quality scoring and logging
         """
         self.llm = llm
         self.max_retries = max_retries
+        self.enable_scoring = enable_scoring
 
     def generate_code_from_prompt(self, prompt: str) -> str:
         """Generate Python code from natural language prompt.
@@ -91,6 +104,21 @@ class CodeGenerator:
         Returns:
             List of generated resources
         """
+        # Pre-execution validation: check imports before running
+        import_errors = validate_imports(code)
+        if import_errors:
+            # Try auto-fixing common import issues
+            fixed_code = fix_common_imports(code)
+            fixed_import_errors = validate_imports(fixed_code)
+
+            if not fixed_import_errors:
+                # Auto-fix succeeded
+                code = fixed_code
+            else:
+                # Auto-fix didn't work, include errors in first retry
+                error_msg = "\n".join(import_errors)
+                code = self._retry_with_error(code, f"Import validation failed:\n{error_msg}")
+
         last_error: Exception | None = None
 
         for attempt in range(1 + self.max_retries):
@@ -100,15 +128,46 @@ class CodeGenerator:
                 continue
 
             try:
-                return execute_code(code)
+                resources = execute_code(code)
+
+                # Score code quality if enabled
+                if self.enable_scoring:
+                    metrics = calculate_code_quality_score(code, resources)
+                    logger.info(
+                        f"Code quality: {metrics['score']:.2f} ({metrics['grade']}) - "
+                        f"{len(metrics.get('warnings', []))} warnings"
+                    )
+                    if metrics.get("warnings"):
+                        for warning in metrics["warnings"]:
+                            logger.debug(f"  • {warning}")
+
+                return resources
+            except ImportError as exc:
+                # Import errors get special handling with auto-fix attempt
+                last_error = exc
+                if attempt < self.max_retries:
+                    fixed_code = fix_common_imports(code)
+                    if fixed_code != code:
+                        code = fixed_code
+                    else:
+                        code = self._retry_with_error(code, f"ImportError: {exc}")
             except Exception as exc:
                 last_error = exc
                 if attempt < self.max_retries:
                     code = self._retry_with_error(code, str(exc))
 
-        raise RuntimeError(
-            f"Code execution failed after {self.max_retries + 1} attempts: {last_error}"
-        ) from last_error
+        # If we got here, all retries failed
+        # Build helpful error message
+        error_msg = f"Code execution failed after {self.max_retries + 1} attempts: {last_error}"
+        if isinstance(last_error, ImportError):
+            error_msg += (
+                "\n\nSuggestions:\n"
+                "  1. Try a more reliable provider: --provider gpt-4\n"
+                "  2. Save and inspect the code: --save-code output.py\n"
+                "  3. Check import paths in fhir.resources package"
+            )
+
+        raise RuntimeError(error_msg) from last_error
 
     def _retry_with_error(self, code: str, error: str) -> str:
         """Ask the LLM to fix broken generated code.

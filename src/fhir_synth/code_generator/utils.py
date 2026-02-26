@@ -12,7 +12,7 @@ def extract_code(response: str) -> str:
     Returns:
         Extracted Python code
     """
-    # Try to extract from Markdown code block
+    # Try to extract from the Markdown code block
     if "```python" in response:
         start = response.find("```python") + 9
         end = response.find("```", start)

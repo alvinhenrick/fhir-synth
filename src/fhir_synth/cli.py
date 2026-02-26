@@ -164,7 +164,31 @@ def generate(
             typer.echo(f"✓  Bundle with {bundle_dict['total']} entries → {out}")
             typer.echo(f"✓  NDJSON → {ndjson_path}")
     except Exception as exc:
-        typer.echo(f"Error: {exc}", err=True)
+        error_msg = str(exc)
+
+        # Provide helpful error messages based on error type
+        if "No module named" in error_msg or "ImportError" in error_msg or "Import" in error_msg:
+            typer.echo("❌ Import error detected", err=True)
+            typer.echo(f"   {exc}", err=True)
+            typer.echo("\n💡 Suggestions:", err=True)
+            typer.echo("   1. Try a more reliable provider: --provider gpt-4", err=True)
+            if save_code:
+                typer.echo(f"   2. Check the saved code: {save_code}", err=True)
+            else:
+                typer.echo("   2. Save and inspect the code: --save-code output.py", err=True)
+            typer.echo("   3. The LLM may have used incorrect import paths", err=True)
+        elif "Code execution failed" in error_msg:
+            typer.echo("❌ Code execution failed after retries", err=True)
+            typer.echo(f"   {exc}", err=True)
+            if save_code:
+                typer.echo(f"\n💡 Check the saved code: {save_code}", err=True)
+            else:
+                typer.echo(
+                    "\n💡 Try: --save-code output.py to inspect the generated code", err=True
+                )
+        else:
+            typer.echo(f"❌ Error: {exc}", err=True)
+
         sys.exit(1)
 
 

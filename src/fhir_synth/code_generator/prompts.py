@@ -6,7 +6,15 @@ fhir.resources library (Pydantic models).
 
 HARD RULES — every response MUST follow these:
 1. Define exactly one function: def generate_resources() -> list[dict]:
-2. Import from fhir.resources.R4B (e.g. from fhir.resources.R4B.patient import Patient).
+2. Import from fhir.resources.R4B using CORRECT module paths:
+   ✓ CORRECT: from fhir.resources.R4B.patient import Patient
+   ✓ CORRECT: from fhir.resources.R4B.timing import Timing, TimingRepeat
+   ✓ CORRECT: from fhir.resources.R4B.observation import Observation
+   ✗ WRONG: from fhir.resources.R4B.timingrepeat import TimingRepeat (module doesn't exist)
+   
+   Module naming: Resources are in lowercase singular modules (patient, observation, condition).
+   Complex types are in their own modules (timing, codeableconcept, quantity, humanname, etc.).
+   
 3. Use uuid4 for all resource IDs.
 4. Call .model_dump(exclude_none=True) on every Pydantic model before appending to results.
 5. Return a flat list[dict] of resource dictionaries.
@@ -43,6 +51,14 @@ RELATIONSHIP PATTERNS:
 - Encounter references Patient, Practitioner, Location, Organization
 - Condition, Observation, Procedure reference Patient + Encounter
 
+THINK STEP-BY-STEP:
+1. Parse requirement → identify resource types needed (Patient, Condition, etc.)
+2. Plan imports → check correct module paths (fhir.resources.R4B.{module})
+3. Design data flow → determine relationships (Patient IDs → references)
+4. Choose codes → select appropriate ICD-10/LOINC/RxNorm codes
+5. Implement function → write generate_resources() with proper structure
+6. Validate → ensure all references are valid, all models use .model_dump()
+
 Return ONLY the Python code, no explanation text."""
 
 
@@ -65,7 +81,50 @@ Remember:
 - .model_dump(exclude_none=True) on every resource
 - uuid4 for IDs, Decimal for numeric values
 - real clinical codes (ICD-10, LOINC, RxNorm, SNOMED)
-- diverse, realistic data"""
+- diverse, realistic data
+
+EXAMPLE (for reference - adapt to your requirement):
+```python
+from fhir.resources.R4B.patient import Patient
+from fhir.resources.R4B.condition import Condition
+from fhir.resources.R4B.codeableconcept import CodeableConcept
+from fhir.resources.R4B.coding import Coding
+from fhir.resources.R4B.reference import Reference
+from uuid import uuid4
+from datetime import date
+import random
+
+def generate_resources() -> list[dict]:
+    resources = []
+    
+    # Generate patient
+    patient_id = str(uuid4())
+    patient = Patient(
+        id=patient_id,
+        name=[{{"given": ["John"], "family": "Doe"}}],
+        gender="male",
+        birthDate="1970-01-01"
+    )
+    resources.append(patient.model_dump(exclude_none=True))
+    
+    # Generate related condition
+    condition = Condition(
+        id=str(uuid4()),
+        subject=Reference(reference=f"Patient/{{patient_id}}"),
+        code=CodeableConcept(
+            coding=[Coding(
+                system="http://hl7.org/fhir/sid/icd-10-cm",
+                code="E11.9",
+                display="Type 2 diabetes mellitus"
+            )]
+        )
+    )
+    resources.append(condition.model_dump(exclude_none=True))
+    
+    return resources
+```
+
+Now generate code for: {requirement}"""
 
 
 def build_rules_prompt(requirement: str) -> str:
