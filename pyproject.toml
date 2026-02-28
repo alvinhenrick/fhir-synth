@@ -32,6 +32,9 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+bedrock = [
+    "boto3>=1.28",
+]
 dev = [
     "pytest>=7.0",
     "pytest-cov>=4.0",
@@ -144,6 +147,10 @@ plugins = ["pydantic.mypy"]
 [[tool.mypy.overrides]]
 module = "tests.*"
 disallow_untyped_defs = false
+
+[[tool.mypy.overrides]]
+module = ["boto3", "boto3.*"]
+ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

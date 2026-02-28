@@ -78,6 +78,7 @@ nav:
       - Metadata Configuration: guide/metadata.md
       - Metadata Quick Reference: guide/metadata-reference.md
       - LLM Providers: guide/providers.md
+      - Code Quality & Robustness: guide/code-quality.md
   - Architecture: architecture.md
   - API Reference:
       - Code Generator: api/code_generator.md

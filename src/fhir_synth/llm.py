@@ -13,6 +13,8 @@ class LLMProvider:
         model: str = "gpt-4",
         api_key: str | None = None,
         api_base: str | None = None,
+        aws_profile_name: str | None = None,
+        aws_region_name: str | None = None,
         **kwargs: Any,
     ) -> None:
         """Initialize LLM provider with LiteLLM.
@@ -21,12 +23,58 @@ class LLMProvider:
             model: Model name (e.g., "gpt-4", "claude-3-opus", "bedrock/anthropic.claude-v2")
             api_key: API key for the provider (optional, will use env vars)
             api_base: Custom API base URL (optional)
+            aws_profile_name: AWS profile name for Bedrock (optional, uses ~/.aws/credentials)
+            aws_region_name: AWS region for Bedrock (optional, e.g., "us-east-1")
             **kwargs: Additional arguments passed to litellm.completion()
         """
         self.model = model
         self.api_key = api_key
         self.api_base = api_base
+        self.aws_profile_name = aws_profile_name
+        self.aws_region_name = aws_region_name
         self.extra_kwargs = kwargs
+
+    def _is_bedrock(self) -> bool:
+        """Check if using AWS Bedrock provider."""
+        return self.model.startswith("bedrock/")
+
+    def _get_boto3_session_kwargs(self) -> dict[str, Any]:
+        """Build boto3 session kwargs for Bedrock authentication.
+
+        Returns:
+            Dictionary with aws_* keys for litellm Bedrock calls
+        """
+        kwargs: dict[str, Any] = {}
+
+        # Profile name (from constructor, env var, or default)
+        profile = self.aws_profile_name or os.getenv("AWS_PROFILE")
+        region = (
+            self.aws_region_name or os.getenv("AWS_REGION_NAME") or os.getenv("AWS_DEFAULT_REGION")
+        )
+
+        if profile or region:
+            import boto3
+
+            session_kwargs: dict[str, str] = {}
+            if profile:
+                session_kwargs["profile_name"] = profile
+            if region:
+                session_kwargs["region_name"] = region
+
+            session = boto3.Session(**session_kwargs)
+            credentials = session.get_credentials()
+
+            if credentials:
+                frozen = credentials.get_frozen_credentials()
+                kwargs["aws_access_key_id"] = frozen.access_key
+                kwargs["aws_secret_access_key"] = frozen.secret_key
+                if frozen.token:
+                    kwargs["aws_session_token"] = frozen.token
+
+            if region or session.region_name:
+                kwargs["aws_region_name"] = region or session.region_name
+
+        return kwargs
 
     def generate_text(
         self, prompt: str, system: str | None = None, json_schema: dict[str, Any] | None = None
@@ -49,6 +97,10 @@ class LLMProvider:
             kwargs["api_key"] = self.api_key
         if self.api_base:
             kwargs["api_base"] = self.api_base
+
+        # Add AWS Bedrock credentials if applicable
+        if self._is_bedrock():
+            kwargs.update(self._get_boto3_session_kwargs())
 
         # Request JSON mode if schema provided and model supports it
         if json_schema:
@@ -123,19 +175,28 @@ def generate_resources():
 
 
 def get_provider(
-    provider_name: str = "gpt-4", api_key: str | None = None, **kwargs: Any
+    provider_name: str = "gpt-4",
+    api_key: str | None = None,
+    aws_profile: str | None = None,
+    aws_region: str | None = None,
+    **kwargs: Any,
 ) -> LLMProvider:
     """Get LLM provider.
 
     Args:
         provider_name: Provider/model name. Use "mock" for testing, or any LiteLLM-supported model:
-            - OpenAI: "gpt-4", "gpt-3.5-turbo"
+            - OpenAI: "gpt-4", "gpt-4o", "gpt-3.5-turbo"
             - Anthropic: "claude-3-opus-20240229", "claude-3-sonnet-20240229"
-            - Bedrock: "bedrock/anthropic.claude-v2", "bedrock/anthropic.claude-instant-v1"
+            - Bedrock: "bedrock/anthropic.claude-v2",
+              "bedrock/us.anthropic.claude-3-5-sonnet-20241022-v2:0"
             - Azure: "azure/gpt-4"
-            - And 100+ more providers
+            - And 100+ more providers via LiteLLM
         api_key: API key (optional, will use environment variables from .env or system)
-        **kwargs: Additional arguments
+        aws_profile: AWS profile name for Bedrock (reads ~/.aws/credentials).
+            Falls back to ``AWS_PROFILE`` env var.
+        aws_region: AWS region for Bedrock (e.g. "us-east-1").
+            Falls back to ``AWS_REGION_NAME`` / ``AWS_DEFAULT_REGION`` env vars.
+        **kwargs: Additional arguments passed to ``litellm.completion()``
 
     Returns:
         LLMProvider instance
@@ -145,20 +206,22 @@ def get_provider(
 
     # If no api_key provided, check environment for common API key names
     if not api_key:
-        # Map provider names to environment variable names
         env_key_map = {
-            "gpt-4": "OPENAI_API_KEY",
-            "gpt-3.5-turbo": "OPENAI_API_KEY",
+            "gpt-": "OPENAI_API_KEY",
             "claude": "ANTHROPIC_API_KEY",
-            "claude-3-opus": "ANTHROPIC_API_KEY",
-            "claude-3-sonnet": "ANTHROPIC_API_KEY",
+            "gemini": "GEMINI_API_KEY",
         }
 
-        # Check for matching environment variable
         for provider_prefix, env_var in env_key_map.items():
             if provider_name.startswith(provider_prefix):
                 api_key = os.getenv(env_var)
                 if api_key:
                     break
 
-    return LLMProvider(model=provider_name, api_key=api_key, **kwargs)
+    return LLMProvider(
+        model=provider_name,
+        api_key=api_key,
+        aws_profile_name=aws_profile,
+        aws_region_name=aws_region,
+        **kwargs,
+    )

@@ -34,6 +34,12 @@ def generate(
         "--split",
         help="Split output into one JSON file per patient (default: single bundle)",
     ),
+    aws_profile: str | None = typer.Option(
+        None, "--aws-profile", help="AWS profile for Bedrock (reads ~/.aws/credentials)"
+    ),
+    aws_region: str | None = typer.Option(
+        None, "--aws-region", help="AWS region for Bedrock (e.g. us-east-1)"
+    ),
 ) -> None:
     """Generate synthetic FHIR data end-to-end: prompt → LLM → code → execute → bundle.
 
@@ -42,9 +48,9 @@ def generate(
 
     Examples:
 
-      fhir-synth generates "10 diabetic patients with HbA1c labs" -o diabetes.json
+      fhir-synth generate "10 diabetic patients with HbA1c labs" -o diabetes.json
 
-      fhir-synth generates "5 patients with hypertension and encounters" --provider gpt-4 -o hypertension.json
+      fhir-synth generate "5 patients" --provider bedrock/us.anthropic.claude-3-5-sonnet-20241022-v2:0 --aws-profile my-profile --aws-region us-east-1 -o output.json
 
       fhir-synth generate "EMPI dataset" --empi --persons 3 -o empi.json
     """
@@ -53,7 +59,7 @@ def generate(
         from fhir_synth.code_generator import CodeGenerator
         from fhir_synth.llm import get_provider
 
-        llm = get_provider(provider)
+        llm = get_provider(provider, aws_profile=aws_profile, aws_region=aws_region)
         code_gen = CodeGenerator(llm)
 
         # Load metadata configuration from YAML if provided
@@ -164,7 +170,31 @@ def generate(
             typer.echo(f"✓  Bundle with {bundle_dict['total']} entries → {out}")
             typer.echo(f"✓  NDJSON → {ndjson_path}")
     except Exception as exc:
-        typer.echo(f"Error: {exc}", err=True)
+        error_msg = str(exc)
+
+        # Provide helpful error messages based on error type
+        if "No module named" in error_msg or "ImportError" in error_msg or "Import" in error_msg:
+            typer.echo("❌ Import error detected", err=True)
+            typer.echo(f"   {exc}", err=True)
+            typer.echo("\n💡 Suggestions:", err=True)
+            typer.echo("   1. Try a more reliable provider: --provider gpt-4", err=True)
+            if save_code:
+                typer.echo(f"   2. Check the saved code: {save_code}", err=True)
+            else:
+                typer.echo("   2. Save and inspect the code: --save-code output.py", err=True)
+            typer.echo("   3. The LLM may have used incorrect import paths", err=True)
+        elif "Code execution failed" in error_msg:
+            typer.echo("❌ Code execution failed after retries", err=True)
+            typer.echo(f"   {exc}", err=True)
+            if save_code:
+                typer.echo(f"\n💡 Check the saved code: {save_code}", err=True)
+            else:
+                typer.echo(
+                    "\n💡 Try: --save-code output.py to inspect the generated code", err=True
+                )
+        else:
+            typer.echo(f"❌ Error: {exc}", err=True)
+
         sys.exit(1)
 
 
@@ -177,13 +207,19 @@ def rules(
     persons: int = typer.Option(1, "--persons", help="Number of Persons for EMPI"),
     systems: str = typer.Option("emr1,emr2", "--systems", help="Comma-separated EMR system ids"),
     no_orgs: bool = typer.Option(False, "--no-orgs", help="Do not create Organization resources"),
+    aws_profile: str | None = typer.Option(
+        None, "--aws-profile", help="AWS profile for Bedrock (reads ~/.aws/credentials)"
+    ),
+    aws_region: str | None = typer.Option(
+        None, "--aws-region", help="AWS region for Bedrock (e.g. us-east-1)"
+    ),
 ) -> None:
     """Generate declarative rules from a natural language prompt."""
     try:
         from fhir_synth.code_generator import PromptToRulesConverter
         from fhir_synth.llm import get_provider
 
-        llm = get_provider(provider)
+        llm = get_provider(provider, aws_profile=aws_profile, aws_region=aws_region)
         converter = PromptToRulesConverter(llm)
         rules_result = converter.convert_prompt_to_rules(prompt)
 
@@ -216,13 +252,19 @@ def codegen(
     persons: int = typer.Option(1, "--persons", help="Number of Persons for EMPI"),
     systems: str = typer.Option("emr1,emr2", "--systems", help="Comma-separated EMR system ids"),
     no_orgs: bool = typer.Option(False, "--no-orgs", help="Do not create Organization resources"),
+    aws_profile: str | None = typer.Option(
+        None, "--aws-profile", help="AWS profile for Bedrock (reads ~/.aws/credentials)"
+    ),
+    aws_region: str | None = typer.Option(
+        None, "--aws-region", help="AWS region for Bedrock (e.g. us-east-1)"
+    ),
 ) -> None:
     """Generate Python code for resource creation from a prompt."""
     try:
         from fhir_synth.code_generator import CodeGenerator
         from fhir_synth.llm import get_provider
 
-        llm = get_provider(provider)
+        llm = get_provider(provider, aws_profile=aws_profile, aws_region=aws_region)
         code_gen = CodeGenerator(llm, max_retries=2)
         prompt_text = prompt
         if empi:
