@@ -18,8 +18,17 @@ FHIR R4B Bundles (JSON + NDJSON)
 
 ## Install
 
+Install directly from GitHub (releases are published as GitHub Releases, not PyPI):
+
 ```bash
-pip install fhir-synth
+# Latest release
+pip install git+https://github.com/alvinhenrick/fhir-synth.git@main
+
+# Specific version tag
+pip install git+https://github.com/alvinhenrick/fhir-synth.git@v1.0.0
+
+# With AWS Bedrock support
+pip install "fhir-synth[bedrock] @ git+https://github.com/alvinhenrick/fhir-synth.git@main"
 ```
 
 ## Quick Start
@@ -230,25 +239,71 @@ See the [Metadata Quick Reference](docs/guide/metadata-reference.md) for the ful
 
 ## LLM Providers
 
-The `generate` command defaults to `gpt-4`. Set your API key in a `.env` file:
+FHIR Synth uses [LiteLLM](https://docs.litellm.ai/) to support 100+ LLM providers. The `generate` command defaults to `gpt-4`.
+
+### Setup
+
+Create a `.env` file in your project root with your provider's API key:
 
 ```bash
+# OpenAI
 OPENAI_API_KEY=sk-...
+
+# Anthropic
 ANTHROPIC_API_KEY=sk-ant-...
+
+# Google Gemini
+GEMINI_API_KEY=...
+
+# Azure OpenAI
+AZURE_API_KEY=...
+AZURE_API_BASE=https://your-resource.openai.azure.com/
+AZURE_API_VERSION=2024-02-01
 ```
 
-Supported via [LiteLLM](https://docs.litellm.ai/): OpenAI, Anthropic, AWS Bedrock, Azure, Google Gemini, and 100+ providers.
+### Provider Examples
 
 | Provider | `--provider` value | Auth |
 |----------|-------------------|------|
-| OpenAI | `gpt-4`, `gpt-4o` | `OPENAI_API_KEY` |
-| Anthropic | `claude-3-opus-20240229` | `ANTHROPIC_API_KEY` |
-| AWS Bedrock | `bedrock/anthropic.claude-v2` | `--aws-profile` / `--aws-region` |
+| OpenAI | `gpt-4`, `gpt-4o`, `gpt-4o-mini` | `OPENAI_API_KEY` |
+| Anthropic | `claude-3-opus-20240229`, `claude-3-5-sonnet-20241022` | `ANTHROPIC_API_KEY` |
+| AWS Bedrock | `bedrock/us.anthropic.claude-3-5-sonnet-20241022-v2:0` | `--aws-profile` / `--aws-region` |
 | Google Gemini | `gemini/gemini-pro` | `GEMINI_API_KEY` |
-| Azure | `azure/gpt-4` | `AZURE_API_KEY` |
+| Azure OpenAI | `azure/gpt-4` | `AZURE_API_KEY` + `AZURE_API_BASE` |
 | Mock (testing) | `mock` | None |
 
-Use `--provider mock` for testing without an API key.
+### AWS Bedrock
+
+Bedrock uses your existing AWS credentials. Install the optional `bedrock` extra:
+
+```bash
+pip install "fhir-synth[bedrock] @ git+https://github.com/alvinhenrick/fhir-synth.git@main"
+```
+
+Authenticate via named profile, environment variables, or SSO:
+
+```bash
+# Named profile (recommended)
+fhir-synth generate "10 patients" \
+  --provider bedrock/us.anthropic.claude-3-5-sonnet-20241022-v2:0 \
+  --aws-profile my-profile --aws-region us-east-1 -o output.json
+
+# Environment variables
+export AWS_PROFILE=my-profile
+export AWS_DEFAULT_REGION=us-east-1
+fhir-synth generate "10 patients" \
+  --provider bedrock/us.anthropic.claude-3-5-sonnet-20241022-v2:0 -o output.json
+
+# SSO
+aws sso login --profile my-sso-profile
+fhir-synth generate "10 patients" \
+  --provider bedrock/us.anthropic.claude-3-5-sonnet-20241022-v2:0 \
+  --aws-profile my-sso-profile -o output.json
+```
+
+Use `--provider mock` for testing without any API key.
+
+See the [LLM Providers Guide](https://alvinhenrick.github.io/fhir-synth/guide/providers/) for full details on all providers.
 
 ## Architecture
 
@@ -268,7 +323,7 @@ See [Architecture](docs/architecture.md) for complete system design and data flo
 The project uses GitHub Actions with three chained workflows:
 
 - **CI** (`ci.yml`) — Runs on every push/PR: lint (`ruff`, `mypy`) + tests (`pytest`)
-- **Release** (`release.yml`) — Triggered after CI passes on `main`: auto-increments version and creates a GitHub Release
+- **Release** (`release.yml`) — Triggered after CI passes on `main`: auto-increments version and creates a GitHub Release (no PyPI — install via `pip install git+...`)
 - **Docs** (`docs.yml`) — Triggered after Release: builds and deploys MkDocs to GitHub Pages
 
 ## Development

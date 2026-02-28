@@ -22,6 +22,8 @@ fhir-synth generate "10 diabetic patients with HbA1c observations" -o diabetes.j
 | `--systems` | `emr1,emr2` | EMR system ids (EMPI) |
 | `--no-orgs` | off | Skip Organization resources (EMPI) |
 | `--meta-config` | — | Path to metadata YAML config file |
+| `--aws-profile` | — | AWS profile name for Bedrock |
+| `--aws-region` | — | AWS region for Bedrock (e.g. `us-east-1`) |
 
 NDJSON output (one patient bundle per line) is always generated alongside the JSON output.
 
@@ -45,6 +47,17 @@ fhir-synth generate "20 patients with conditions" -o data.json --save-code gener
 
 # Mock provider (no API key needed)
 fhir-synth generate "5 patients" --provider mock -o test.json
+
+# Anthropic Claude
+fhir-synth generate "10 patients" --provider claude-3-5-sonnet-20241022 -o output.json
+
+# AWS Bedrock with named profile
+fhir-synth generate "10 patients" \
+  --provider bedrock/us.anthropic.claude-3-5-sonnet-20241022-v2:0 \
+  --aws-profile my-profile --aws-region us-east-1 -o output.json
+
+# Google Gemini
+fhir-synth generate "10 patients" --provider gemini/gemini-pro -o output.json
 ```
 
 ---

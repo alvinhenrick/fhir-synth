@@ -117,7 +117,7 @@ flowchart TD
 
 ### LLM Integration via LiteLLM
 
-All LLM calls go through a thin `LLMProvider` abstraction backed by [LiteLLM](https://docs.litellm.ai/), supporting 100+ providers (OpenAI, Anthropic, Bedrock, Azure, etc.) with a single interface. A `MockLLMProvider` enables testing without API keys.
+All LLM calls go through a thin `LLMProvider` abstraction backed by [LiteLLM](https://docs.litellm.ai/), supporting 100+ providers (OpenAI, Anthropic, AWS Bedrock, Azure, Google Gemini, etc.) with a single interface. AWS Bedrock authentication is handled via `boto3` sessions with support for named profiles, SSO, and environment variables. A `MockLLMProvider` enables testing without API keys.
 
 ### FHIR Spec Auto-Discovery
 
