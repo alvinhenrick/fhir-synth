@@ -32,26 +32,26 @@ echo "OPENAI_API_KEY=sk-..." > .env
 
 ### 2. Generate data from a prompt
 
-Describe what you need in plain English → get a valid FHIR R4B Bundle:
+Describe what you need in plain English → get NDJSON output (one patient bundle per line):
 
 ```bash
 # 10 diabetic patients with labs (uses gpt-4 by default)
-fhir-synth generate "10 diabetic patients with HbA1c observations" -o diabetes.json
+fhir-synth generate "10 diabetic patients with HbA1c observations" -o diabetes.ndjson
 
 # 5 patients with hypertension, encounters, and meds
-fhir-synth generate "5 patients with hypertension, office encounters, and antihypertensive medications" -o hypertension.json
+fhir-synth generate "5 patients with hypertension, office encounters, and antihypertensive medications" -o hypertension.ndjson
 
 # Save the generated code for inspection
-fhir-synth generate "20 patients with conditions and observations" -o data.json --save-code generated.py
+fhir-synth generate "20 patients with conditions and observations" -o data.ndjson --save-code generated.py
 
 # Split output into one JSON file per patient
 fhir-synth generate "10 diabetic patients" --split -o patients/
 
 # Apply custom metadata (security labels, tags, profiles)
-fhir-synth generate "10 patients" --meta-config examples/meta-normal.yaml -o output.json
+fhir-synth generate "10 patients" --meta-config examples/meta-normal.yaml -o output.ndjson
 
 # EMPI: Person → Patients across EMR systems
-fhir-synth generate "EMPI dataset" --empi --persons 3 -o empi.json
+fhir-synth generate "EMPI dataset" --empi --persons 3 -o empi.ndjson
 
 # AWS Bedrock provider with named profile
 fhir-synth generate "5 patients" \

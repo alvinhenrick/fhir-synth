@@ -55,7 +55,6 @@ def generate(
       fhir-synth generate "EMPI dataset" --empi --persons 3 -o empi.json
     """
     try:
-        from fhir_synth.bundle import BundleBuilder
         from fhir_synth.code_generator import CodeGenerator
         from fhir_synth.llm import get_provider
 
@@ -144,31 +143,24 @@ def generate(
             )
             typer.echo("   Applied metadata from config")
 
-        # Step 3 — build per-patient bundles (used for both modes + NDJSON)
+        # Step 3 — output results
         from fhir_synth.bundle import split_resources_by_patient, write_ndjson, write_split_bundles
 
         per_patient_bundles = split_resources_by_patient(resources)
 
         if split:
-            # --split: one JSON file per patient + NDJSON
+            # --split: one JSON file per patient in a directory
             out_dir = Path(out)
             paths = write_split_bundles(per_patient_bundles, out_dir)
-            ndjson_path = write_ndjson(per_patient_bundles, out_dir / "all_patients.ndjson")
             typer.echo(f"✓  {len(paths)} patient bundles → {out_dir}/")
-            typer.echo(f"✓  NDJSON → {ndjson_path}")
         else:
-            # Default: single combined bundle + NDJSON
-            builder = BundleBuilder(bundle_type=bundle_type)
-            builder.add_resources(resources)
-            bundle_dict = builder.build()
-
+            # Default: single NDJSON file (one bundle per patient per line)
             out_path = Path(out)
+            if out_path.suffix != ".ndjson":
+                out_path = out_path.with_suffix(".ndjson")
             out_path.parent.mkdir(parents=True, exist_ok=True)
-            out_path.write_text(json.dumps(bundle_dict, indent=2, default=str))
-
-            ndjson_path = write_ndjson(per_patient_bundles, out_path.with_suffix(".ndjson"))
-            typer.echo(f"✓  Bundle with {bundle_dict['total']} entries → {out}")
-            typer.echo(f"✓  NDJSON → {ndjson_path}")
+            ndjson_path = write_ndjson(per_patient_bundles, out_path)
+            typer.echo(f"✓  {len(per_patient_bundles)} patient bundles → {ndjson_path}")
     except Exception as exc:
         error_msg = str(exc)
 

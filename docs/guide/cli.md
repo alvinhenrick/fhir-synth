@@ -2,20 +2,19 @@
 
 ## `fhir-synth generate`
 
-End-to-end: prompt → LLM → code → execute → FHIR Bundle.
+End-to-end: prompt → LLM → code → execute → NDJSON.
 
 ```bash
-fhir-synth generate "10 diabetic patients with HbA1c observations" -o diabetes.json
+fhir-synth generate "10 diabetic patients with HbA1c observations" -o diabetes.ndjson
 ```
 
 ### Options
 
 | Flag | Default | Description |
 |------|---------|-------------|
-| `-o / --out` | `output.json` | Output file (or directory with `--split`) |
+| `-o / --out` | `output.ndjson` | Output file (or directory with `--split`) |
 | `-p / --provider` | `gpt-4` | LLM model/provider |
-| `-t / --type` | `transaction` | Bundle type |
-| `--split` | off | Split output: one JSON file per patient |
+| `--split` | off | Split output: one JSON file per patient in a directory |
 | `--save-code` | — | Save generated Python code |
 | `--empi` | off | Include EMPI Person→Patient linkage |
 | `--persons` | `1` | Number of Persons (EMPI) |
@@ -23,28 +22,29 @@ fhir-synth generate "10 diabetic patients with HbA1c observations" -o diabetes.j
 | `--no-orgs` | off | Skip Organization resources (EMPI) |
 | `--meta-config` | — | Path to metadata YAML config file |
 
-NDJSON output (one patient bundle per line) is always generated alongside the JSON output.
+Default output is a single NDJSON file (one patient bundle per line).
+Use `--split` to write one JSON file per patient into a directory instead.
 
 ### Examples
 
 ```bash
-# Single bundle (default) → output.json + output.ndjson
-fhir-synth generate "10 diabetic patients with HbA1c observations" -o diabetes.json
+# Default: single NDJSON file (one patient bundle per line)
+fhir-synth generate "10 diabetic patients with HbA1c observations" -o diabetes.ndjson
 
-# Split per patient → patients/patient_001.json ... + patients/all_patients.ndjson
+# Split per patient → patients/patient_001.json ...
 fhir-synth generate "10 diabetic patients with HbA1c observations" --split -o patients/
 
 # With EMPI
-fhir-synth generate "EMPI dataset" --empi --persons 3 -o empi.json
+fhir-synth generate "EMPI dataset" --empi --persons 3 -o empi.ndjson
 
 # With metadata from YAML
-fhir-synth generate "20 patients" --meta-config examples/meta-normal.yaml -o output.json
+fhir-synth generate "20 patients" --meta-config examples/meta-normal.yaml -o output.ndjson
 
 # Save generated code for inspection
-fhir-synth generate "20 patients with conditions" -o data.json --save-code generated.py
+fhir-synth generate "20 patients with conditions" -o data.ndjson --save-code generated.py
 
 # Mock provider (no API key needed)
-fhir-synth generate "5 patients" --provider mock -o test.json
+fhir-synth generate "5 patients" --provider mock -o test.ndjson
 ```
 
 ---
