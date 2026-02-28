@@ -42,7 +42,7 @@ def generate(
 ) -> None:
     """Generate synthetic FHIR data end-to-end: prompt → LLM → code → execute → NDJSON.
 
-    Default output is a single NDJSON file (one patient bundle per line).
+    The default output is a single NDJSON file (one patient bundle per line).
     Use --split to write one JSON file per patient into a directory instead.
 
     Example prompts:
