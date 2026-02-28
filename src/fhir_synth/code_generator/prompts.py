@@ -11,10 +11,10 @@ HARD RULES — every response MUST follow these:
    ✓ CORRECT: from fhir.resources.R4B.timing import Timing, TimingRepeat
    ✓ CORRECT: from fhir.resources.R4B.observation import Observation
    ✗ WRONG: from fhir.resources.R4B.timingrepeat import TimingRepeat (module doesn't exist)
-   
+
    Module naming: Resources are in lowercase singular modules (patient, observation, condition).
    Complex types are in their own modules (timing, codeableconcept, quantity, humanname, etc.).
-   
+
 3. Use uuid4 for all resource IDs.
 4. Call .model_dump(exclude_none=True) on every Pydantic model before appending to results.
 5. Return a flat list[dict] of resource dictionaries.
@@ -96,7 +96,7 @@ import random
 
 def generate_resources() -> list[dict]:
     resources = []
-    
+
     # Generate patient
     patient_id = str(uuid4())
     patient = Patient(
@@ -106,7 +106,7 @@ def generate_resources() -> list[dict]:
         birthDate="1970-01-01"
     )
     resources.append(patient.model_dump(exclude_none=True))
-    
+
     # Generate related condition
     condition = Condition(
         id=str(uuid4()),
@@ -120,7 +120,7 @@ def generate_resources() -> list[dict]:
         )
     )
     resources.append(condition.model_dump(exclude_none=True))
-    
+
     return resources
 ```
 

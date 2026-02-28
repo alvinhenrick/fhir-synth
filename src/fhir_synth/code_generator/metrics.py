@@ -138,7 +138,7 @@ def print_quality_report(metrics: dict[str, Any]) -> None:
         for warning in metrics["warnings"]:
             print(f"  • {warning}")
 
-    print(f"\n✓ Checks:")
+    print("\n✓ Checks:")
     for check, result in metrics["checks"].items():
         status = "✅" if result is True else "⚠️" if result == "partial" else "❌"
         print(f"  {status} {check.replace('_', ' ').title()}: {result}")
