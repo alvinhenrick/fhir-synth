@@ -19,12 +19,22 @@ FHIR R4B Bundles
 ## Features
 
 - **Natural Language → FHIR**: Describe what you need in plain English, get valid FHIR R4B Bundles
-- **LLM-Powered Code Generation**: Uses GPT-4, Claude, or 100+ providers via LiteLLM
+- **LLM-Powered Code Generation**: Uses GPT-4, Claude, Bedrock, or 100+ providers via [LiteLLM](https://docs.litellm.ai/)
 - **Self-Healing Execution**: If generated code fails, errors are sent back to the LLM for automatic retry
 - **Declarative Rule Engine**: Define generation rules as structured data
 - **EMPI Support**: Generate Person → Patient linkages across EMR systems
-- **Custom Metadata**: Add security labels, tags, profiles, and source via YAML config or CLI flags
+- **Custom Metadata**: Add security labels, tags, profiles, and source via YAML config
 - **Full FHIR R4B**: Supports all 141 R4B resource types via `fhir.resources` Pydantic models
+
+## Install
+
+```bash
+# Install from GitHub (latest release)
+pip install git+https://github.com/alvinhenrick/fhir-synth.git@main
+
+# With AWS Bedrock support
+pip install "fhir-synth[bedrock] @ git+https://github.com/alvinhenrick/fhir-synth.git@main"
+```
 
 ## Quick Example
 
