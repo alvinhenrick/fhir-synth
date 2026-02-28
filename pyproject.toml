@@ -32,6 +32,9 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+bedrock = [
+    "boto3>=1.28",
+]
 dev = [
     "pytest>=7.0",
     "pytest-cov>=4.0",
