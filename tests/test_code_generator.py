@@ -182,28 +182,29 @@ def test_validate_imports_detects_bad_module():
 
 
 def test_dangerous_code_os_system_rejected():
-    """Code using os.system() should be rejected."""
+    """Code using os.system() is caught by import whitelist, not dangerous patterns."""
     code = "import os\nos.system('rm -rf /')\ndef generate_resources(): return []"
-    warnings = _check_dangerous_code(code)
-    assert len(warnings) > 0
+    # os is not in allowed modules
+    errors = _validate_imports_whitelist(code)
+    assert len(errors) > 0
 
 
 def test_dangerous_code_subprocess_rejected():
-    """Code using a subprocess should be rejected."""
+    """Code using subprocess is caught by import whitelist, not dangerous patterns."""
     code = "import subprocess\nsubprocess.run(['ls'])\ndef generate_resources(): return []"
-    warnings = _check_dangerous_code(code)
-    assert len(warnings) > 0
+    errors = _validate_imports_whitelist(code)
+    assert len(errors) > 0
 
 
 def test_dangerous_code_eval_rejected():
-    """Code using eval() should be rejected."""
+    """Code using eval() should be rejected by dangerous patterns (builtin, no import)."""
     code = "eval('1+1')\ndef generate_resources(): return []"
     warnings = _check_dangerous_code(code)
     assert len(warnings) > 0
 
 
 def test_dangerous_code_open_rejected():
-    """Code using open() should be rejected."""
+    """Code using open() should be rejected by dangerous patterns (builtin, no import)."""
     code = "open('/etc/passwd')\ndef generate_resources(): return []"
     warnings = _check_dangerous_code(code)
     assert len(warnings) > 0
@@ -262,13 +263,13 @@ def test_validate_code_accepts_safe_code():
 def test_execute_code_rejects_dangerous_imports():
     """execute_code should raise ValueError for disallowed imports."""
     code = "import socket\ndef generate_resources(): return []"
-    with pytest.raises(ValueError, match="Code rejected"):
+    with pytest.raises(ValueError, match="Disallowed imports"):
         execute_code(code)
 
 
 def test_execute_code_rejects_dangerous_patterns():
-    """execute_code should raise ValueError for dangerous patterns."""
-    code = "import os\nos.system('ls')\ndef generate_resources(): return []"
+    """execute_code should raise ValueError for dangerous builtin patterns."""
+    code = "eval('1+1')\ndef generate_resources(): return []"
     with pytest.raises(ValueError, match="Code rejected"):
         execute_code(code)
 
