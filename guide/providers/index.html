@@ -16,7 +16,7 @@
         <link rel="prev" href="../metadata-reference/">
       
       
-        <link rel="next" href="../../architecture/">
+        <link rel="next" href="../code-quality/">
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
@@ -668,20 +668,89 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#configuration" class="md-nav__link">
+  <a href="#openai-anthropic-google" class="md-nav__link">
     <span class="md-ellipsis">
-      Configuration
+      OpenAI / Anthropic / Google
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#usage" class="md-nav__link">
+  <a href="#aws-bedrock" class="md-nav__link">
     <span class="md-ellipsis">
-      Usage
+      AWS Bedrock
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="AWS Bedrock">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#option-1-aws-profile-flag-recommended" class="md-nav__link">
+    <span class="md-ellipsis">
+      Option 1 — --aws-profile flag (recommended)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#option-2-environment-variables" class="md-nav__link">
+    <span class="md-ellipsis">
+      Option 2 — Environment variables
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#option-3-env-file" class="md-nav__link">
+    <span class="md-ellipsis">
+      Option 3 — .env file
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#option-4-sso-profiles" class="md-nav__link">
+    <span class="md-ellipsis">
+      Option 4 — SSO profiles
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#bedrock-model-names" class="md-nav__link">
+    <span class="md-ellipsis">
+      Bedrock Model Names
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#python-api-with-bedrock" class="md-nav__link">
+    <span class="md-ellipsis">
+      Python API with Bedrock
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#troubleshooting-bedrock" class="md-nav__link">
+    <span class="md-ellipsis">
+      Troubleshooting Bedrock
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -698,6 +767,27 @@
   
 </nav>
       
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../code-quality/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Code Quality & Robustness
+  </span>
+  
+
+      </a>
     </li>
   
 
@@ -959,20 +1049,89 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#configuration" class="md-nav__link">
+  <a href="#openai-anthropic-google" class="md-nav__link">
     <span class="md-ellipsis">
-      Configuration
+      OpenAI / Anthropic / Google
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#usage" class="md-nav__link">
+  <a href="#aws-bedrock" class="md-nav__link">
     <span class="md-ellipsis">
-      Usage
+      AWS Bedrock
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="AWS Bedrock">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#option-1-aws-profile-flag-recommended" class="md-nav__link">
+    <span class="md-ellipsis">
+      Option 1 — --aws-profile flag (recommended)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#option-2-environment-variables" class="md-nav__link">
+    <span class="md-ellipsis">
+      Option 2 — Environment variables
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#option-3-env-file" class="md-nav__link">
+    <span class="md-ellipsis">
+      Option 3 — .env file
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#option-4-sso-profiles" class="md-nav__link">
+    <span class="md-ellipsis">
+      Option 4 — SSO profiles
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#bedrock-model-names" class="md-nav__link">
+    <span class="md-ellipsis">
+      Bedrock Model Names
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#python-api-with-bedrock" class="md-nav__link">
+    <span class="md-ellipsis">
+      Python API with Bedrock
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#troubleshooting-bedrock" class="md-nav__link">
+    <span class="md-ellipsis">
+      Troubleshooting Bedrock
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1011,65 +1170,178 @@
 <tr>
 <th>Provider</th>
 <th>Model Example</th>
-<th>Env Variable</th>
+<th>Auth</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td>OpenAI</td>
-<td><code>gpt-4</code>, <code>gpt-4o</code>, <code>gpt-3.5-turbo</code></td>
-<td><code>OPENAI_API_KEY</code></td>
+<td><code>gpt-4</code>, <code>gpt-4o</code></td>
+<td><code>OPENAI_API_KEY</code> env var</td>
 </tr>
 <tr>
 <td>Anthropic</td>
 <td><code>claude-3-opus-20240229</code></td>
-<td><code>ANTHROPIC_API_KEY</code></td>
+<td><code>ANTHROPIC_API_KEY</code> env var</td>
 </tr>
 <tr>
 <td>AWS Bedrock</td>
-<td><code>bedrock/anthropic.claude-v2</code></td>
-<td>AWS credentials</td>
+<td><code>bedrock/us.anthropic.claude-3-5-sonnet-20241022-v2:0</code></td>
+<td>AWS profile / env vars</td>
 </tr>
 <tr>
 <td>Azure OpenAI</td>
 <td><code>azure/gpt-4</code></td>
-<td><code>AZURE_API_KEY</code></td>
+<td><code>AZURE_API_KEY</code> env var</td>
 </tr>
 <tr>
 <td>Google</td>
 <td><code>gemini/gemini-pro</code></td>
-<td><code>GEMINI_API_KEY</code></td>
+<td><code>GEMINI_API_KEY</code> env var</td>
 </tr>
 </tbody>
 </table>
 <p>See <a href="https://docs.litellm.ai/docs/providers">LiteLLM docs</a> for the full list.</p>
-<h2 id="configuration">Configuration<a class="headerlink" href="#configuration" title="Permanent link">&para;</a></h2>
-<p>Set your API key in a <code>.env</code> file:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># OpenAI (default)</span>
+<h2 id="openai-anthropic-google">OpenAI / Anthropic / Google<a class="headerlink" href="#openai-anthropic-google" title="Permanent link">&para;</a></h2>
+<p>Set your API key in a <code>.env</code> file or export it:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># .env</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="nv">OPENAI_API_KEY</span><span class="o">=</span>sk-...
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="c1"># Anthropic</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="nv">ANTHROPIC_API_KEY</span><span class="o">=</span>sk-ant-...
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="nv">ANTHROPIC_API_KEY</span><span class="o">=</span>sk-ant-...
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="nv">GEMINI_API_KEY</span><span class="o">=</span>...
 </code></pre></div>
-<h2 id="usage">Usage<a class="headerlink" href="#usage" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1"># OpenAI GPT-4 (default)</span>
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;10 patients&quot;</span><span class="w"> </span>-o<span class="w"> </span>output.json
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="c1"># Specify provider</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="c1"># Anthropic Claude</span>
 <a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;10 patients&quot;</span><span class="w"> </span>-p<span class="w"> </span>claude-3-opus-20240229<span class="w"> </span>-o<span class="w"> </span>output.json
-<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>
-<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="c1"># Mock provider for testing (no API key needed)</span>
-<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;5 patients&quot;</span><span class="w"> </span>--provider<span class="w"> </span>mock<span class="w"> </span>-o<span class="w"> </span>test.json
 </code></pre></div>
+<h2 id="aws-bedrock">AWS Bedrock<a class="headerlink" href="#aws-bedrock" title="Permanent link">&para;</a></h2>
+<p>Bedrock uses your existing AWS credentials instead of API keys.
+FHIR Synth supports <strong>three ways</strong> to authenticate:</p>
+<h3 id="option-1-aws-profile-flag-recommended">Option 1 — <code>--aws-profile</code> flag (recommended)<a class="headerlink" href="#option-1-aws-profile-flag-recommended" title="Permanent link">&para;</a></h3>
+<p>Point to a named profile in <code>~/.aws/credentials</code>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;10 patients&quot;</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span>--provider<span class="w"> </span>bedrock/us.anthropic.claude-3-5-sonnet-20241022-v2:0<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">  </span>--aws-profile<span class="w"> </span>my-profile<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">  </span>--aws-region<span class="w"> </span>us-east-1<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">  </span>-o<span class="w"> </span>output.json
+</code></pre></div>
+<p>This reads the <code>[my-profile]</code> section from <code>~/.aws/credentials</code>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1"># ~/.aws/credentials</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="k">[my-profile]</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="na">aws_access_key_id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">AKIA...</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="na">aws_secret_access_key</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">...</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="c1"># ~/.aws/config</span>
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="k">[profile my-profile]</span>
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="na">region</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">us-east-1</span>
+</code></pre></div>
+<h3 id="option-2-environment-variables">Option 2 — Environment variables<a class="headerlink" href="#option-2-environment-variables" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">AWS_PROFILE</span><span class="o">=</span>my-profile<span class="w">          </span><span class="c1"># profile name</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="nb">export</span><span class="w"> </span><span class="nv">AWS_DEFAULT_REGION</span><span class="o">=</span>us-east-1<span class="w">    </span><span class="c1"># region</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;10 patients&quot;</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">  </span>--provider<span class="w"> </span>bedrock/us.anthropic.claude-3-5-sonnet-20241022-v2:0<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="w">  </span>-o<span class="w"> </span>output.json
+</code></pre></div>
+<p>Or with explicit keys:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">AWS_ACCESS_KEY_ID</span><span class="o">=</span>AKIA...
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="nb">export</span><span class="w"> </span><span class="nv">AWS_SECRET_ACCESS_KEY</span><span class="o">=</span>...
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="nb">export</span><span class="w"> </span><span class="nv">AWS_REGION_NAME</span><span class="o">=</span>us-east-1
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;10 patients&quot;</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="w">  </span>--provider<span class="w"> </span>bedrock/us.anthropic.claude-3-5-sonnet-20241022-v2:0<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="w">  </span>-o<span class="w"> </span>output.json
+</code></pre></div>
+<h3 id="option-3-env-file">Option 3 — <code>.env</code> file<a class="headerlink" href="#option-3-env-file" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="c1"># .env</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="nv">AWS_PROFILE</span><span class="o">=</span>my-profile
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="nv">AWS_DEFAULT_REGION</span><span class="o">=</span>us-east-1
+</code></pre></div>
+<h3 id="option-4-sso-profiles">Option 4 — SSO profiles<a class="headerlink" href="#option-4-sso-profiles" title="Permanent link">&para;</a></h3>
+<p>If you use AWS SSO / IAM Identity Center:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>aws<span class="w"> </span>sso<span class="w"> </span>login<span class="w"> </span>--profile<span class="w"> </span>my-sso-profile
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;10 patients&quot;</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="w">  </span>--provider<span class="w"> </span>bedrock/us.anthropic.claude-3-5-sonnet-20241022-v2:0<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="w">  </span>--aws-profile<span class="w"> </span>my-sso-profile<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="w">  </span>-o<span class="w"> </span>output.json
+</code></pre></div>
+<h3 id="bedrock-model-names">Bedrock Model Names<a class="headerlink" href="#bedrock-model-names" title="Permanent link">&para;</a></h3>
+<p>Use the <code>bedrock/</code> prefix followed by the model ID:</p>
+<table>
+<thead>
+<tr>
+<th>Model</th>
+<th>Provider String</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Claude 3.5 Sonnet v2</td>
+<td><code>bedrock/us.anthropic.claude-3-5-sonnet-20241022-v2:0</code></td>
+</tr>
+<tr>
+<td>Claude 3 Opus</td>
+<td><code>bedrock/anthropic.claude-3-opus-20240229-v1:0</code></td>
+</tr>
+<tr>
+<td>Claude 3 Haiku</td>
+<td><code>bedrock/anthropic.claude-3-haiku-20240307-v1:0</code></td>
+</tr>
+<tr>
+<td>Claude 3.5 Haiku</td>
+<td><code>bedrock/us.anthropic.claude-3-5-haiku-20241022-v1:0</code></td>
+</tr>
+<tr>
+<td>Titan Text</td>
+<td><code>bedrock/amazon.titan-text-express-v1</code></td>
+</tr>
+<tr>
+<td>Llama 3</td>
+<td><code>bedrock/meta.llama3-70b-instruct-v1:0</code></td>
+</tr>
+</tbody>
+</table>
+<div class="admonition tip">
+<p class="admonition-title">Finding model IDs</p>
+<p>Run <code>aws bedrock list-foundation-models --region us-east-1</code> to see
+available models in your account. The <code>modelId</code> value is what you
+append after <code>bedrock/</code>.</p>
+</div>
+<h3 id="python-api-with-bedrock">Python API with Bedrock<a class="headerlink" href="#python-api-with-bedrock" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fhir_synth.llm</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_provider</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="c1"># With named profile</span>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="n">llm</span> <span class="o">=</span> <span class="n">get_provider</span><span class="p">(</span>
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>    <span class="s2">&quot;bedrock/us.anthropic.claude-3-5-sonnet-20241022-v2:0&quot;</span><span class="p">,</span>
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>    <span class="n">aws_profile</span><span class="o">=</span><span class="s2">&quot;my-profile&quot;</span><span class="p">,</span>
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a>    <span class="n">aws_region</span><span class="o">=</span><span class="s2">&quot;us-east-1&quot;</span><span class="p">,</span>
+<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a><span class="p">)</span>
+<a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a>
+<a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a><span class="c1"># Or rely on env vars / default profile</span>
+<a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a><span class="n">llm</span> <span class="o">=</span> <span class="n">get_provider</span><span class="p">(</span><span class="s2">&quot;bedrock/us.anthropic.claude-3-5-sonnet-20241022-v2:0&quot;</span><span class="p">)</span>
+</code></pre></div>
+<h3 id="troubleshooting-bedrock">Troubleshooting Bedrock<a class="headerlink" href="#troubleshooting-bedrock" title="Permanent link">&para;</a></h3>
+<p><strong><code>AccessDeniedException</code></strong></p>
+<p>Your IAM user / role needs the <code>bedrock:InvokeModel</code> permission:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="p">{</span>
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">  </span><span class="nt">&quot;Effect&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Allow&quot;</span><span class="p">,</span>
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="w">  </span><span class="nt">&quot;Action&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;bedrock:InvokeModel&quot;</span><span class="p">,</span>
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="w">  </span><span class="nt">&quot;Resource&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;arn:aws:bedrock:us-east-1::foundation-model/*&quot;</span>
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="p">}</span>
+</code></pre></div>
+<p><strong><code>Could not connect to the endpoint</code></strong></p>
+<p>Check your region — not all models are available in every region.
+Use <code>--aws-region</code> to set the correct one.</p>
+<p><strong><code>ExpiredTokenException</code></strong></p>
+<p>Re-authenticate: <code>aws sso login --profile my-profile</code> or refresh
+your temporary credentials.</p>
 <h2 id="mock-provider">Mock Provider<a class="headerlink" href="#mock-provider" title="Permanent link">&para;</a></h2>
-<p>The mock provider generates hardcoded sample resources without calling any API. Useful for:</p>
-<ul>
-<li>Testing without API keys</li>
-<li>CI/CD pipelines</li>
-<li>Development and debugging</li>
-</ul>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;5 patients&quot;</span><span class="w"> </span>--provider<span class="w"> </span>mock<span class="w"> </span>-o<span class="w"> </span>test.json
+<p>The mock provider generates hardcoded sample resources without calling any API:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;5 patients&quot;</span><span class="w"> </span>--provider<span class="w"> </span>mock<span class="w"> </span>-o<span class="w"> </span>test.json
 </code></pre></div>
+<p>Useful for testing, CI/CD pipelines, and development.</p>
 
 
 
