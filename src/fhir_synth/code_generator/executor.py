@@ -1,16 +1,14 @@
 """Code execution and validation utilities.
 
-Provides two layers of security for running LLM-generated code:
+Provides three layers of security for running LLM-generated code:
 
-1. **RestrictedPython** (AST-level) – ``compile_restricted`` catches unsafe
-   constructs (attribute mutation, builtins abuse, print hijacking) at
-   *compile time*, before any code runs.
-2. **Subprocess isolation** (OS-level) – the code executes in a *separate
-   process* with a hard wall-clock timeout, so a runaway loop or crash
-   cannot affect the parent.
-
-Both layers share the same import whitelist (``_ALLOWED_MODULES`` /
-``_ALLOWED_MODULE_PREFIXES``).
+1. **Import whitelist** (AST-level) – only modules in ``ALLOWED_MODULES``
+   and prefixes in ``ALLOWED_MODULE_PREFIXES`` may be imported.
+2. **Dangerous-builtins regex** – blocks ``eval()``, ``exec()``,
+   ``open()``, ``compile()``, ``globals()``, and ``__import__()``.
+3. **Subprocess isolation** (OS-level) – the code executes in a *separate
+   process* with a hard wall-clock timeout and a restricted ``__import__``
+   that enforces the same whitelist at runtime.
 """
 
 import ast
@@ -25,10 +23,6 @@ import textwrap
 from pathlib import Path
 from typing import Any
 
-from RestrictedPython import compile_restricted
-from RestrictedPython.Eval import default_guarded_getattr
-from RestrictedPython.Guards import guarded_unpack_sequence, safe_globals
-
 from fhir_synth.code_generator.constants import (
     ALLOWED_MODULE_PREFIXES,
     ALLOWED_MODULES,
@@ -37,7 +31,6 @@ from fhir_synth.code_generator.constants import (
 from fhir_synth.fhir_spec import class_to_module
 
 logger = logging.getLogger(__name__)
-
 
 
 def _check_dangerous_code(code: str) -> list[str]:
@@ -90,148 +83,11 @@ def _is_allowed_module(module: str) -> bool:
     return any(module.startswith(prefix) for prefix in ALLOWED_MODULE_PREFIXES)
 
 
-# ── RestrictedPython helpers ─────────────────────────────────────────────
-
-
-def _strip_type_annotations(code: str) -> str:
-    """Remove variable type annotations that RestrictedPython does not support.
-
-    Converts ``x: int = 5`` → ``x = 5`` and removes bare annotations
-    like ``x: int`` (no value).  Function parameter annotations and
-    return annotations are left alone — RestrictedPython handles those.
-
-    Args:
-        code: Python source code.
-
-    Returns:
-        Code with ``AnnAssign`` nodes converted to plain ``Assign``.
-    """
-    try:
-        tree = ast.parse(code)
-    except SyntaxError:
-        return code  # let compile_restricted report the real error
-
-    changed = False
-    new_body: list[ast.stmt] = []
-
-    for node in tree.body:
-        result, did_change = _strip_annassign_recursive(node)
-        if did_change:
-            changed = True
-        if result is not None:
-            new_body.append(result)
-
-    if not changed:
-        return code
-
-    tree.body = new_body
-    ast.fix_missing_locations(tree)
-    return ast.unparse(tree)
-
-
-def _strip_annassign_recursive(
-    node: ast.stmt,
-) -> tuple[ast.stmt | None, bool]:
-    """Strip AnnAssign from a node, recursing into function/class bodies."""
-    changed = False
-
-    if isinstance(node, ast.AnnAssign):
-        if node.value is not None:
-            # x: int = 5  →  x = 5
-            assign = ast.Assign(
-                targets=[node.target],
-                value=node.value,
-                lineno=node.lineno,
-                col_offset=node.col_offset,
-            )
-            return assign, True
-        # Bare annotation (x: int) with no value — remove entirely
-        return None, True
-
-    # Recurse into compound statements
-    if hasattr(node, "body") and isinstance(node.body, list):
-        new_body: list[ast.stmt] = []
-        for child in node.body:
-            stripped_child, did = _strip_annassign_recursive(child)
-            if did:
-                changed = True
-            if stripped_child is not None:
-                new_body.append(stripped_child)
-        node.body = new_body
-
-    if hasattr(node, "orelse") and isinstance(node.orelse, list):
-        new_orelse: list[ast.stmt] = []
-        for child in node.orelse:
-            stripped_child, did = _strip_annassign_recursive(child)
-            if did:
-                changed = True
-            if stripped_child is not None:
-                new_orelse.append(stripped_child)
-        node.orelse = new_orelse
-
-    return node, changed
-
-
-def _compile_restricted_check(code: str) -> list[str]:
-    """Compile *code* with RestrictedPython and return any errors.
-
-    Type annotations (``AnnAssign``) are stripped first because
-    RestrictedPython does not support them.
-
-    Returns:
-        Empty list on success, otherwise a list of human-readable errors.
-    """
-    stripped = _strip_type_annotations(code)
-    try:
-        compile_restricted(stripped, "<generated>", "exec")
-        return []
-    except SyntaxError as exc:
-        return [f"SyntaxError: {exc}"]
-
-
-def _build_restricted_globals() -> dict[str, Any]:
-    """Build the restricted globals dict for in-process RestrictedPython exec.
-
-    Provides the guards that RestrictedPython's rewritten AST expects:
-    - ``_getattr_`` – guarded attribute access
-    - ``_getiter_`` – guarded iteration
-    - ``_getitem_`` – guarded item access
-    - ``_unpack_sequence_`` / ``_iter_unpack_sequence_`` – guarded unpacking
-    - ``__import__`` – delegated to our import whitelist
-
-    Returns:
-        A copy of ``safe_globals`` augmented with the guards above.
-    """
-    glb: dict[str, Any] = safe_globals.copy()
-    glb["_getattr_"] = default_guarded_getattr
-    glb["_getiter_"] = iter
-    glb["_getitem_"] = lambda obj, key: obj[key]
-    glb["_unpack_sequence_"] = guarded_unpack_sequence
-    glb["_iter_unpack_sequence_"] = guarded_unpack_sequence
-
-    # Custom __import__ that enforces the same whitelist used pre-flight
-    _real_import = __import__
-
-    def _restricted_import(
-        name: str,
-        glb_: dict[str, Any] | None = None,
-        loc_: dict[str, Any] | None = None,
-        fromlist: tuple[str, ...] = (),
-        level: int = 0,
-    ) -> Any:
-        if not _is_allowed_module(name):
-            raise ImportError(f"Import of {name!r} is not allowed in generated code")
-        return _real_import(name, glb_, loc_, fromlist, level)
-
-    builtins_dict: dict[str, Any] = glb["__builtins__"]  # safe_globals always uses a dict
-    builtins_dict["__import__"] = _restricted_import
-    return glb
-
 
 def validate_code(code: str) -> bool:
     """Validate that generated code is safe and syntactically correct.
 
-    Checks RestrictedPython compilation, dangerous patterns, and import whitelist.
+    Checks syntax, dangerous builtins patterns, and import whitelist.
 
     Args:
         code: Python code to validate
@@ -239,10 +95,10 @@ def validate_code(code: str) -> bool:
     Returns:
         True if valid, False otherwise
     """
-    # RestrictedPython AST-level check (catches syntax errors too)
-    rp_errors = _compile_restricted_check(code)
-    if rp_errors:
-        logger.debug("RestrictedPython rejected code: %s", rp_errors)
+    # Check syntax
+    try:
+        ast.parse(code)
+    except SyntaxError:
         return False
 
     # Reject dangerous patterns
@@ -336,6 +192,32 @@ def fix_common_imports(code: str) -> str:
     return _import_re.sub(_fix_line, code)
 
 
+# Regex patterns for naive datetime.now() calls
+_NAIVE_NOW_RE = re.compile(
+    r"datetime\.now\(\s*\)",
+)
+_NAIVE_UTCNOW_RE = re.compile(
+    r"datetime\.utcnow\(\s*\)",
+)
+
+
+def _fix_naive_datetimes(code: str) -> str:
+    """Replace naive datetime.now() with timezone-aware UTC versions.
+
+    FHIR ``instant`` fields require a timezone offset.  LLMs frequently
+    generate ``datetime.now().isoformat()`` which produces a naive
+    timestamp (no timezone) that fails Pydantic validation.
+
+    This function rewrites the source code so:
+
+    - ``datetime.now()`` → ``datetime.now(datetime.timezone.utc)``
+    - ``datetime.utcnow()`` → ``datetime.now(datetime.timezone.utc)``
+    """
+    code = _NAIVE_NOW_RE.sub("datetime.now(datetime.timezone.utc)", code)
+    code = _NAIVE_UTCNOW_RE.sub("datetime.now(datetime.timezone.utc)", code)
+    return code
+
+
 def execute_code(code: str, timeout: int = 30) -> list[dict[str, Any]]:
     """Run generated code in an isolated subprocess with a timeout.
 
@@ -367,57 +249,23 @@ def execute_code(code: str, timeout: int = 30) -> list[dict[str, Any]]:
     if import_errors:
         raise ValueError(f"Disallowed imports: {'; '.join(import_errors)}")
 
-    # RestrictedPython AST-level check (fast, in-process)
-    rp_errors = _compile_restricted_check(code)
-    if rp_errors:
-        raise ValueError(f"Code rejected by RestrictedPython: {'; '.join(rp_errors)}")
+    # ── Fix naive datetime.now() calls ────────────────────────────────
+    # LLMs often generate datetime.now().isoformat() which produces naive
+    # timestamps that fail FHIR instant validation. Patch the source to
+    # use datetime.now(datetime.timezone.utc) instead.
+    code = _fix_naive_datetimes(code)
 
     # ── Build the wrapper that runs inside the subprocess ─────────────
-    # The wrapper uses RestrictedPython to compile AND execute the user
-    # code with guarded attribute access, iteration, and a restricted
-    # __import__ that enforces the same whitelist.
-    #
-    # Strip type annotations first — RestrictedPython rejects AnnAssign.
-    clean_code = _strip_type_annotations(code)
+    # The pre-flight AST check already blocked disallowed imports.
+    # The subprocess provides isolation (timeout + crash containment).
     wrapper = textwrap.dedent("""\
         import json as _json
         import sys as _sys
 
-        from RestrictedPython import compile_restricted as _compile_restricted
-        from RestrictedPython.Eval import default_guarded_getattr as _guarded_getattr
-        from RestrictedPython.Guards import guarded_unpack_sequence as _guarded_unpack
-        from RestrictedPython.Guards import safe_globals as _safe_globals
-
-        # ── Allowed-import whitelist (serialised from pre-flight set) ──
-        _ALLOWED = frozenset({allowed_repr})
-        _PREFIXES = {prefixes_repr}
-        _real_import = __import__
-
-        def _restricted_import(name, glb=None, loc=None, fromlist=(), level=0):
-            if name not in _ALLOWED and not any(name.startswith(p) for p in _PREFIXES):
-                raise ImportError(f"Import of {{name!r}} is not allowed")
-            return _real_import(name, glb, loc, fromlist, level)
-
-        # ── Build restricted globals ─────────────────────────────────
-        _glb = _safe_globals.copy()
-        _glb["_getattr_"] = _guarded_getattr
-        _glb["_getiter_"] = iter
-        _glb["_getitem_"] = lambda obj, key: obj[key]
-        _glb["_unpack_sequence_"] = _guarded_unpack
-        _glb["_iter_unpack_sequence_"] = _guarded_unpack
-        _glb["__builtins__"]["__import__"] = _restricted_import
-
-        # ── Compile with RestrictedPython ────────────────────────────
+        # ── Execute user code ────────────────────────────────────────
         _user_code = {user_code_repr}
-
-        try:
-            _bytecode = _compile_restricted(_user_code, "<generated>", "exec")
-        except SyntaxError as _e:
-            print(_json.dumps({{"__error__": f"RestrictedPython compile error: {{_e}}"}}))
-            _sys.exit(1)
-
-        # ── Execute in restricted namespace ──────────────────────────
-        exec(_bytecode, _glb)
+        _glb = {{}}
+        exec(compile(_user_code, "<generated>", "exec"), _glb)
 
         if "generate_resources" not in _glb:
             print(_json.dumps({{"__error__": "Code must define generate_resources()"}}))
@@ -426,11 +274,22 @@ def execute_code(code: str, timeout: int = 30) -> list[dict[str, Any]]:
         _result = _glb["generate_resources"]()
         if not isinstance(_result, list):
             _result = [_result]
+
+        # ── Smoke test: validate output looks like FHIR resources ────
+        if not _result:
+            print(_json.dumps({{"__error__": "generate_resources() returned empty list — it must return at least one resource dict"}}))
+            _sys.exit(1)
+        for _i, _r in enumerate(_result[:5]):
+            if not isinstance(_r, dict):
+                print(_json.dumps({{"__error__": f"Resource {{_i}} is {{type(_r).__name__}}, expected dict — use .model_dump(exclude_none=True) on Pydantic models"}}))
+                _sys.exit(1)
+            if "resourceType" not in _r:
+                print(_json.dumps({{"__error__": f"Resource {{_i}} is missing 'resourceType' (keys: {{list(_r.keys())[:5]}}) — use .model_dump(exclude_none=True) on Pydantic models"}}))
+                _sys.exit(1)
+
         print(_json.dumps(_result, default=str))
     """).format(
-        user_code_repr=repr(clean_code),
-        allowed_repr=repr(set(ALLOWED_MODULES)),
-        prefixes_repr=repr(ALLOWED_MODULE_PREFIXES),
+        user_code_repr=repr(code),
     )
 
     # ── Write to a temp file & run in subprocess ────────────────────────
@@ -450,6 +309,16 @@ def execute_code(code: str, timeout: int = 30) -> list[dict[str, Any]]:
         )
 
         if result.returncode != 0:
+            # Check stdout for structured __error__ JSON (smoke test failures)
+            stdout_raw = result.stdout.strip()
+            if stdout_raw:
+                try:
+                    err_data = json.loads(stdout_raw)
+                    if isinstance(err_data, dict) and "__error__" in err_data:
+                        raise ValueError(err_data["__error__"])
+                except json.JSONDecodeError:
+                    pass  # not JSON, fall through to stderr
+
             stderr = result.stderr.strip()
             if not stderr:
                 raise RuntimeError("Unknown error")

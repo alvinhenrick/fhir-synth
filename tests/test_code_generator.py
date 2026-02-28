@@ -5,9 +5,7 @@ import pytest
 from fhir_synth.code_generator import CodeGenerator
 from fhir_synth.code_generator.constants import SUPPORTED_RESOURCE_TYPES
 from fhir_synth.code_generator.executor import (
-    _build_restricted_globals,
     _check_dangerous_code,
-    _compile_restricted_check,
     _validate_imports_whitelist,
     execute_code,
     fix_common_imports,
@@ -309,62 +307,29 @@ def test_execute_code_subprocess_isolation():
     assert result[0]["id"] == "sandbox-test"
 
 
-# ── RestrictedPython integration tests ────────────────────────────────
+# ── Sandbox security tests ────────────────────────────────────────────
 
 
-def test_restricted_python_accepts_safe_code():
-    """compile_restricted should accept safe FHIR generation code."""
+def test_validate_code_accepts_safe_code_with_annotations():
+    """validate_code should accept safe FHIR generation code including type annotations."""
     code = (
         "from uuid import uuid4\n"
         "from fhir.resources.R4B.patient import Patient\n"
-        "def generate_resources():\n"
-        "    return []\n"
+        "def generate_resources() -> list[dict]:\n"
+        "    resources: list[dict] = []\n"
+        "    return resources\n"
     )
-    errors = _compile_restricted_check(code)
-    assert errors == []
+    assert validate_code(code) is True
 
 
-def test_restricted_python_rejects_syntax_error():
-    """compile_restricted should reject code with syntax errors."""
+def test_validate_code_rejects_syntax_error():
+    """validate_code should reject code with syntax errors."""
     code = "def generate_resources(\n"
-    errors = _compile_restricted_check(code)
-    assert len(errors) == 1
-    assert "SyntaxError" in errors[0]
+    assert validate_code(code) is False
 
 
-def test_restricted_python_guards_built():
-    """_build_restricted_globals should produce a dict with all required guards."""
-    glb = _build_restricted_globals()
-    assert "_getattr_" in glb
-    assert "_getiter_" in glb
-    assert "_getitem_" in glb
-    assert "_unpack_sequence_" in glb
-    assert "_iter_unpack_sequence_" in glb
-    assert callable(glb["__builtins__"]["__import__"])
-
-
-def test_restricted_globals_import_whitelist():
-    """The restricted __import__ should block disallowed modules."""
-    glb = _build_restricted_globals()
-    restricted_import = glb["__builtins__"]["__import__"]
-
-    # Allowed modules should work
-    restricted_import("uuid")
-    restricted_import("datetime")
-
-    # Disallowed modules should raise ImportError
-    with pytest.raises(ImportError, match="not allowed"):
-        restricted_import("os")
-
-    with pytest.raises(ImportError, match="not allowed"):
-        restricted_import("subprocess")
-
-    with pytest.raises(ImportError, match="not allowed"):
-        restricted_import("socket")
-
-
-def test_restricted_python_check_in_validate_code():
-    """validate_code should use RestrictedPython as part of its checks."""
+def test_validate_code_checks_in_validate():
+    """validate_code should check syntax, dangerous patterns, and imports."""
     # Valid code should pass
     safe_code = "def generate_resources():\n    return []\n"
     assert validate_code(safe_code) is True
@@ -374,8 +339,8 @@ def test_restricted_python_check_in_validate_code():
     assert validate_code(bad_syntax) is False
 
 
-def test_restricted_python_check_in_execute_code():
-    """execute_code adds RestrictedPython as a pre-flight check layer."""
+def test_sandbox_execute_code_pre_flight():
+    """execute_code catches syntax errors and bad imports before subprocess."""
     # Syntax errors are caught early by import whitelist validation
     bad_code = "def generate_resources(\n"
     with pytest.raises(ValueError, match="Syntax error"):
@@ -384,17 +349,14 @@ def test_restricted_python_check_in_execute_code():
     # Safe code should pass all pre-flight checks and execute
     safe_code = (
         "def generate_resources():\n"
-        "    return [{'resourceType': 'Patient', 'id': 'rp-test'}]\n"
+        "    return [{'resourceType': 'Patient', 'id': 'sandbox-test'}]\n"
     )
     result = execute_code(safe_code, timeout=10)
-    assert result[0]["id"] == "rp-test"
+    assert result[0]["id"] == "sandbox-test"
 
 
 def test_subprocess_restricted_import_blocks_at_runtime():
     """The subprocess wrapper's restricted __import__ blocks disallowed modules at runtime."""
-    # This code passes the pre-flight AST whitelist check because it uses
-    # importlib (which isn't in the whitelist) — but the pre-flight catches it.
-    # Let's test it with code that uses a whitelisted module to sneak in a bad one.
     code = (
         "import collections\n"  # allowed
         "def generate_resources():\n"
@@ -413,11 +375,11 @@ def test_subprocess_restricted_import_blocks_at_runtime():
         execute_code(bad_code)
 
 
-def test_type_annotations_stripped_for_restricted_python():
+def test_type_annotations_work_in_sandbox():
     """Code with type annotations should pass validation and execution.
 
-    RestrictedPython rejects AnnAssign (e.g. ``x: int = 5``), so the
-    executor strips them automatically before compilation.
+    Unlike RestrictedPython, the plain subprocess sandbox handles
+    type annotations natively — no stripping needed.
     """
     code = (
         "def generate_resources() -> list[dict]:\n"
@@ -433,5 +395,36 @@ def test_type_annotations_stripped_for_restricted_python():
     result = execute_code(code, timeout=10)
     assert len(result) == 1
     assert result[0]["id"] == "p1"
+
+
+# ── Smoke test validation tests ──────────────────────────────────────
+
+
+def test_smoke_test_rejects_empty_list():
+    """Smoke test should reject code that returns an empty list."""
+    code = "def generate_resources():\n    return []\n"
+    with pytest.raises(ValueError, match="returned empty list"):
+        execute_code(code, timeout=10)
+
+
+def test_smoke_test_rejects_missing_resource_type():
+    """Smoke test should reject resources missing resourceType."""
+    code = (
+        "def generate_resources():\n"
+        "    return [{'id': 'p1', 'name': 'John'}]\n"
+    )
+    with pytest.raises(ValueError, match="missing.*resourceType"):
+        execute_code(code, timeout=10)
+
+
+def test_smoke_test_passes_valid_resources():
+    """Smoke test should pass for valid FHIR-like resources."""
+    code = (
+        "def generate_resources():\n"
+        "    return [{'resourceType': 'Patient', 'id': 'p1'}]\n"
+    )
+    result = execute_code(code, timeout=10)
+    assert len(result) == 1
+    assert result[0]["resourceType"] == "Patient"
 
 

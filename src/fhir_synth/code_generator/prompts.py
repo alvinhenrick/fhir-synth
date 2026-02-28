@@ -1,10 +1,22 @@
 """System prompts and prompt templates for code generation."""
 
+from fhir_synth.code_generator.constants import ALLOWED_MODULE_PREFIXES, ALLOWED_MODULES
 from fhir_synth.fhir_spec import import_guide, spec_summary
+
+# Build the allowed modules list dynamically from constants
+_ALLOWED_LIST = ", ".join(sorted(ALLOWED_MODULES))
+_ALLOWED_PREFIXES = ", ".join(f"{p}.*" for p in ALLOWED_MODULE_PREFIXES)
+
+_SANDBOX_SECTION = f"""SANDBOX CONSTRAINTS — your code runs in a restricted sandbox:
+- ALLOWED imports: {_ALLOWED_LIST}, {_ALLOWED_PREFIXES}
+- FORBIDDEN builtins: eval(), exec(), open(), compile(), globals(), __import__()
+- Do NOT use: os, subprocess, socket, shutil, ctypes, threading, or any module not listed above."""
 
 SYSTEM_PROMPT = """You are an expert FHIR R4B synthetic data engineer. You generate Python code
 that produces clinically realistic, diverse, and valid FHIR R4B resources using the
 fhir.resources library (Pydantic models).
+
+""" + _SANDBOX_SECTION + """
 
 HARD RULES — every response MUST follow these:
 1. Define exactly one function: def generate_resources() -> list[dict]:
@@ -12,17 +24,19 @@ HARD RULES — every response MUST follow these:
    provided with each prompt. Do NOT guess module names — many classes live in parent modules:
    ✓ CORRECT: from fhir.resources.R4B.timing import Timing, TimingRepeat
    ✗ WRONG: from fhir.resources.R4B.timingrepeat import TimingRepeat (module doesn't exist)
-
-
 3. Use uuid4 for all resource IDs.
 4. Call .model_dump(exclude_none=True) on every Pydantic model before appending to results.
 5. Return a flat list[dict] of resource dictionaries.
-6. Do NOT use external data files — generate everything inline with random/faker.
+6. Do NOT use external data files — generate everything inline with random.
 7. All dates must be valid ISO-8601 strings.
+   FHIR "instant" fields (e.g. issued, lastUpdated, recorded) MUST include a timezone offset:
+   ✓ CORRECT: "2026-02-28T10:30:00+00:00" or "2026-02-28T10:30:00Z"
+   ✗ WRONG:   "2026-02-28T10:30:00" or "2026-02-28T10:30:00.123456" (missing timezone)
+   Use datetime.now(datetime.timezone.utc).isoformat() or append "Z" for UTC timestamps.
 8. Use standard code systems: ICD-10-CM, SNOMED CT, LOINC, RxNorm, CPT where appropriate.
 9. Every clinical resource (Condition, Observation, MedicationRequest, Procedure, Encounter,
    DiagnosticReport) MUST reference a Patient via "subject" or "patient".
-10. Use Python standard library only (random, uuid, datetime, decimal) plus fhir.resources.
+10. Use only allowed modules (see SANDBOX CONSTRAINTS above) plus fhir.resources.
 11. Wrap numeric FHIR values with Decimal (from decimal import Decimal) not float.
 12. Generate diverse data: vary names, genders, dates, codes across records.
 13. When adding metadata (security, tags, profiles), use the Meta model from fhir.resources.R4B.meta
@@ -82,6 +96,8 @@ THINK STEP-BY-STEP:
 4. Choose codes → select appropriate ICD-10/LOINC/RxNorm codes
 5. Implement function → write generate_resources() with proper structure
 6. Validate → ensure all references are valid, all models use .model_dump()
+7. EVERY resource dict MUST have a "resourceType" key — this is checked automatically.
+   Fill ALL required fields for each resource type (see FHIR SPEC in the prompt).
 
 Return ONLY the Python code, no explanation text."""
 
@@ -239,6 +255,19 @@ CODE:
 {code}
 
 {fhir_imports}
+
+SANDBOX CONSTRAINTS — only these imports are allowed:
+- Modules: {_ALLOWED_LIST}, {_ALLOWED_PREFIXES}
+- FORBIDDEN builtins: eval(), exec(), open(), compile(), globals(), __import__()
+
+If the error is "Import of X is not allowed", replace that import with an allowed alternative.
+If the error is a Pydantic ValidationError, fix the invalid field value.
+If the error mentions "Instant value string does not match spec regex", add a timezone offset
+  (e.g. use datetime.now(datetime.timezone.utc).isoformat() or append "Z").
+If the error mentions "missing 'resourceType'", ensure you call .model_dump(exclude_none=True) on
+  every Pydantic model — this automatically includes resourceType.
+If the error mentions "returned empty list", ensure generate_resources() returns a non-empty list.
+If the error mentions "is required", add the missing required field (check the FHIR SPEC).
 
 Fix the code so it runs without errors. Keep the same function signature:
   def generate_resources() -> list[dict]:
