@@ -48,7 +48,7 @@ def generate(
     Example prompts:
 
       # Diabetes cohort with labs
-      fhir-synth generates "10 diabetic patients with HbA1c observations"
+      fhir-synth generate "10 diabetic patients with HbA1c observations"
 
       # Cardiology patients with encounters and meds
       fhir-synth generate "5 patients with hypertension, office encounters, and antihypertensive medications"
@@ -63,7 +63,7 @@ def generate(
       fhir-synth generate "10 pediatric patients aged 0-5 with immunization records for DTaP, MMR, and IPV"
 
       # Mental health
-      fhir-synth generates "5 patients with major depressive disorder, PHQ-9 observations, and SSRI prescriptions"
+      fhir-synth generate "5 patients with major depressive disorder, PHQ-9 observations, and SSRI prescriptions"
 
       # Prenatal care
       fhir-synth generate "4 pregnant patients with prenatal encounters, ultrasound procedures, and pregnancy-related observations"
@@ -81,7 +81,7 @@ def generate(
       fhir-synth generate "3 patients" --empi --persons 3 --systems emr1,emr2,lab_system
 
       # With metadata (security labels, tags, profiles)
-      fhir-synth generates "10 patients" --meta-config examples/meta-normal.yaml
+      fhir-synth generate "10 patients" --meta-config examples/meta-normal.yaml
 
       # Split into per-patient files
       fhir-synth generate "20 patients with conditions" --split -o patients/

@@ -29,51 +29,15 @@ from RestrictedPython import compile_restricted
 from RestrictedPython.Eval import default_guarded_getattr
 from RestrictedPython.Guards import guarded_unpack_sequence, safe_globals
 
+from fhir_synth.code_generator.constants import (
+    ALLOWED_MODULE_PREFIXES,
+    ALLOWED_MODULES,
+    DANGEROUS_PATTERNS,
+)
 from fhir_synth.fhir_spec import class_to_module
 
 logger = logging.getLogger(__name__)
 
-# Modules that generated code are allowed to import
-_ALLOWED_MODULES = frozenset(
-    {
-        "uuid",
-        "datetime",
-        "random",
-        "math",
-        "string",
-        "json",
-        "copy",
-        "collections",
-        "itertools",
-        "functools",
-        "typing",
-        "decimal",
-        "re",
-    }
-)
-
-_ALLOWED_MODULE_PREFIXES = (
-    "fhir.resources",
-    "pydantic",
-)
-
-# Dangerous patterns that should never appear in generated code
-_DANGEROUS_PATTERNS = [
-    re.compile(r"\bos\b\.\b(system|popen|exec|remove|rmdir|unlink|rename)\b"),
-    re.compile(r"\bsubprocess\b"),
-    re.compile(r"\bshutil\b"),
-    re.compile(r"\b__subclasses__\b"),
-    re.compile(r"\beval\s*\("),
-    re.compile(r"\bexec\s*\("),
-    re.compile(r"\bopen\s*\("),
-    re.compile(r"\bsocket\b"),
-    re.compile(r"\bctypes\b"),
-    re.compile(r"\bcompile\s*\("),
-    re.compile(r"\bglobals\s*\("),
-    re.compile(r"\bsetattr\s*\("),
-    re.compile(r"\bdelattr\s*\("),
-    re.compile(r"\b__import__\s*\("),
-]
 
 
 def _check_dangerous_code(code: str) -> list[str]:
@@ -86,7 +50,7 @@ def _check_dangerous_code(code: str) -> list[str]:
         List of warnings about dangerous patterns found
     """
     warnings = []
-    for pattern in _DANGEROUS_PATTERNS:
+    for pattern in DANGEROUS_PATTERNS:
         if pattern.search(code):
             warnings.append(f"Dangerous pattern detected: {pattern.pattern}")
     return warnings
@@ -121,27 +85,105 @@ def _validate_imports_whitelist(code: str) -> list[str]:
 
 def _is_allowed_module(module: str) -> bool:
     """Check if a module is in the allowed whitelist."""
-    if module in _ALLOWED_MODULES:
+    if module in ALLOWED_MODULES:
         return True
-    return any(module.startswith(prefix) for prefix in _ALLOWED_MODULE_PREFIXES)
+    return any(module.startswith(prefix) for prefix in ALLOWED_MODULE_PREFIXES)
 
 
 # ── RestrictedPython helpers ─────────────────────────────────────────────
 
 
+def _strip_type_annotations(code: str) -> str:
+    """Remove variable type annotations that RestrictedPython does not support.
+
+    Converts ``x: int = 5`` → ``x = 5`` and removes bare annotations
+    like ``x: int`` (no value).  Function parameter annotations and
+    return annotations are left alone — RestrictedPython handles those.
+
+    Args:
+        code: Python source code.
+
+    Returns:
+        Code with ``AnnAssign`` nodes converted to plain ``Assign``.
+    """
+    try:
+        tree = ast.parse(code)
+    except SyntaxError:
+        return code  # let compile_restricted report the real error
+
+    changed = False
+    new_body: list[ast.stmt] = []
+
+    for node in tree.body:
+        result, did_change = _strip_annassign_recursive(node)
+        if did_change:
+            changed = True
+        if result is not None:
+            new_body.append(result)
+
+    if not changed:
+        return code
+
+    tree.body = new_body
+    ast.fix_missing_locations(tree)
+    return ast.unparse(tree)
+
+
+def _strip_annassign_recursive(
+    node: ast.stmt,
+) -> tuple[ast.stmt | None, bool]:
+    """Strip AnnAssign from a node, recursing into function/class bodies."""
+    changed = False
+
+    if isinstance(node, ast.AnnAssign):
+        if node.value is not None:
+            # x: int = 5  →  x = 5
+            assign = ast.Assign(
+                targets=[node.target],
+                value=node.value,
+                lineno=node.lineno,
+                col_offset=node.col_offset,
+            )
+            return assign, True
+        # Bare annotation (x: int) with no value — remove entirely
+        return None, True
+
+    # Recurse into compound statements
+    if hasattr(node, "body") and isinstance(node.body, list):
+        new_body: list[ast.stmt] = []
+        for child in node.body:
+            stripped_child, did = _strip_annassign_recursive(child)
+            if did:
+                changed = True
+            if stripped_child is not None:
+                new_body.append(stripped_child)
+        node.body = new_body
+
+    if hasattr(node, "orelse") and isinstance(node.orelse, list):
+        new_orelse: list[ast.stmt] = []
+        for child in node.orelse:
+            stripped_child, did = _strip_annassign_recursive(child)
+            if did:
+                changed = True
+            if stripped_child is not None:
+                new_orelse.append(stripped_child)
+        node.orelse = new_orelse
+
+    return node, changed
+
+
 def _compile_restricted_check(code: str) -> list[str]:
     """Compile *code* with RestrictedPython and return any errors.
 
-    RestrictedPython rewrites the AST to intercept attribute access,
-    iteration, item access, and print calls.  If the code uses constructs
-    that cannot be safely sandboxed, ``compile_restricted`` raises a
-    ``SyntaxError``.
+    Type annotations (``AnnAssign``) are stripped first because
+    RestrictedPython does not support them.
 
     Returns:
         Empty list on success, otherwise a list of human-readable errors.
     """
+    stripped = _strip_type_annotations(code)
     try:
-        compile_restricted(code, "<generated>", "exec")
+        compile_restricted(stripped, "<generated>", "exec")
         return []
     except SyntaxError as exc:
         return [f"SyntaxError: {exc}"]
@@ -334,6 +376,9 @@ def execute_code(code: str, timeout: int = 30) -> list[dict[str, Any]]:
     # The wrapper uses RestrictedPython to compile AND execute the user
     # code with guarded attribute access, iteration, and a restricted
     # __import__ that enforces the same whitelist.
+    #
+    # Strip type annotations first — RestrictedPython rejects AnnAssign.
+    clean_code = _strip_type_annotations(code)
     wrapper = textwrap.dedent("""\
         import json as _json
         import sys as _sys
@@ -343,13 +388,9 @@ def execute_code(code: str, timeout: int = 30) -> list[dict[str, Any]]:
         from RestrictedPython.Guards import guarded_unpack_sequence as _guarded_unpack
         from RestrictedPython.Guards import safe_globals as _safe_globals
 
-        # ── Allowed-import whitelist (same as pre-flight) ────────────
-        _ALLOWED = frozenset({{
-            "uuid", "datetime", "random", "math", "string", "json",
-            "copy", "collections", "itertools", "functools", "typing",
-            "decimal", "re",
-        }})
-        _PREFIXES = ("fhir.resources", "pydantic")
+        # ── Allowed-import whitelist (serialised from pre-flight set) ──
+        _ALLOWED = frozenset({allowed_repr})
+        _PREFIXES = {prefixes_repr}
         _real_import = __import__
 
         def _restricted_import(name, glb=None, loc=None, fromlist=(), level=0):
@@ -387,7 +428,9 @@ def execute_code(code: str, timeout: int = 30) -> list[dict[str, Any]]:
             _result = [_result]
         print(_json.dumps(_result, default=str))
     """).format(
-        user_code_repr=repr(code),
+        user_code_repr=repr(clean_code),
+        allowed_repr=repr(set(ALLOWED_MODULES)),
+        prefixes_repr=repr(ALLOWED_MODULE_PREFIXES),
     )
 
     # ── Write to a temp file & run in subprocess ────────────────────────
@@ -408,9 +451,26 @@ def execute_code(code: str, timeout: int = 30) -> list[dict[str, Any]]:
 
         if result.returncode != 0:
             stderr = result.stderr.strip()
-            # Pull only the last meaningful traceback line for clarity
-            last_line = stderr.rsplit("\n", 1)[-1] if stderr else "Unknown error"
-            raise RuntimeError(last_line)
+            if not stderr:
+                raise RuntimeError("Unknown error")
+            # Extract a useful error message from the traceback.
+            # For Pydantic ValidationError the last line is just a URL;
+            # walk backwards to find the real error.
+            lines = stderr.split("\n")
+            meaningful: list[str] = []
+            for line in reversed(lines):
+                stripped = line.strip()
+                if not stripped:
+                    continue
+                # Skip Pydantic URL footer lines
+                if stripped.startswith("For further information"):
+                    continue
+                meaningful.append(stripped)
+                # Stop once we have enough context (the exception line + a detail)
+                if len(meaningful) >= 3:
+                    break
+            meaningful.reverse()
+            raise RuntimeError("\n".join(meaningful))
 
         stdout = result.stdout.strip()
         if not stdout:

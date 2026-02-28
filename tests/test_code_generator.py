@@ -281,7 +281,18 @@ def test_execute_code_timeout():
         "    time.sleep(60)\n"
         "    return []\n"
     )
-    # time is not in the whitelist, so it should be rejected before timeout
+    # time is now allowed, so this should actually run and hit the timeout
+    with pytest.raises(TimeoutError):
+        execute_code(code, timeout=2)
+
+
+def test_execute_code_rejects_disallowed_module():
+    """execute_code should reject disallowed imports before execution."""
+    code = (
+        "import threading\n"
+        "def generate_resources():\n"
+        "    return []\n"
+    )
     with pytest.raises(ValueError, match="Disallowed imports"):
         execute_code(code, timeout=2)
 
@@ -399,5 +410,27 @@ def test_subprocess_restricted_import_blocks_at_runtime():
     )
     with pytest.raises(ValueError, match="Disallowed"):
         execute_code(bad_code)
+
+
+def test_type_annotations_stripped_for_restricted_python():
+    """Code with type annotations should pass validation and execution.
+
+    RestrictedPython rejects AnnAssign (e.g. ``x: int = 5``), so the
+    executor strips them automatically before compilation.
+    """
+    code = (
+        "def generate_resources() -> list[dict]:\n"
+        "    resources: list[dict] = []\n"
+        "    patient_id: str = 'p1'\n"
+        "    resources.append({'resourceType': 'Patient', 'id': patient_id})\n"
+        "    return resources\n"
+    )
+    # Should pass validation
+    assert validate_code(code) is True
+
+    # Should execute successfully
+    result = execute_code(code, timeout=10)
+    assert len(result) == 1
+    assert result[0]["id"] == "p1"
 
 
