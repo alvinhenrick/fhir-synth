@@ -894,19 +894,37 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#010-2026-02-24" class="md-nav__link">
+  <a href="#v110-2026-02-28" class="md-nav__link">
     <span class="md-ellipsis">
-      [0.1.0] - 2026-02-24
+      v1.1.0 (2026-02-28)
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="[0.1.0] - 2026-02-24">
+    <nav class="md-nav" aria-label="v1.1.0 (2026-02-28)">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#added" class="md-nav__link">
+  <a href="#documentation" class="md-nav__link">
     <span class="md-ellipsis">
-      Added
+      Documentation
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#features" class="md-nav__link">
+    <span class="md-ellipsis">
+      Features
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#refactoring" class="md-nav__link">
+    <span class="md-ellipsis">
+      Refactoring
     </span>
   </a>
   
@@ -914,6 +932,15 @@
         
       </ul>
     </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v100-2026-02-25" class="md-nav__link">
+    <span class="md-ellipsis">
+      v1.0.0 (2026-02-25)
+    </span>
+  </a>
   
 </li>
       
@@ -952,19 +979,37 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#010-2026-02-24" class="md-nav__link">
+  <a href="#v110-2026-02-28" class="md-nav__link">
     <span class="md-ellipsis">
-      [0.1.0] - 2026-02-24
+      v1.1.0 (2026-02-28)
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="[0.1.0] - 2026-02-24">
+    <nav class="md-nav" aria-label="v1.1.0 (2026-02-28)">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#added" class="md-nav__link">
+  <a href="#documentation" class="md-nav__link">
     <span class="md-ellipsis">
-      Added
+      Documentation
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#features" class="md-nav__link">
+    <span class="md-ellipsis">
+      Features
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#refactoring" class="md-nav__link">
+    <span class="md-ellipsis">
+      Refactoring
     </span>
   </a>
   
@@ -972,6 +1017,15 @@
         
       </ul>
     </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v100-2026-02-25" class="md-nav__link">
+    <span class="md-ellipsis">
+      v1.0.0 (2026-02-25)
+    </span>
+  </a>
   
 </li>
       
@@ -993,25 +1047,52 @@
   
 
 
-<h1 id="changelog">Changelog<a class="headerlink" href="#changelog" title="Permanent link">&para;</a></h1>
-<p>All notable changes to this project will be documented in this file.</p>
-<p>The format is based on <a href="https://keepachangelog.com/en/1.1.0/">Keep a Changelog</a>,
-and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semantic Versioning</a>.</p>
-<p>Releases are managed automatically by <a href="https://python-semantic-release.readthedocs.io/">python-semantic-release</a>.</p>
-<h2 id="010-2026-02-24">[0.1.0] - 2026-02-24<a class="headerlink" href="#010-2026-02-24" title="Permanent link">&para;</a></h2>
-<h3 id="added">Added<a class="headerlink" href="#added" title="Permanent link">&para;</a></h3>
+<h1 id="changelog">CHANGELOG<a class="headerlink" href="#changelog" title="Permanent link">&para;</a></h1>
+<!-- version list -->
+
+<h2 id="v110-2026-02-28">v1.1.0 (2026-02-28)<a class="headerlink" href="#v110-2026-02-28" title="Permanent link">&para;</a></h2>
+<h3 id="documentation">Documentation<a class="headerlink" href="#documentation" title="Permanent link">&para;</a></h3>
 <ul>
-<li>Initial release</li>
-<li>LLM-powered FHIR R4B code generation with self-healing execution</li>
-<li>Declarative rule engine with weighted rule selection</li>
-<li>EMPI (Person → Patient) linkage support</li>
-<li>Bundle builder with transaction/batch/collection support</li>
-<li>Custom metadata support (security labels, tags, profiles, source)</li>
-<li>YAML-based metadata configuration</li>
-<li>CLI commands: <code>generate</code>, <code>rules</code>, <code>codegen</code>, <code>bundle</code></li>
-<li>Mock LLM provider for testing without API keys</li>
-<li>Support for 100+ LLM providers via LiteLLM</li>
-<li>Auto-discovery of all 141 FHIR R4B resource types</li>
+<li>Update documentation for fhir-synth CLI; enhance output modes and AWS Bedrock integration details
+  (<a href="https://github.com/alvinhenrick/fhir-synth/commit/1c4284bac5f189fedf2dd7900ebeb732b168e20f"><code>1c4284b</code></a>)</li>
+</ul>
+<h3 id="features">Features<a class="headerlink" href="#features" title="Permanent link">&para;</a></h3>
+<ul>
+<li>
+<p>Add AWS Bedrock support; include options for AWS profile and region in CLI
+  (<a href="https://github.com/alvinhenrick/fhir-synth/commit/439233c2bafbc7fd62b6d436a550e9894315432c"><code>439233c</code></a>)</p>
+</li>
+<li>
+<p>Add code quality scoring and robust error handling; enhance import validation and auto-fixing
+  (<a href="https://github.com/alvinhenrick/fhir-synth/commit/4bd92822aedeb952769c1530d9a0812a98b5fcc7"><code>4bd9282</code></a>)</p>
+</li>
+<li>
+<p>Add Makefile for build automation and improve code formatting in metrics and prompts
+  (<a href="https://github.com/alvinhenrick/fhir-synth/commit/e60124a2704705b04a62d129db4fffe898722477"><code>e60124a</code></a>)</p>
+</li>
+<li>
+<p>Add mypy overrides for boto3 to ignore missing imports
+  (<a href="https://github.com/alvinhenrick/fhir-synth/commit/45a3590cef72b897041afdf1ba8a419258650b1b"><code>45a3590</code></a>)</p>
+</li>
+<li>
+<p>Enhance import handling with introspection for FHIR resources and data types
+  (<a href="https://github.com/alvinhenrick/fhir-synth/commit/8d38bfff800949503bbc4e9a4f5cb30c79ce6f72"><code>8d38bff</code></a>)</p>
+</li>
+</ul>
+<h3 id="refactoring">Refactoring<a class="headerlink" href="#refactoring" title="Permanent link">&para;</a></h3>
+<ul>
+<li>
+<p>Improve formatting of code quality report output in metrics.py
+  (<a href="https://github.com/alvinhenrick/fhir-synth/commit/baff8a677de80b5185586dd4ad373b7fd339f145"><code>baff8a6</code></a>)</p>
+</li>
+<li>
+<p>Improve readability of AWS region retrieval logic in llm.py
+  (<a href="https://github.com/alvinhenrick/fhir-synth/commit/d1ae95edd96d3d479f1127f8b9d3b5a45f0d2d3d"><code>d1ae95e</code></a>)</p>
+</li>
+</ul>
+<h2 id="v100-2026-02-25">v1.0.0 (2026-02-25)<a class="headerlink" href="#v100-2026-02-25" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Initial Release</li>
 </ul>
 
 

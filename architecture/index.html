@@ -1202,7 +1202,7 @@
 <hr />
 <h2 id="key-design-decisions">Key Design Decisions<a class="headerlink" href="#key-design-decisions" title="Permanent link">&para;</a></h2>
 <h3 id="llm-integration-via-litellm">LLM Integration via LiteLLM<a class="headerlink" href="#llm-integration-via-litellm" title="Permanent link">&para;</a></h3>
-<p>All LLM calls go through a thin <code>LLMProvider</code> abstraction backed by <a href="https://docs.litellm.ai/">LiteLLM</a>, supporting 100+ providers (OpenAI, Anthropic, Bedrock, Azure, etc.) with a single interface. A <code>MockLLMProvider</code> enables testing without API keys.</p>
+<p>All LLM calls go through a thin <code>LLMProvider</code> abstraction backed by <a href="https://docs.litellm.ai/">LiteLLM</a>, supporting 100+ providers (OpenAI, Anthropic, AWS Bedrock, Azure, Google Gemini, etc.) with a single interface. AWS Bedrock authentication is handled via <code>boto3</code> sessions with support for named profiles, SSO, and environment variables. A <code>MockLLMProvider</code> enables testing without API keys.</p>
 <h3 id="fhir-spec-auto-discovery">FHIR Spec Auto-Discovery<a class="headerlink" href="#fhir-spec-auto-discovery" title="Permanent link">&para;</a></h3>
 <p>At import time, <code>fhir_spec.py</code> scans the <code>fhir.resources.R4B</code> package filesystem and builds a <code>{ClassName: module}</code> map of all ~141 resource types. Actual classes are loaded lazily on first access via <code>get_resource_class()</code>, keeping startup fast.</p>
 <h3 id="custom-metadata">Custom Metadata<a class="headerlink" href="#custom-metadata" title="Permanent link">&para;</a></h3>
