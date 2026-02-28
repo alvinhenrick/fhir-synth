@@ -2,6 +2,7 @@
 
 from fhir_synth.code_generator import CodeGenerator
 from fhir_synth.code_generator.constants import SUPPORTED_RESOURCE_TYPES
+from fhir_synth.code_generator.executor import fix_common_imports, validate_imports
 from fhir_synth.llm import MockLLMProvider
 
 
@@ -62,12 +63,12 @@ def generate_resources():
 
 
 def test_self_healing_retry_fixes_broken_code():
-    """If first code fails, the LLM is asked to fix it and the retry succeeds."""
+    """If the first code fails, the LLM is asked to fix it and the retry succeeds."""
     bad_code = "def generate_resources():\n    return 1/0  # will fail"
     good_code = "def generate_resources():\n    return [{'resourceType': 'Patient', 'id': 'fixed'}]"
 
     class _HealingMock(MockLLMProvider):
-        """First call returns bad code, second call returns fixed code."""
+        """The first call returns bad code, the second call returns fixed code."""
 
         def __init__(self) -> None:
             super().__init__()
@@ -95,3 +96,72 @@ def test_supported_resource_types_has_no_concatenation_bugs():
         assert rt[0].isupper(), f"{rt} does not start with uppercase"
         assert " " not in rt, f"{rt} contains a space"
         assert len(rt) < 50, f"{rt} looks like a concatenation bug"
+
+
+# ── fix_common_imports introspection-driven tests ─────────────────────────
+
+
+def test_fix_common_imports_rewrites_wrong_module():
+    """TimingRepeat should be rewritten from 'timingrepeat' to 'timing'."""
+    code = "from fhir.resources.R4B.timingrepeat import TimingRepeat\n"
+    fixed = fix_common_imports(code)
+    assert "from fhir.resources.R4B.timing import TimingRepeat" in fixed
+    assert "timingrepeat" not in fixed
+
+
+def test_fix_common_imports_leaves_correct_imports_unchanged():
+    """Already-correct imports should not be modified."""
+    code = "from fhir.resources.R4B.patient import Patient\n"
+    fixed = fix_common_imports(code)
+    assert fixed == code
+
+
+def test_fix_common_imports_handles_multiple_classes():
+    """Multiple classes from the same module should be kept together."""
+    code = "from fhir.resources.R4B.timing import Timing, TimingRepeat\n"
+    fixed = fix_common_imports(code)
+    assert "Timing" in fixed
+    assert "TimingRepeat" in fixed
+    assert "from fhir.resources.R4B.timing import" in fixed
+
+
+def test_fix_common_imports_splits_classes_to_different_modules():
+    """If classes belong to different modules, split into separate imports."""
+    # This is an unlikely but possible LLM mistake: mixing classes from different modules
+    code = "from fhir.resources.R4B.wrong import Patient, Coding\n"
+    fixed = fix_common_imports(code)
+    assert "from fhir.resources.R4B.patient import Patient" in fixed
+    assert "from fhir.resources.R4B.coding import Coding" in fixed
+
+
+def test_fix_common_imports_preserves_non_fhir_imports():
+    """Non-fhir imports should be left unchanged."""
+    code = "from uuid import uuid4\nimport random\nfrom fhir.resources.R4B.patient import Patient\n"
+    fixed = fix_common_imports(code)
+    assert "from uuid import uuid4" in fixed
+    assert "import random" in fixed
+
+
+def test_fix_common_imports_handles_unknown_class_gracefully():
+    """Unknown classes should be left in their original module."""
+    code = "from fhir.resources.R4B.patient import Patient, SomethingWeird\n"
+    fixed = fix_common_imports(code)
+    assert "Patient" in fixed
+    assert "SomethingWeird" in fixed
+
+
+def test_fix_dosage_import():
+    """DosageDoseAndRate in the wrong module should be fixed."""
+    code = "from fhir.resources.R4B.dosagedoseandrate import DosageDoseAndRate\n"
+    fixed = fix_common_imports(code)
+    assert "from fhir.resources.R4B.dosage import DosageDoseAndRate" in fixed
+
+
+def test_validate_imports_detects_bad_module():
+    """validate_imports should detect non-existent modules and suggest fixes."""
+    code = "from fhir.resources.R4B.timingrepeat import TimingRepeat\n"
+    errors = validate_imports(code)
+    assert len(errors) >= 1
+    assert any("timingrepeat" in e for e in errors)
+    # Should suggest the correct module
+    assert any("timing" in e for e in errors)

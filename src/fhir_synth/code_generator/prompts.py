@@ -1,19 +1,18 @@
 """System prompts and prompt templates for code generation."""
 
+from fhir_synth.fhir_spec import import_guide, spec_summary
+
 SYSTEM_PROMPT = """You are an expert FHIR R4B synthetic data engineer. You generate Python code
 that produces clinically realistic, diverse, and valid FHIR R4B resources using the
 fhir.resources library (Pydantic models).
 
 HARD RULES — every response MUST follow these:
 1. Define exactly one function: def generate_resources() -> list[dict]:
-2. Import from fhir.resources.R4B using CORRECT module paths:
-   ✓ CORRECT: from fhir.resources.R4B.patient import Patient
+2. Import from fhir.resources.R4B using ONLY the exact module paths listed in the IMPORT GUIDE
+   provided with each prompt. Do NOT guess module names — many classes live in parent modules:
    ✓ CORRECT: from fhir.resources.R4B.timing import Timing, TimingRepeat
-   ✓ CORRECT: from fhir.resources.R4B.observation import Observation
    ✗ WRONG: from fhir.resources.R4B.timingrepeat import TimingRepeat (module doesn't exist)
 
-   Module naming: Resources are in lowercase singular modules (patient, observation, condition).
-   Complex types are in their own modules (timing, codeableconcept, quantity, humanname, etc.).
 
 3. Use uuid4 for all resource IDs.
 4. Call .model_dump(exclude_none=True) on every Pydantic model before appending to results.
@@ -45,11 +44,36 @@ REALISM GUIDELINES — make data look like a real EHR:
   * Profiles: US Core profiles (http://hl7.org/fhir/us/core/StructureDefinition/us-core-*)
   * Source: system URIs like http://example.org/fhir-system
 
-RELATIONSHIP PATTERNS:
-- Person 1──* Patient (EMPI: one person across multiple EMR systems)
-- Patient 1──* Encounter 1──* Condition, Observation, Procedure, MedicationRequest
-- Encounter references Patient, Practitioner, Location, Organization
-- Condition, Observation, Procedure reference Patient + Encounter
+REFERENCE FIELD MAP — use these exact field names when linking resources:
+  Encounter.subject           → Reference("Patient/{id}")
+  Encounter.participant.individual → Reference("Practitioner/{id}")
+  Encounter.serviceProvider   → Reference("Organization/{id}")
+  Condition.subject           → Reference("Patient/{id}")
+  Condition.encounter         → Reference("Encounter/{id}")
+  Observation.subject         → Reference("Patient/{id}")
+  Observation.encounter       → Reference("Encounter/{id}")
+  Procedure.subject           → Reference("Patient/{id}")
+  Procedure.encounter         → Reference("Encounter/{id}")
+  MedicationRequest.subject   → Reference("Patient/{id}")
+  MedicationRequest.encounter → Reference("Encounter/{id}")
+  MedicationRequest.requester → Reference("Practitioner/{id}")
+  DiagnosticReport.subject    → Reference("Patient/{id}")
+  DiagnosticReport.encounter  → Reference("Encounter/{id}")
+  DocumentReference.subject   → Reference("Patient/{id}")
+  Immunization.patient        → Reference("Patient/{id}")
+  Immunization.encounter      → Reference("Encounter/{id}")
+  AllergyIntolerance.patient  → Reference("Patient/{id}")
+  CarePlan.subject            → Reference("Patient/{id}")
+  ServiceRequest.subject      → Reference("Patient/{id}")
+  Person.link[].target        → Reference("Patient/{id}")  (EMPI linkage)
+
+CREATION ORDER — always create resources in dependency order:
+  1. Organization, Practitioner, Location  (standalone)
+  2. Patient                               (may reference Organization)
+  3. Person                                (links to Patient for EMPI)
+  4. Encounter                             (references Patient)
+  5. Condition, Observation, Procedure,    (reference Patient + Encounter)
+     MedicationRequest, DiagnosticReport
 
 THINK STEP-BY-STEP:
 1. Parse requirement → identify resource types needed (Patient, Condition, etc.)
@@ -71,9 +95,16 @@ def build_code_prompt(requirement: str) -> str:
     Returns:
         Formatted prompt string
     """
+    fhir_spec = spec_summary()
+    fhir_imports = import_guide()
     return f"""Generate Python code to create FHIR R4B resources.
 
 Requirement: {requirement}
+
+{fhir_imports}
+
+FHIR SPEC (required, reference, and optional fields for common resource types):
+{fhir_spec}
 
 Remember:
 - def generate_resources() -> list[dict]:
@@ -168,6 +199,8 @@ def build_bundle_code_prompt(resource_types: list[str], count_per_resource: int)
         Formatted prompt string
     """
     resources_str = ", ".join(resource_types)
+    fhir_spec = spec_summary(resource_types)
+    fhir_imports = import_guide(resource_types)
     return f"""Generate Python code that creates FHIR R4B resources and returns them as a flat list.
 
 Requirements:
@@ -178,7 +211,12 @@ Requirements:
 - Use real clinical codes (ICD-10, LOINC, RxNorm, SNOMED)
 - def generate_resources() -> list[dict]:
 - .model_dump(exclude_none=True) on every resource
-- uuid4 for IDs, Decimal for numeric values"""
+- uuid4 for IDs, Decimal for numeric values
+
+{fhir_imports}
+
+FHIR SPEC (required, reference, and optional fields):
+{fhir_spec}"""
 
 
 def build_fix_prompt(code: str, error: str) -> str:
@@ -191,6 +229,7 @@ def build_fix_prompt(code: str, error: str) -> str:
     Returns:
         Formatted prompt string
     """
+    fhir_imports = import_guide()
     return f"""The following Python code failed with this error:
 
 ERROR:
@@ -198,6 +237,8 @@ ERROR:
 
 CODE:
 {code}
+
+{fhir_imports}
 
 Fix the code so it runs without errors. Keep the same function signature:
   def generate_resources() -> list[dict]:

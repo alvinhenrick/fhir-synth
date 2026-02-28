@@ -1,7 +1,9 @@
 """Auto-discover the full FHIR R4B specification from fhir.resources.
 
-This module uses **lazy loading** — it scans filesystem module names at import
-time (instant) but only imports the heavy Pydantic model classes on demand.
+This module introspects the ``fhir.resources.R4B`` package at import time to
+build a complete catalogue of resource types, data types, and their fields.
+Classification uses the class hierarchy (``Resource`` / ``DomainResource`` vs
+``Element``) — **nothing is hardcoded**.
 
 Public API
 ----------
@@ -11,6 +13,8 @@ Public API
 - ``field_schema`` – full field metadata for a resource type
 - ``reference_targets`` – which resource types a reference field can point to
 - ``spec_summary`` – compact text summary suitable for LLM prompts
+- ``class_to_module`` – look up the correct module for any Pydantic class
+- ``import_guide`` – compact import reference for LLM prompts
 """
 
 import importlib
@@ -20,60 +24,13 @@ from functools import cache
 from typing import Any
 
 import fhir.resources.R4B as _r4b
+from fhir.resources.R4B.domainresource import DomainResource
+from fhir.resources.R4B.resource import Resource
 from pydantic import BaseModel
 
-# ── Data-type modules to skip (not top-level FHIR resources) ──────────────
-_DATA_TYPE_MODULES: frozenset[str] = frozenset(
-    {
-        "fhirtypes",
-        "codeableconcept",
-        "codeablereference",
-        "coding",
-        "backboneelement",
-        "element",
-        "extension",
-        "meta",
-        "narrative",
-        "reference",
-        "resource",
-        "domainresource",
-        "quantity",
-        "contactpoint",
-        "contactdetail",
-        "address",
-        "humanname",
-        "identifier",
-        "period",
-        "attachment",
-        "annotation",
-        "age",
-        "count",
-        "distance",
-        "duration",
-        "money",
-        "range",
-        "ratio",
-        "ratiorange",
-        "sampleddata",
-        "signature",
-        "timing",
-        "triggerdefinition",
-        "usagecontext",
-        "dosage",
-        "expression",
-        "parameterdefinition",
-        "relatedartifact",
-        "contributor",
-        "datarequirement",
-        "marketingstatus",
-        "population",
-        "prodcharacteristic",
-        "productshelflife",
-        "substanceamount",
-        "elementdefinition",
-        "fhirprimitiveextension",
-        "fhirresourcemodel",
-    }
+# ── Truly internal modules that are not usable FHIR types ─────────────────
+_INTERNAL_MODULES: frozenset[str] = frozenset(
+    {"fhirtypes", "fhirprimitiveextension", "fhirresourcemodel"}
 )
 
 
@@ -109,30 +66,33 @@ class ResourceMeta:
         return tuple(f.name for f in self.all_fields if f.is_reference)
 
 
-# ── Lightweight name discovery (filesystem only, no imports) ──────────────
+# ── Single unified scan ──────────────────────────────────────────────────
 
 
-def _discover_module_names() -> dict[str, str]:
-    """Return ``{ClassName: module_name}`` by scanning filenames only.
+def _discover_all() -> tuple[dict[str, str], dict[str, str], dict[str, str], dict[str, list[str]]]:
+    """Scan ``fhir.resources.R4B`` once and classify every module.
 
-    Uses a two-pass strategy:
-    1. For simple names (e.g. ``patient`` → ``Patient``), uppercase the first letter.
-    2. For compound names (e.g. ``practitionerrole``), look up in a known table
-       built from the fhir.resources package metadata.
+    Uses the class hierarchy to separate FHIR *resources*
+    (``issubclass(cls, Resource)``) from *data types* (everything else).
 
-    No heavy Pydantic models are imported here.
+    Returns:
+        Tuple of:
+        - resource_map: ``{ClassName: module_name}`` for resource types
+        - data_type_map: ``{ClassName: module_name}`` for data types
+        - class_module_map: ``{ClassName: module_name}`` for ALL classes
+        - module_classes: ``{module_name: [ClassName, ...]}`` reverse lookup
     """
     base_path = _r4b.__path__[0]
-    mapping: dict[str, str] = {}
+    resource_map: dict[str, str] = {}
+    data_type_map: dict[str, str] = {}
+    class_module_map: dict[str, str] = {}
+    module_classes: dict[str, list[str]] = {}
 
-    # Build a lowercase → real-class-name lookup from all .py files
-    # by importing just the module and checking dir() for a class whose
-    # lowercase matches the module name.
     for fname in sorted(os.listdir(base_path)):
         if not fname.endswith(".py") or fname.startswith("_"):
             continue
         modname = fname[:-3]
-        if modname in _DATA_TYPE_MODULES:
+        if modname in _INTERNAL_MODULES:
             continue
 
         try:
@@ -140,21 +100,50 @@ def _discover_module_names() -> dict[str, str]:
         except Exception:  # noqa: BLE001
             continue
 
-        # Find the main resource class: same name (case-insensitive) + has model_fields
+        # Find the primary class (name matches module, case-insensitive)
         for attr_name in dir(mod):
             if attr_name.startswith("_"):
                 continue
-            if attr_name.lower() == modname.lower():
-                obj = getattr(mod, attr_name, None)
-                if obj is not None and isinstance(obj, type) and hasattr(obj, "model_fields"):
-                    mapping[attr_name] = modname
-                    break
+            if attr_name.lower() != modname.lower():
+                continue
+            obj = getattr(mod, attr_name, None)
+            if obj is not None and isinstance(obj, type) and hasattr(obj, "model_fields"):
+                # Classify: Resource (including DomainResource) vs data type
+                is_resource = issubclass(obj, Resource) and obj not in (
+                    Resource,
+                    DomainResource,
+                )
+                if is_resource:
+                    resource_map[attr_name] = modname
+                else:
+                    data_type_map[attr_name] = modname
+                break
 
-    return mapping
+        # Collect ALL exported Pydantic classes (for class→module lookup)
+        for attr_name in dir(mod):
+            if attr_name.startswith("_"):
+                continue
+            obj = getattr(mod, attr_name, None)
+            if obj is not None and isinstance(obj, type) and hasattr(obj, "model_fields"):
+                if attr_name not in class_module_map:
+                    class_module_map[attr_name] = modname
+                    module_classes.setdefault(modname, []).append(attr_name)
+
+    return resource_map, data_type_map, class_module_map, module_classes
 
 
-# Built once at import time — just a dict of names, zero heavy imports
-_MODULE_MAP: dict[str, str] = _discover_module_names()
+# Built once at import time
+_MODULE_MAP, _DATA_TYPE_MAP, _CLASS_MODULE_MAP, _MODULE_CLASSES = _discover_all()
+
+
+def class_to_module(class_name: str) -> str | None:
+    """Return the module name for a Pydantic class, or None if unknown."""
+    return _CLASS_MODULE_MAP.get(class_name)
+
+
+def data_type_modules() -> list[str]:
+    """Sorted list of all discovered data-type module names."""
+    return sorted(_DATA_TYPE_MAP.values())
 
 
 # ── Lazy loaders (import + introspect on first access, then cached) ───────
@@ -256,44 +245,36 @@ def reference_targets(name: str) -> dict[str, str]:
     return {f.name: f.type_annotation for f in meta.all_fields if f.is_reference}
 
 
-# ── Commonly used clinical resource types ─────────────────────────────────
+# ── Clinical resources (derived by introspection) ─────────────────────────
 
-CLINICAL_RESOURCES: list[str] = [
-    rt
-    for rt in [
-        "Patient",
-        "Person",
-        "Practitioner",
-        "PractitionerRole",
-        "Organization",
-        "Location",
-        "Encounter",
-        "Condition",
-        "Observation",
-        "Procedure",
-        "MedicationRequest",
-        "MedicationDispense",
-        "MedicationAdministration",
-        "Medication",
-        "MedicationStatement",
-        "DiagnosticReport",
-        "DocumentReference",
-        "Immunization",
-        "AllergyIntolerance",
-        "CarePlan",
-        "CareTeam",
-        "Goal",
-        "ServiceRequest",
-        "FamilyMemberHistory",
-        "Specimen",
-        "ImagingStudy",
-        "Consent",
-        "Coverage",
-        "Claim",
-        "ExplanationOfBenefit",
-    ]
-    if rt.lower() in {m.lower() for m in _MODULE_MAP}
-]
+# Foundational resource types always included in the clinical subset
+_FOUNDATIONAL_TYPES: frozenset[str] = frozenset(
+    {"Patient", "Person", "Practitioner", "PractitionerRole", "Organization", "Location"}
+)
+
+
+def _discover_clinical_resources() -> list[str]:
+    """Derive clinical resource types by introspecting reference fields.
+
+    A resource is considered "clinical" if it has a ``subject``, ``patient``,
+    or ``encounter`` reference field, or if it is a foundational type
+    (Patient, Practitioner, Organization, etc.).
+    """
+    clinical: set[str] = set(_FOUNDATIONAL_TYPES & set(_MODULE_MAP))
+
+    for name in _MODULE_MAP:
+        try:
+            meta = _introspect(name)
+        except ValueError:
+            continue
+        field_names = {f.name for f in meta.all_fields}
+        if field_names & {"subject", "patient", "encounter", "beneficiary"}:
+            clinical.add(name)
+
+    return sorted(clinical)
+
+
+CLINICAL_RESOURCES: list[str] = _discover_clinical_resources()
 
 
 def spec_summary(resource_types: list[str] | None = None) -> str:
@@ -320,5 +301,49 @@ def spec_summary(resource_types: list[str] | None = None) -> str:
         lines.append(f"  references: {refs}")
         lines.append(f"  optional: {opt_sample}")
         lines.append("")
+
+    return "\n".join(lines)
+
+
+# ── Import guide (all data-type modules derived from introspection) ───────
+
+
+def import_guide(resource_types: list[str] | None = None) -> str:
+    """Compact import guide showing exact ``from fhir.resources.R4B.{mod} import {Cls}`` lines.
+
+    Designed to be injected into LLM prompts so the model uses correct import
+    paths and never guesses wrong module names.
+
+    Args:
+        resource_types: Resource types being generated (e.g. ``["Patient", "Condition"]``).
+            Their modules are always included.  If *None*, ``CLINICAL_RESOURCES`` is used.
+
+    Returns:
+        Multi-line string suitable for embedding in a prompt.
+    """
+    types = resource_types or CLINICAL_RESOURCES
+
+    lines: list[str] = ["VALID IMPORT PATHS (use these exactly):\n"]
+
+    # 1. Resource modules
+    lines.append("# Resource types")
+    for rt in types:
+        modname = _MODULE_MAP.get(rt)
+        if modname:
+            lines.append(f"from fhir.resources.R4B.{modname} import {rt}")
+
+    # 2. All discovered data-type modules
+    lines.append("\n# Data types (complex types used in resource fields)")
+    for modname in sorted(_DATA_TYPE_MAP.values()):
+        classes = _MODULE_CLASSES.get(modname)
+        if classes:
+            cls_str = ", ".join(sorted(classes))
+            lines.append(f"from fhir.resources.R4B.{modname} import {cls_str}")
+
+    lines.append(
+        "\n# WARNING: Classes are in the modules listed above."
+        "\n# Do NOT invent module names like 'timingrepeat' or 'contactdetail'."
+        "\n# e.g., TimingRepeat is in 'timing', not 'timingrepeat'."
+    )
 
     return "\n".join(lines)

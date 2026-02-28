@@ -2,7 +2,9 @@
 
 from fhir_synth.fhir_spec import (
     CLINICAL_RESOURCES,
+    class_to_module,
     get_resource_class,
+    import_guide,
     required_fields,
     resource_names,
     spec_summary,
@@ -52,6 +54,30 @@ def test_clinical_resources_is_subset_of_all():
         assert rt in all_names, f"{rt} not in all resource names"
 
 
+def test_clinical_resources_includes_key_types():
+    """Dynamic discovery should find the most important clinical resource types."""
+    # These all have subject/patient/encounter/beneficiary fields
+    expected = {
+        "Patient",  # foundational
+        "Practitioner",  # foundational
+        "Organization",  # foundational
+        "Condition",
+        "Observation",
+        "Procedure",
+        "Encounter",
+        "MedicationRequest",
+        "DiagnosticReport",
+        "Immunization",
+        "AllergyIntolerance",
+        "CarePlan",
+        "Claim",
+        "ExplanationOfBenefit",
+    }
+    clinical_set = set(CLINICAL_RESOURCES)
+    for rt in expected:
+        assert rt in clinical_set, f"{rt} not in dynamically discovered CLINICAL_RESOURCES"
+
+
 def test_spec_summary_returns_text():
     """spec_summary should return a non-empty string."""
     summary = spec_summary(["Patient", "Condition"])
@@ -65,3 +91,62 @@ def test_no_concatenation_bugs_in_resource_names():
     for name in resource_names():
         assert name[0].isupper(), f"{name} does not start with uppercase"
         assert len(name) < 40, f"{name} looks like a concatenation bug"
+
+
+# ── class_to_module introspection tests ───────────────────────────────────
+
+
+def test_class_to_module_covers_data_types():
+    """Data-type classes like TimingRepeat, CodeableConcept, HumanName should be mapped."""
+    assert class_to_module("TimingRepeat") == "timing"
+    assert class_to_module("Timing") == "timing"
+    assert class_to_module("CodeableConcept") == "codeableconcept"
+    assert class_to_module("HumanName") == "humanname"
+    assert class_to_module("Coding") == "coding"
+    assert class_to_module("Quantity") == "quantity"
+    assert class_to_module("Reference") == "reference"
+
+
+def test_class_to_module_covers_resources():
+    """Resource classes should also be in the map."""
+    assert class_to_module("Patient") == "patient"
+    assert class_to_module("Observation") == "observation"
+    assert class_to_module("Condition") == "condition"
+
+
+def test_class_to_module_returns_none_for_unknown():
+    """Unknown class names should return None."""
+    assert class_to_module("NotARealClass") is None
+    assert class_to_module("") is None
+
+
+def test_class_to_module_dosage_subtypes():
+    """DosageDoseAndRate should be in 'dosage', not 'dosagedoseandrate'."""
+    assert class_to_module("Dosage") == "dosage"
+    assert class_to_module("DosageDoseAndRate") == "dosage"
+
+
+# ── import_guide tests ────────────────────────────────────────────────────
+
+
+def test_import_guide_includes_requested_resources():
+    """Import guide should contain exact import lines for requested resource types."""
+    guide = import_guide(["Patient", "Condition"])
+    assert "from fhir.resources.R4B.patient import Patient" in guide
+    assert "from fhir.resources.R4B.condition import Condition" in guide
+
+
+def test_import_guide_includes_common_data_types():
+    """Import guide should always include common data-type modules."""
+    guide = import_guide(["Patient"])
+    assert "from fhir.resources.R4B.timing import" in guide
+    assert "TimingRepeat" in guide
+    assert "from fhir.resources.R4B.codeableconcept import" in guide
+    assert "from fhir.resources.R4B.coding import" in guide
+
+
+def test_import_guide_includes_warning():
+    """Import guide should contain the warning about not inventing module names."""
+    guide = import_guide(["Patient"])
+    assert "Do NOT invent module names" in guide
+    assert "timingrepeat" in guide
