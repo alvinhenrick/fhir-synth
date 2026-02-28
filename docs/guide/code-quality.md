@@ -216,7 +216,7 @@ if metrics["score"] >= 0.9:
         f.write(json.dumps(example) + "\n")
 ```
 
-After collecting 100+ examples, consider using DSPy for prompt optimization (see [LLM Framework Analysis](llm-framework-analysis.md)).
+After collecting 100+ examples, consider using DSPy for prompt optimization.
 
 ## Performance Tips
 
