@@ -48,7 +48,9 @@ class LLMProvider:
 
         # Profile name (from constructor, env var, or default)
         profile = self.aws_profile_name or os.getenv("AWS_PROFILE")
-        region = self.aws_region_name or os.getenv("AWS_REGION_NAME") or os.getenv("AWS_DEFAULT_REGION")
+        region = (
+            self.aws_region_name or os.getenv("AWS_REGION_NAME") or os.getenv("AWS_DEFAULT_REGION")
+        )
 
         if profile or region:
             import boto3
