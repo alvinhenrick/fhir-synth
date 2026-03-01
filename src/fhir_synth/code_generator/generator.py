@@ -1,10 +1,13 @@
 """Main code generation engine."""
 
+from __future__ import annotations
+
 import logging
 from typing import Any
 
 from fhir_synth.code_generator.executor import (
-    execute_code,
+    Executor,
+    LocalSubprocessExecutor,
     fix_common_imports,
     validate_code,
     validate_imports,
@@ -27,7 +30,11 @@ class CodeGenerator:
     """Generates Python code for FHIR resource creation from natural language."""
 
     def __init__(
-        self, llm: LLMProvider, max_retries: int = 2, enable_scoring: bool = False
+        self,
+        llm: LLMProvider,
+        max_retries: int = 2,
+        enable_scoring: bool = False,
+        executor: Executor | None = None,
     ) -> None:
         """Initialize code generator with LLM.
 
@@ -35,10 +42,13 @@ class CodeGenerator:
             llm: LLM provider for code generation
             max_retries: Number of times to retry if generated code fails execution
             enable_scoring: Enable code quality scoring and logging
+            executor: Executor backend for running generated code.
+                Defaults to :class:`LocalSubprocessExecutor`.
         """
         self.llm = llm
         self.max_retries = max_retries
         self.enable_scoring = enable_scoring
+        self.executor: Executor = executor or LocalSubprocessExecutor()
 
     def generate_code_from_prompt(self, prompt: str) -> str:
         """Generate Python code from natural language prompt.
@@ -128,9 +138,10 @@ class CodeGenerator:
                 continue
 
             try:
-                resources = execute_code(code, timeout=timeout)
+                result = self.executor.execute(code, timeout=timeout)
+                resources = result.artifacts
 
-                # Score code qt his
+                # Score code quality
                 if self.enable_scoring:
                     metrics = calculate_code_quality_score(code, resources)
                     logger.info(

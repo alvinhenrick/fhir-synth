@@ -21,6 +21,10 @@ fhir-synth generate "10 diabetic patients with HbA1c observations" -o diabetes.n
 | `--systems` | `emr1,emr2` | EMR system ids (EMPI) |
 | `--no-orgs` | off | Skip Organization resources (EMPI) |
 | `--meta-config` | — | Path to metadata YAML config file |
+| `-e / --executor` | `local` | Execution backend: `local`, `dify`, or `e2b` |
+| `--dify-url` | — | Base URL for dify-sandbox (or set `DIFY_SANDBOX_URL` env var) |
+| `--aws-profile` | — | AWS profile for Bedrock |
+| `--aws-region` | — | AWS region for Bedrock |
 
 Default output is a single NDJSON file (one patient bundle per line).
 Use `--split` to write one JSON file per patient into a directory instead.
@@ -45,7 +49,29 @@ fhir-synth generate "20 patients with conditions" -o data.ndjson --save-code gen
 
 # Mock provider (no API key needed)
 fhir-synth generate "5 patients" --provider mock -o test.ndjson
+
+# Dify sandbox executor — sends code to a dify-sandbox service
+fhir-synth generate "5 patients" --executor dify
+
+# Dify sandbox with explicit URL
+fhir-synth generate "5 patients" --executor dify --dify-url http://sandbox.internal:8194
+
+# Dify enterprise/cloud (set DIFY_SANDBOX_API_KEY for auth)
+# export DIFY_SANDBOX_URL=https://dify.yourcompany.com
+# export DIFY_SANDBOX_API_KEY=your-key
+fhir-synth generate "5 patients" --executor dify
+
+# E2B cloud sandbox (requires E2B_API_KEY env var)
+fhir-synth generate "5 patients" --executor e2b
 ```
+
+### Environment Variables
+
+| Variable | Used by | Description |
+|----------|---------|-------------|
+| `DIFY_SANDBOX_URL` | `--executor dify` | Dify sandbox URL (default: `http://localhost:8194`) |
+| `DIFY_SANDBOX_API_KEY` | `--executor dify` | API key for Dify enterprise/cloud (not needed for self-hosted) |
+| `E2B_API_KEY` | `--executor e2b` | API key for [E2B](https://e2b.dev) cloud sandbox |
 
 ---
 
@@ -66,6 +92,9 @@ Generate executable Python code from prompts (without bundling).
 ```bash
 fhir-synth codegen "Create 50 patients" --out code.py
 fhir-synth codegen "Create 50 patients" --out code.py --execute
+
+# Execute with dify-sandbox isolation
+fhir-synth codegen "Create 50 patients" --out code.py --execute --executor dify
 ```
 
 ---

@@ -10,11 +10,18 @@ graph TB
     end
 
     subgraph CORE["⚙️ Core Modules"]
-        CG["code_generator/\nCodeGenerator · PromptToRulesConverter\nexecutor · prompts · constants · utils"]
+        CG["code_generator/\nCodeGenerator · PromptToRulesConverter\nprompts · constants · utils"]
         RE["rule_engine/\nRuleEngine · Rule · RuleSet\nGenerationRules · EMPI"]
         BB["bundle/\nBundleBuilder · BundleManager\nBundleFactory"]
         FU["fhir_utils/\nFHIRResourceFactory\nLazyResourceMap"]
         FS["fhir_spec.py\nAuto-discovery of all\n141 R4B resource types"]
+    end
+
+    subgraph EXEC["🔒 Executor Backends"]
+        EX_IF["Executor Protocol\nexecute(code) → ExecutionResult"]
+        LOCAL["LocalSubprocessExecutor\n(default — subprocess isolation)"]
+        DIFY["DifySandboxExecutor\n(dify-sandbox HTTP API)"]
+        E2B["E2BExecutor\n(E2B cloud sandbox)"]
     end
 
     subgraph LLM_LAYER["🤖 LLM Layer"]
@@ -33,6 +40,11 @@ graph TB
     API --> RE
     API --> BB
     API --> FU
+
+    CG --> EX_IF
+    EX_IF --> LOCAL
+    EX_IF --> DIFY
+    EX_IF --> E2B
 
     CG --> LLM
     CG --> FS
@@ -58,7 +70,7 @@ sequenceDiagram
     participant CLI as 🖥️ CLI
     participant CG as ⚙️ CodeGenerator
     participant LLM as 🤖 LLMProvider
-    participant EX as 🔒 Executor
+    participant EX as 🔒 Executor<br/>(local│dify│e2b)
     participant BB as 📦 BundleBuilder
     participant F as 💾 File
 
@@ -113,7 +125,7 @@ flowchart TD
     B1 -->|Pass| B2{"Dangerous builtins?"}
     B2 -->|"eval/exec/open"| REJECT["✗ Reject code"]
     B2 -->|Pass| B3["🔧 Auto-fix naive datetime.now()"]
-    B3 --> C["🔒 Execute in subprocess"]
+    B3 --> C["🔒 Execute via chosen backend<br/>(local / dify / e2b)"]
     C --> D{"✅ Execution OK?"}
     D -->|"Runtime error"| RETRY
     D -->|Pass| E["🧪 Smoke test output"]
@@ -189,6 +201,22 @@ meta:
       code: "synthetic-data"
   source: "http://example.org/fhir-synth"
 ```
+
+### Executor Backends
+
+LLM-generated code runs inside a pluggable executor selected via `--executor`:
+
+| Backend | Flag | How it works | Install |
+|---|---|---|---|
+| **Local subprocess** | `--executor local` (default) | Runs code in a separate Python process with import whitelist + dangerous-pattern scan | *(built-in)* |
+| **Dify Sandbox** | `--executor dify` | Sends code over HTTP to a self-hosted [dify-sandbox](https://github.com/langgenius/dify-sandbox) service (seccomp + namespace isolation) | `pip install "fhir-synth[dify]"` |
+| **E2B** | `--executor e2b` | Runs code in an [E2B](https://e2b.dev) cloud sandbox (fully isolated micro-VM) | `pip install "fhir-synth[e2b]"` |
+
+All backends implement the `Executor` protocol and return a uniform `ExecutionResult(stdout, stderr, artifacts)`. Shared pre-flight validation (import whitelist, dangerous-pattern scan, naive datetime fix) runs before any backend executes.
+
+The dify-sandbox URL is resolved in order: `--dify-url` flag → `DIFY_SANDBOX_URL` env var → `http://localhost:8194`.
+
+The E2B API key is resolved in order: `E2B_API_KEY` env var (set it once, works automatically).
 
 ### Output Modes
 

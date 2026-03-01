@@ -27,6 +27,7 @@ ALLOWED_MODULES: frozenset[str] = frozenset(
         "decimal",
         "re",
         "enum",
+        "faker",
     }
 )
 

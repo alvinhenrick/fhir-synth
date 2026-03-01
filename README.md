@@ -66,7 +66,7 @@ fhir-synth generate "5 patients" --provider mock -o test.json
 1. Your prompt goes to the LLM (via [LiteLLM](https://docs.litellm.ai/) — 100+ providers)
 2. LLM generates Python code using `fhir.resources` (Pydantic FHIR models)
 3. Code is safety-checked (import whitelist + dangerous builtins scan) and auto-fixed (naive datetimes → UTC)
-4. Code executes in an isolated subprocess with a timeout
+4. Code executes via a pluggable executor backend (local subprocess, dify-sandbox, or E2B cloud)
 5. Output is smoke-tested (non-empty, every resource has `resourceType`)
 6. If anything fails, the error is sent back to the LLM for self-healing (up to 2 retries)
 7. Resources are split by patient and saved as FHIR R4B Bundle (JSON) or NDJSON
@@ -97,6 +97,8 @@ End-to-end: prompt → LLM → code → execute → FHIR Bundle.
 | `--no-orgs` | off | Skip Organization resources (EMPI) |
 | `--aws-profile` | — | AWS profile for Bedrock (`~/.aws/credentials`) |
 | `--aws-region` | — | AWS region for Bedrock (e.g. `us-east-1`) |
+| `-e / --executor` | `local` | Execution backend: `local`, `dify`, or `e2b` |
+| `--dify-url` | — | Base URL for dify-sandbox (or set `DIFY_SANDBOX_URL` env var) |
 
 ### `fhir-synth rules`
 Generate structured rule definitions from natural language.
@@ -125,7 +127,7 @@ fhir-synth bundle --empi --persons 5 --systems emr1,emr2,emr3 --no-orgs --out em
 
 ```python
 from fhir_synth.llm import get_provider
-from fhir_synth.code_generator import CodeGenerator
+from fhir_synth.code_generator import CodeGenerator, get_executor
 from fhir_synth.rule_engine import RuleEngine, Rule, RuleSet, MetaConfig
 from fhir_synth.bundle import (
     BundleBuilder, BundleManager, BundleFactory,
@@ -133,10 +135,15 @@ from fhir_synth.bundle import (
 )
 from fhir_synth.fhir_utils import FHIRResourceFactory
 
-# --- Generate code from prompts ---
+# --- Generate code from prompts (default: local subprocess executor) ---
 llm = get_provider("mock")
 code_gen = CodeGenerator(llm)
 code = code_gen.generate_code_from_prompt("Create 20 patients")
+resources = code_gen.execute_generated_code(code)
+
+# --- Use a different executor backend ---
+executor = get_executor("dify", dify_url="http://sandbox.internal:8194")
+code_gen = CodeGenerator(llm, executor=executor)
 resources = code_gen.execute_generated_code(code)
 
 # --- Build a bundle ---
@@ -258,10 +265,19 @@ FHIR Synth is organized into focused packages:
 
 - **`bundle/`** — Bundle creation and management (`BundleBuilder`, `BundleManager`, `BundleFactory`, `split_resources_by_patient`, `write_ndjson`, `write_split_bundles`)
 - **`code_generator/`** — LLM-powered code generation with self-healing execution (`CodeGenerator`, `PromptToRulesConverter`)
+    - **`code_generator/executor/`** — Pluggable executor backends (`LocalSubprocessExecutor`, `DifySandboxExecutor`, `E2BExecutor`)
 - **`rule_engine/`** — Declarative rule engine, EMPI logic, and metadata models (`RuleEngine`, `RuleSet`, `Rule`, `MetaConfig`)
 - **`fhir_utils/`** — FHIR resource factory and lazy resource class map (`FHIRResourceFactory`)
 - **`llm.py`** — Unified LLM provider interface via LiteLLM (`LLMProvider`, `get_provider`)
 - **`cli.py`** — Typer-based CLI
+
+### Executor Backends
+
+| Backend | `--executor` | Install | Isolation |
+|---------|-------------|---------|-----------|
+| Local subprocess | `local` (default) | Built-in | Import whitelist + process isolation |
+| Dify Sandbox | `dify` | `pip install "fhir-synth[dify]"` | seccomp + namespace isolation |
+| E2B Cloud | `e2b` | `pip install "fhir-synth[e2b]"` | Fully isolated micro-VM |
 
 See [Architecture](docs/architecture.md) for complete system design and data flows.
 

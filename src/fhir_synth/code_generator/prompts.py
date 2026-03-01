@@ -45,9 +45,14 @@ HARD RULES — every response MUST follow these:
 13. When adding metadata (security, tags, profiles), use the Meta model from fhir.resources.R4B.meta
     and set it on resources before calling .model_dump().
 
-REALISM GUIDELINES — make data look like a real EHR:
-- Patients: realistic names, genders (male/female/other), birth dates spanning 0-90 years,
-  addresses with city/state/zip, phone numbers, MRN identifiers.
+REALISM GUIDELINES — use the Faker library for realistic demographics:
+- ALWAYS use Faker: from faker import Faker; fake = Faker()
+- Patient names: fake.first_name_male() / fake.first_name_female() / fake.last_name()
+- Birth dates: fake.date_of_birth(minimum_age=0, maximum_age=90).isoformat()
+- Addresses: fake.street_address(), fake.city(), fake.state_abbr(), fake.zipcode()
+- Phone: fake.phone_number()
+- Identifiers: fake.bothify('MRN-####-????') for MRNs
+- Vary gender (male/female/other) and match names to gender
 - Conditions: use real ICD-10 codes (E11.9 Type 2 DM, I10 Hypertension, J06.9 URI, etc.).
 - Observations: use real LOINC codes (e.g. 4548-4 HbA1c, 2339-0 Glucose, 8867-4 Heart rate).
   Include valueQuantity with unit, system, code.
