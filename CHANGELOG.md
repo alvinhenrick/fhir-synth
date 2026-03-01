@@ -2,6 +2,25 @@
 
 <!-- version list -->
 
+## v1.3.0 (2026-03-01)
+
+### Code Style
+
+- Fix formatting issues in docstrings and remove unnecessary imports
+  ([`986f511`](https://github.com/alvinhenrick/fhir-synth/commit/986f511ed2db9d452d1bf94e8adb5a126e0ab3fd))
+
+### Features
+
+- Add E2B executor backend for running code in isolated micro-VMs
+  ([`a5502b9`](https://github.com/alvinhenrick/fhir-synth/commit/a5502b9d9b316a705dfdc9a5839db4931b4f2831))
+
+- Add Faker library for generating realistic demographic data
+  ([`af00d49`](https://github.com/alvinhenrick/fhir-synth/commit/af00d49a38a6acd1452674cddb0cff29cb2aa9dd))
+
+- Implement pluggable executor backends for running LLM-generated code
+  ([`41b2370`](https://github.com/alvinhenrick/fhir-synth/commit/41b23700c0229d2f0a99b746fa7900947ab9032e))
+
+
 ## v1.2.0 (2026-03-01)
 
 ### Code Style
