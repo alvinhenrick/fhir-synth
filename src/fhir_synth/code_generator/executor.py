@@ -83,7 +83,6 @@ def _is_allowed_module(module: str) -> bool:
     return any(module.startswith(prefix) for prefix in ALLOWED_MODULE_PREFIXES)
 
 
-
 def validate_code(code: str) -> bool:
     """Validate that generated code is safe and syntactically correct.
 
@@ -293,9 +292,7 @@ def execute_code(code: str, timeout: int = 30) -> list[dict[str, Any]]:
     )
 
     # ── Write to a temp file & run in subprocess ────────────────────────
-    tmp = tempfile.NamedTemporaryFile(
-        mode="w", suffix=".py", prefix="fhir_synth_", delete=False
-    )
+    tmp = tempfile.NamedTemporaryFile(mode="w", suffix=".py", prefix="fhir_synth_", delete=False)
     try:
         tmp.write(wrapper)
         tmp.flush()
@@ -350,7 +347,9 @@ def execute_code(code: str, timeout: int = 30) -> list[dict[str, Any]]:
             raise ValueError(data["__error__"])
 
         if not isinstance(data, list):
-            raise RuntimeError(f"Expected list from generate_resources(), got {type(data).__name__}")
+            raise RuntimeError(
+                f"Expected list from generate_resources(), got {type(data).__name__}"
+            )
 
         return data
 

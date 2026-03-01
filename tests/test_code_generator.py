@@ -274,12 +274,7 @@ def test_execute_code_rejects_dangerous_patterns():
 
 def test_execute_code_timeout():
     """execute_code should raise TimeoutError for long-running code."""
-    code = (
-        "import time\n"
-        "def generate_resources():\n"
-        "    time.sleep(60)\n"
-        "    return []\n"
-    )
+    code = "import time\ndef generate_resources():\n    time.sleep(60)\n    return []\n"
     # time is now allowed, so this should actually run and hit the timeout
     with pytest.raises(TimeoutError):
         execute_code(code, timeout=2)
@@ -287,11 +282,7 @@ def test_execute_code_timeout():
 
 def test_execute_code_rejects_disallowed_module():
     """execute_code should reject disallowed imports before execution."""
-    code = (
-        "import threading\n"
-        "def generate_resources():\n"
-        "    return []\n"
-    )
+    code = "import threading\ndef generate_resources():\n    return []\n"
     with pytest.raises(ValueError, match="Disallowed imports"):
         execute_code(code, timeout=2)
 
@@ -366,11 +357,7 @@ def test_subprocess_restricted_import_blocks_at_runtime():
     assert result[0]["id"] == "safe"
 
     # Directly disallowed import is caught pre-flight
-    bad_code = (
-        "import os\n"
-        "def generate_resources():\n"
-        "    return []\n"
-    )
+    bad_code = "import os\ndef generate_resources():\n    return []\n"
     with pytest.raises(ValueError, match="Disallowed"):
         execute_code(bad_code)
 
@@ -409,22 +396,14 @@ def test_smoke_test_rejects_empty_list():
 
 def test_smoke_test_rejects_missing_resource_type():
     """Smoke test should reject resources missing resourceType."""
-    code = (
-        "def generate_resources():\n"
-        "    return [{'id': 'p1', 'name': 'John'}]\n"
-    )
+    code = "def generate_resources():\n    return [{'id': 'p1', 'name': 'John'}]\n"
     with pytest.raises(ValueError, match="missing.*resourceType"):
         execute_code(code, timeout=10)
 
 
 def test_smoke_test_passes_valid_resources():
     """Smoke test should pass for valid FHIR-like resources."""
-    code = (
-        "def generate_resources():\n"
-        "    return [{'resourceType': 'Patient', 'id': 'p1'}]\n"
-    )
+    code = "def generate_resources():\n    return [{'resourceType': 'Patient', 'id': 'p1'}]\n"
     result = execute_code(code, timeout=10)
     assert len(result) == 1
     assert result[0]["resourceType"] == "Patient"
-
-

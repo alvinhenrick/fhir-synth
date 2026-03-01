@@ -12,11 +12,14 @@ _SANDBOX_SECTION = f"""SANDBOX CONSTRAINTS — your code runs in a restricted sa
 - FORBIDDEN builtins: eval(), exec(), open(), compile(), globals(), __import__()
 - Do NOT use: os, subprocess, socket, shutil, ctypes, threading, or any module not listed above."""
 
-SYSTEM_PROMPT = """You are an expert FHIR R4B synthetic data engineer. You generate Python code
+SYSTEM_PROMPT = (
+    """You are an expert FHIR R4B synthetic data engineer. You generate Python code
 that produces clinically realistic, diverse, and valid FHIR R4B resources using the
 fhir.resources library (Pydantic models).
 
-""" + _SANDBOX_SECTION + """
+"""
+    + _SANDBOX_SECTION
+    + """
 
 HARD RULES — every response MUST follow these:
 1. Define exactly one function: def generate_resources() -> list[dict]:
@@ -100,6 +103,7 @@ THINK STEP-BY-STEP:
    Fill ALL required fields for each resource type (see FHIR SPEC in the prompt).
 
 Return ONLY the Python code, no explanation text."""
+)
 
 
 def build_code_prompt(requirement: str) -> str:

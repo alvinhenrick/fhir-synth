@@ -46,4 +46,3 @@ DANGEROUS_PATTERNS: list[re.Pattern[str]] = [
     re.compile(r"\bglobals\s*\("),
     re.compile(r"\b__import__\s*\("),
 ]
-
