@@ -2150,9 +2150,9 @@
 <a id="__codelineno-0-128" name="__codelineno-0-128"></a>                <span class="k">continue</span>
 <a id="__codelineno-0-129" name="__codelineno-0-129"></a>
 <a id="__codelineno-0-130" name="__codelineno-0-130"></a>            <span class="k">try</span><span class="p">:</span>
-<a id="__codelineno-0-131" name="__codelineno-0-131"></a>                <span class="n">resources</span> <span class="o">=</span> <span class="n">execute_code</span><span class="p">(</span><span class="n">code</span><span class="p">)</span>
+<a id="__codelineno-0-131" name="__codelineno-0-131"></a>                <span class="n">resources</span> <span class="o">=</span> <span class="n">execute_code</span><span class="p">(</span><span class="n">code</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="n">timeout</span><span class="p">)</span>
 <a id="__codelineno-0-132" name="__codelineno-0-132"></a>
-<a id="__codelineno-0-133" name="__codelineno-0-133"></a>                <span class="c1"># Score code quality if enabled</span>
+<a id="__codelineno-0-133" name="__codelineno-0-133"></a>                <span class="c1"># Score code qt his</span>
 <a id="__codelineno-0-134" name="__codelineno-0-134"></a>                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">enable_scoring</span><span class="p">:</span>
 <a id="__codelineno-0-135" name="__codelineno-0-135"></a>                    <span class="n">metrics</span> <span class="o">=</span> <span class="n">calculate_code_quality_score</span><span class="p">(</span><span class="n">code</span><span class="p">,</span> <span class="n">resources</span><span class="p">)</span>
 <a id="__codelineno-0-136" name="__codelineno-0-136"></a>                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
@@ -2984,9 +2984,9 @@ corrected version. This repeats up to <code>max_retries</code> times.</p>
 <a id="__codelineno-0-128" name="__codelineno-0-128"></a>            <span class="k">continue</span>
 <a id="__codelineno-0-129" name="__codelineno-0-129"></a>
 <a id="__codelineno-0-130" name="__codelineno-0-130"></a>        <span class="k">try</span><span class="p">:</span>
-<a id="__codelineno-0-131" name="__codelineno-0-131"></a>            <span class="n">resources</span> <span class="o">=</span> <span class="n">execute_code</span><span class="p">(</span><span class="n">code</span><span class="p">)</span>
+<a id="__codelineno-0-131" name="__codelineno-0-131"></a>            <span class="n">resources</span> <span class="o">=</span> <span class="n">execute_code</span><span class="p">(</span><span class="n">code</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="n">timeout</span><span class="p">)</span>
 <a id="__codelineno-0-132" name="__codelineno-0-132"></a>
-<a id="__codelineno-0-133" name="__codelineno-0-133"></a>            <span class="c1"># Score code quality if enabled</span>
+<a id="__codelineno-0-133" name="__codelineno-0-133"></a>            <span class="c1"># Score code qt his</span>
 <a id="__codelineno-0-134" name="__codelineno-0-134"></a>            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">enable_scoring</span><span class="p">:</span>
 <a id="__codelineno-0-135" name="__codelineno-0-135"></a>                <span class="n">metrics</span> <span class="o">=</span> <span class="n">calculate_code_quality_score</span><span class="p">(</span><span class="n">code</span><span class="p">,</span> <span class="n">resources</span><span class="p">)</span>
 <a id="__codelineno-0-136" name="__codelineno-0-136"></a>                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>

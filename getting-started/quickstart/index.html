@@ -1081,22 +1081,24 @@
 <h1 id="quick-start">Quick Start<a class="headerlink" href="#quick-start" title="Permanent link">&para;</a></h1>
 <h2 id="generate-data-from-a-prompt">Generate Data from a Prompt<a class="headerlink" href="#generate-data-from-a-prompt" title="Permanent link">&para;</a></h2>
 <p>Describe what you need in plain English — FHIR Synth generates the code and executes it:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># 10 diabetic patients with labs → single bundle + NDJSON</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;10 diabetic patients with HbA1c observations&quot;</span><span class="w"> </span>-o<span class="w"> </span>diabetes.json
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># 10 diabetic patients with labs → single NDJSON file (one patient bundle per line)</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;10 diabetic patients with HbA1c observations&quot;</span><span class="w"> </span>-o<span class="w"> </span>diabetes.ndjson
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="c1"># Split: one file per patient + NDJSON</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="c1"># Split: one JSON file per patient in a directory</span>
 <a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;10 diabetic patients with HbA1c observations&quot;</span><span class="w"> </span>--split<span class="w"> </span>-o<span class="w"> </span>patients/
 <a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>
 <a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="c1"># 5 patients with hypertension, encounters, and meds</span>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;5 patients with hypertension, office encounters, and antihypertensive medications&quot;</span><span class="w"> </span>-o<span class="w"> </span>hypertension.json
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;5 patients with hypertension, office encounters, and antihypertensive medications&quot;</span><span class="w"> </span>-o<span class="w"> </span>hypertension.ndjson
 </code></pre></div>
 <h2 id="what-happens-under-the-hood">What Happens Under the Hood<a class="headerlink" href="#what-happens-under-the-hood" title="Permanent link">&para;</a></h2>
 <ol>
-<li>Your prompt goes to the LLM</li>
+<li>Your prompt goes to the LLM (with FHIR spec, import guide, and sandbox constraints)</li>
 <li>LLM generates Python code using <code>fhir.resources</code> (Pydantic FHIR models)</li>
-<li>Code is executed in a sandbox</li>
-<li>If it fails, the error is sent back to the LLM for self-healing (up to 2 retries)</li>
-<li>Resources are wrapped in a FHIR R4B Bundle and saved</li>
+<li>Code is safety-checked (import whitelist + dangerous builtins scan) and auto-fixed (naive datetimes → UTC)</li>
+<li>Code executes in an isolated subprocess with a timeout</li>
+<li>Output is smoke-tested (non-empty, every resource has <code>resourceType</code>)</li>
+<li>If anything fails, the error is sent back to the LLM for self-healing (up to 2 retries)</li>
+<li>Resources are grouped by patient and saved as NDJSON</li>
 </ol>
 <h2 id="save-generated-code">Save Generated Code<a class="headerlink" href="#save-generated-code" title="Permanent link">&para;</a></h2>
 <p>Inspect the code the LLM generates:</p>

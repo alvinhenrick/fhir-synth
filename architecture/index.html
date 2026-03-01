@@ -727,6 +727,30 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Self-Healing Code Execution">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#error-types-handled-by-self-healing" class="md-nav__link">
+    <span class="md-ellipsis">
+      Error types handled by self-healing
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fhir-spec-introspection" class="md-nav__link">
+    <span class="md-ellipsis">
+      FHIR Spec Introspection
+    </span>
+  </a>
+  
 </li>
       
         <li class="md-nav__item">
@@ -749,9 +773,9 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#fhir-spec-auto-discovery" class="md-nav__link">
+  <a href="#dynamic-system-prompt" class="md-nav__link">
     <span class="md-ellipsis">
-      FHIR Spec Auto-Discovery
+      Dynamic System Prompt
     </span>
   </a>
   
@@ -767,9 +791,9 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#sandboxed-execution" class="md-nav__link">
+  <a href="#output-modes" class="md-nav__link">
     <span class="md-ellipsis">
-      Sandboxed Execution
+      Output Modes
     </span>
   </a>
   
@@ -1032,6 +1056,30 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Self-Healing Code Execution">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#error-types-handled-by-self-healing" class="md-nav__link">
+    <span class="md-ellipsis">
+      Error types handled by self-healing
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fhir-spec-introspection" class="md-nav__link">
+    <span class="md-ellipsis">
+      FHIR Spec Introspection
+    </span>
+  </a>
+  
 </li>
       
         <li class="md-nav__item">
@@ -1054,9 +1102,9 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#fhir-spec-auto-discovery" class="md-nav__link">
+  <a href="#dynamic-system-prompt" class="md-nav__link">
     <span class="md-ellipsis">
-      FHIR Spec Auto-Discovery
+      Dynamic System Prompt
     </span>
   </a>
   
@@ -1072,9 +1120,9 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#sandboxed-execution" class="md-nav__link">
+  <a href="#output-modes" class="md-nav__link">
     <span class="md-ellipsis">
-      Sandboxed Execution
+      Output Modes
     </span>
   </a>
   
@@ -1112,7 +1160,7 @@
     end
 
     subgraph CORE["⚙️ Core Modules"]
-        CG["code_generator/\nCodeGenerator · PromptToRulesConverter\nexecutor · prompts · utils"]
+        CG["code_generator/\nCodeGenerator · PromptToRulesConverter\nexecutor · prompts · constants · utils"]
         RE["rule_engine/\nRuleEngine · Rule · RuleSet\nGenerationRules · EMPI"]
         BB["bundle/\nBundleBuilder · BundleManager\nBundleFactory"]
         FU["fhir_utils/\nFHIRResourceFactory\nLazyResourceMap"]
@@ -1147,33 +1195,41 @@
     FU --&gt; FR</code></pre>
 <hr />
 <h2 id="generate-command-data-flow">Generate Command — Data Flow<a class="headerlink" href="#generate-command-data-flow" title="Permanent link">&para;</a></h2>
-<p>The primary workflow: prompt → LLM → code → execute → FHIR Bundle.</p>
+<p>The primary workflow: prompt → LLM → code → safety checks → sandbox exec → smoke test → FHIR Bundle.</p>
 <pre class="mermaid"><code>sequenceDiagram
     autonumber
     participant U as 👤 User
     participant CLI as 🖥️ CLI
     participant CG as ⚙️ CodeGenerator
     participant LLM as 🤖 LLMProvider
-    participant EX as 🔒 Sandbox Executor
+    participant EX as 🔒 Executor
     participant BB as 📦 BundleBuilder
     participant F as 💾 File
 
     U-&gt;&gt;CLI: fhir-synth generate "10 diabetic patients" -o out.json
     CLI-&gt;&gt;CG: generate_code_from_prompt(prompt)
+
+    Note over CG,LLM: System prompt includes FHIR spec,&lt;br/&gt;sandbox constraints, import guide
     CG-&gt;&gt;LLM: generate_text(system_prompt, user_prompt)
     LLM--&gt;&gt;CG: Python code (fhir.resources)
-    CG-&gt;&gt;CG: _extract_code() — strip markdown fences
+    CG-&gt;&gt;CG: extract_code() — strip markdown fences
     CG--&gt;&gt;CLI: code string
 
     CLI-&gt;&gt;CG: execute_generated_code(code)
-    CG-&gt;&gt;CG: validate_code() — compile check
-    CG-&gt;&gt;EX: exec(code) → generate_resources()
+    CG-&gt;&gt;CG: validate_imports() + fix_common_imports()
+    CG-&gt;&gt;CG: validate_code() — syntax + safety checks
 
-    alt ❌ Execution fails
-        EX--&gt;&gt;CG: error / traceback
-        CG-&gt;&gt;LLM: _retry_with_error(code, error)
+    CG-&gt;&gt;EX: execute_code(code)
+    Note over EX: Pre-flight: import whitelist + dangerous builtins
+    Note over EX: Auto-fix: naive datetime.now() → UTC
+    EX-&gt;&gt;EX: Subprocess: exec(code) → generate_resources()
+    EX-&gt;&gt;EX: Smoke test: validate output
+
+    alt ❌ Execution or smoke test fails
+        EX--&gt;&gt;CG: error message
+        CG-&gt;&gt;LLM: build_fix_prompt(code, error)
         LLM--&gt;&gt;CG: fixed code
-        CG-&gt;&gt;EX: exec(fixed_code)
+        CG-&gt;&gt;EX: execute_code(fixed_code)
     end
 
     EX--&gt;&gt;CG: list[dict] resources
@@ -1183,35 +1239,106 @@
     CLI-&gt;&gt;BB: build()
     BB--&gt;&gt;CLI: FHIR Bundle dict
 
-    CLI-&gt;&gt;F: write JSON
-    CLI--&gt;&gt;U: ✓ Bundle with N entries → out.json</code></pre>
+    CLI-&gt;&gt;F: write JSON / NDJSON
+    CLI--&gt;&gt;U: ✓ Bundle → out.json (or per-patient with --split)</code></pre>
 <hr />
 <h2 id="self-healing-code-execution">Self-Healing Code Execution<a class="headerlink" href="#self-healing-code-execution" title="Permanent link">&para;</a></h2>
-<p>When LLM-generated code fails, the error is automatically sent back to the LLM for correction (up to 2 retries).</p>
+<p>When LLM-generated code fails, the error is automatically sent back to the LLM for correction (up to 2 retries). The fix prompt includes the error, the failing code, the FHIR import guide, and specific hints for common error types.</p>
 <pre class="mermaid"><code>flowchart TD
-    A["🤖 LLM generates Python code"] --&gt; B{"✅ Syntax valid?"}
-    B --&gt;|No| C["📤 Send error to LLM"]
-    B --&gt;|Yes| D["🔒 Execute in sandbox"]
-    D --&gt; E{"✅ Execution succeeds?"}
-    E --&gt;|Yes| F["✓ Return resources"]
-    E --&gt;|No| G{"🔄 Retries left?"}
-    G --&gt;|"Yes (max 2)"| C
-    G --&gt;|No| H["✗ Raise RuntimeError"]
-    C --&gt; I["🤖 LLM returns fixed code"]
-    I --&gt; B</code></pre>
+    A["🤖 LLM generates Python code"] --&gt; B["🔍 Pre-flight safety checks"]
+    B --&gt; B1{"Import whitelist?"}
+    B1 --&gt;|"Disallowed import"| FIX["📤 Auto-fix imports or send error to LLM"]
+    B1 --&gt;|Pass| B2{"Dangerous builtins?"}
+    B2 --&gt;|"eval/exec/open"| REJECT["✗ Reject code"]
+    B2 --&gt;|Pass| B3["🔧 Auto-fix naive datetime.now()"]
+    B3 --&gt; C["🔒 Execute in subprocess"]
+    C --&gt; D{"✅ Execution OK?"}
+    D --&gt;|"Runtime error"| RETRY
+    D --&gt;|Pass| E["🧪 Smoke test output"]
+    E --&gt; E1{"Non-empty list?"}
+    E1 --&gt;|Empty| RETRY
+    E1 --&gt;|Pass| E2{"Every dict has resourceType?"}
+    E2 --&gt;|Missing| RETRY
+    E2 --&gt;|Pass| F["✓ Return resources"]
+
+    RETRY{"🔄 Retries left?"}
+    RETRY --&gt;|"Yes (max 2)"| FIX2["📤 Send error + code to LLM"]
+    RETRY --&gt;|No| H["✗ Raise RuntimeError"]
+    FIX2 --&gt; G["🤖 LLM returns fixed code"]
+    FIX --&gt; G
+    G --&gt; B</code></pre>
+<h3 id="error-types-handled-by-self-healing">Error types handled by self-healing<a class="headerlink" href="#error-types-handled-by-self-healing" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Error</th>
+<th>Auto-fix</th>
+<th>LLM hint</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Wrong fhir.resources import path</td>
+<td><code>fix_common_imports()</code> rewrites the import</td>
+<td>Import guide with correct module paths</td>
+</tr>
+<tr>
+<td><code>datetime.now()</code> without timezone</td>
+<td>Source rewrite to <code>datetime.now(timezone.utc)</code></td>
+<td>"Add timezone offset"</td>
+</tr>
+<tr>
+<td>Disallowed import (<code>os</code>, <code>socket</code>, etc.)</td>
+<td>—</td>
+<td>"Replace with allowed alternative"</td>
+</tr>
+<tr>
+<td>Pydantic <code>ValidationError</code></td>
+<td>—</td>
+<td>"Fix the invalid field value"</td>
+</tr>
+<tr>
+<td>Missing required field (<code>status</code>, etc.)</td>
+<td>—</td>
+<td>"Add the missing required field"</td>
+</tr>
+<tr>
+<td>Missing <code>resourceType</code> in output</td>
+<td>—</td>
+<td>"Use <code>.model_dump(exclude_none=True)</code>"</td>
+</tr>
+<tr>
+<td>Empty result list</td>
+<td>—</td>
+<td>"Ensure non-empty list"</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="fhir-spec-introspection">FHIR Spec Introspection<a class="headerlink" href="#fhir-spec-introspection" title="Permanent link">&para;</a></h2>
+<p>At import time, <code>fhir_spec.py</code> scans the <code>fhir.resources.R4B</code> package and builds:</p>
+<ul>
+<li><strong>Module map</strong>: <code>{ClassName: module_name}</code> for all ~141 resource types</li>
+<li><strong>Required fields</strong>: detected via both Pydantic <code>is_required()</code> and <code>fhir.resources</code>' custom <code>element_required</code> marker</li>
+<li><strong>Reference fields</strong>: fields with <code>ReferenceType</code> annotation</li>
+<li><strong>Import guide</strong>: exact <code>from fhir.resources.R4B.{module} import {Class}</code> paths</li>
+</ul>
+<p>This spec is injected into LLM prompts so the model knows the correct import paths and required fields for every resource type.</p>
 <hr />
 <h2 id="key-design-decisions">Key Design Decisions<a class="headerlink" href="#key-design-decisions" title="Permanent link">&para;</a></h2>
 <h3 id="llm-integration-via-litellm">LLM Integration via LiteLLM<a class="headerlink" href="#llm-integration-via-litellm" title="Permanent link">&para;</a></h3>
 <p>All LLM calls go through a thin <code>LLMProvider</code> abstraction backed by <a href="https://docs.litellm.ai/">LiteLLM</a>, supporting 100+ providers (OpenAI, Anthropic, AWS Bedrock, Azure, Google Gemini, etc.) with a single interface. AWS Bedrock authentication is handled via <code>boto3</code> sessions with support for named profiles, SSO, and environment variables. A <code>MockLLMProvider</code> enables testing without API keys.</p>
-<h3 id="fhir-spec-auto-discovery">FHIR Spec Auto-Discovery<a class="headerlink" href="#fhir-spec-auto-discovery" title="Permanent link">&para;</a></h3>
-<p>At import time, <code>fhir_spec.py</code> scans the <code>fhir.resources.R4B</code> package filesystem and builds a <code>{ClassName: module}</code> map of all ~141 resource types. Actual classes are loaded lazily on first access via <code>get_resource_class()</code>, keeping startup fast.</p>
-<h3 id="custom-metadata">Custom Metadata<a class="headerlink" href="#custom-metadata" title="Permanent link">&para;</a></h3>
-<p>Metadata (security labels, tags, profiles, source) can be applied at two levels:</p>
+<h3 id="dynamic-system-prompt">Dynamic System Prompt<a class="headerlink" href="#dynamic-system-prompt" title="Permanent link">&para;</a></h3>
+<p>The system prompt is assembled dynamically from:</p>
 <ul>
-<li><strong>Global</strong> (<code>RuleSet.global_meta</code>) — applied to all resources from that ruleset</li>
-<li><strong>Per-rule</strong> (<code>Rule.meta</code>) — merged on top of global, with rule-specific values taking precedence</li>
+<li><strong>Sandbox constraints</strong> — built from <code>ALLOWED_MODULES</code> in <code>constants.py</code></li>
+<li><strong>FHIR spec summary</strong> — required/optional/reference fields per resource type</li>
+<li><strong>Import guide</strong> — introspected <code>from fhir.resources.R4B.{mod} import {Cls}</code> paths</li>
+<li><strong>Reference field map</strong> — exact field names for Patient/Encounter/etc. linkage</li>
+<li><strong>Chain-of-thought</strong> — step-by-step instructions for code generation</li>
 </ul>
-<p>For CLI usage, metadata is configured via a simple YAML file passed with <code>--meta-config</code>:</p>
+<h3 id="custom-metadata">Custom Metadata<a class="headerlink" href="#custom-metadata" title="Permanent link">&para;</a></h3>
+<p>Metadata (security labels, tags, profiles, source) is configured via YAML (<code>--meta-config</code>):</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nt">meta</span><span class="p">:</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="nt">security</span><span class="p">:</span>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">system</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;http://terminology.hl7.org/CodeSystem/v3-Confidentiality&quot;</span>
@@ -1222,8 +1349,25 @@
 <a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">      </span><span class="nt">code</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;synthetic-data&quot;</span>
 <a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="w">  </span><span class="nt">source</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;http://example.org/fhir-synth&quot;</span>
 </code></pre></div>
-<h3 id="sandboxed-execution">Sandboxed Execution<a class="headerlink" href="#sandboxed-execution" title="Permanent link">&para;</a></h3>
-<p>Generated Python code runs in a restricted <code>exec()</code> sandbox with controlled builtins. The code must define a <code>generate_resources()</code> function that returns a list of FHIR resource dicts.</p>
+<h3 id="output-modes">Output Modes<a class="headerlink" href="#output-modes" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Flag</th>
+<th>Output</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><em>(default)</em></td>
+<td>Single JSON — one Bundle with all patients</td>
+</tr>
+<tr>
+<td><code>--split</code></td>
+<td>One JSON file per patient in output directory</td>
+</tr>
+</tbody>
+</table>
 
 
 
