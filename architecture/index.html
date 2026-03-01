@@ -791,6 +791,15 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#executor-backends" class="md-nav__link">
+    <span class="md-ellipsis">
+      Executor Backends
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#output-modes" class="md-nav__link">
     <span class="md-ellipsis">
       Output Modes
@@ -1120,6 +1129,15 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#executor-backends" class="md-nav__link">
+    <span class="md-ellipsis">
+      Executor Backends
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#output-modes" class="md-nav__link">
     <span class="md-ellipsis">
       Output Modes
@@ -1160,11 +1178,18 @@
     end
 
     subgraph CORE["⚙️ Core Modules"]
-        CG["code_generator/\nCodeGenerator · PromptToRulesConverter\nexecutor · prompts · constants · utils"]
+        CG["code_generator/\nCodeGenerator · PromptToRulesConverter\nprompts · constants · utils"]
         RE["rule_engine/\nRuleEngine · Rule · RuleSet\nGenerationRules · EMPI"]
         BB["bundle/\nBundleBuilder · BundleManager\nBundleFactory"]
         FU["fhir_utils/\nFHIRResourceFactory\nLazyResourceMap"]
         FS["fhir_spec.py\nAuto-discovery of all\n141 R4B resource types"]
+    end
+
+    subgraph EXEC["🔒 Executor Backends"]
+        EX_IF["Executor Protocol\nexecute(code) → ExecutionResult"]
+        LOCAL["LocalSubprocessExecutor\n(default — subprocess isolation)"]
+        DIFY["DifySandboxExecutor\n(dify-sandbox HTTP API)"]
+        E2B["E2BExecutor\n(E2B cloud sandbox)"]
     end
 
     subgraph LLM_LAYER["🤖 LLM Layer"]
@@ -1184,6 +1209,11 @@
     API --&gt; BB
     API --&gt; FU
 
+    CG --&gt; EX_IF
+    EX_IF --&gt; LOCAL
+    EX_IF --&gt; DIFY
+    EX_IF --&gt; E2B
+
     CG --&gt; LLM
     CG --&gt; FS
     RE --&gt; FS
@@ -1202,7 +1232,7 @@
     participant CLI as 🖥️ CLI
     participant CG as ⚙️ CodeGenerator
     participant LLM as 🤖 LLMProvider
-    participant EX as 🔒 Executor
+    participant EX as 🔒 Executor&lt;br/&gt;(local│dify│e2b)
     participant BB as 📦 BundleBuilder
     participant F as 💾 File
 
@@ -1251,7 +1281,7 @@
     B1 --&gt;|Pass| B2{"Dangerous builtins?"}
     B2 --&gt;|"eval/exec/open"| REJECT["✗ Reject code"]
     B2 --&gt;|Pass| B3["🔧 Auto-fix naive datetime.now()"]
-    B3 --&gt; C["🔒 Execute in subprocess"]
+    B3 --&gt; C["🔒 Execute via chosen backend&lt;br/&gt;(local / dify / e2b)"]
     C --&gt; D{"✅ Execution OK?"}
     D --&gt;|"Runtime error"| RETRY
     D --&gt;|Pass| E["🧪 Smoke test output"]
@@ -1349,6 +1379,41 @@
 <a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">      </span><span class="nt">code</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;synthetic-data&quot;</span>
 <a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="w">  </span><span class="nt">source</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;http://example.org/fhir-synth&quot;</span>
 </code></pre></div>
+<h3 id="executor-backends">Executor Backends<a class="headerlink" href="#executor-backends" title="Permanent link">&para;</a></h3>
+<p>LLM-generated code runs inside a pluggable executor selected via <code>--executor</code>:</p>
+<table>
+<thead>
+<tr>
+<th>Backend</th>
+<th>Flag</th>
+<th>How it works</th>
+<th>Install</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Local subprocess</strong></td>
+<td><code>--executor local</code> (default)</td>
+<td>Runs code in a separate Python process with import whitelist + dangerous-pattern scan</td>
+<td><em>(built-in)</em></td>
+</tr>
+<tr>
+<td><strong>Dify Sandbox</strong></td>
+<td><code>--executor dify</code></td>
+<td>Sends code over HTTP to a self-hosted <a href="https://github.com/langgenius/dify-sandbox">dify-sandbox</a> service (seccomp + namespace isolation)</td>
+<td><code>pip install "fhir-synth[dify]"</code></td>
+</tr>
+<tr>
+<td><strong>E2B</strong></td>
+<td><code>--executor e2b</code></td>
+<td>Runs code in an <a href="https://e2b.dev">E2B</a> cloud sandbox (fully isolated micro-VM)</td>
+<td><code>pip install "fhir-synth[e2b]"</code></td>
+</tr>
+</tbody>
+</table>
+<p>All backends implement the <code>Executor</code> protocol and return a uniform <code>ExecutionResult(stdout, stderr, artifacts)</code>. Shared pre-flight validation (import whitelist, dangerous-pattern scan, naive datetime fix) runs before any backend executes.</p>
+<p>The dify-sandbox URL is resolved in order: <code>--dify-url</code> flag → <code>DIFY_SANDBOX_URL</code> env var → <code>http://localhost:8194</code>.</p>
+<p>The E2B API key is resolved in order: <code>E2B_API_KEY</code> env var (set it once, works automatically).</p>
 <h3 id="output-modes">Output Modes<a class="headerlink" href="#output-modes" title="Permanent link">&para;</a></h3>
 <table>
 <thead>

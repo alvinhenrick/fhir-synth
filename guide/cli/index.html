@@ -602,6 +602,15 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#environment-variables" class="md-nav__link">
+    <span class="md-ellipsis">
+      Environment Variables
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1022,6 +1031,15 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#environment-variables" class="md-nav__link">
+    <span class="md-ellipsis">
+      Environment Variables
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1132,6 +1150,26 @@
 <td>—</td>
 <td>Path to metadata YAML config file</td>
 </tr>
+<tr>
+<td><code>-e / --executor</code></td>
+<td><code>local</code></td>
+<td>Execution backend: <code>local</code>, <code>dify</code>, or <code>e2b</code></td>
+</tr>
+<tr>
+<td><code>--dify-url</code></td>
+<td>—</td>
+<td>Base URL for dify-sandbox (or set <code>DIFY_SANDBOX_URL</code> env var)</td>
+</tr>
+<tr>
+<td><code>--aws-profile</code></td>
+<td>—</td>
+<td>AWS profile for Bedrock</td>
+</tr>
+<tr>
+<td><code>--aws-region</code></td>
+<td>—</td>
+<td>AWS region for Bedrock</td>
+</tr>
 </tbody>
 </table>
 <p>Default output is a single NDJSON file (one patient bundle per line).
@@ -1154,7 +1192,48 @@ Use <code>--split</code> to write one JSON file per patient into a directory ins
 <a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a>
 <a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a><span class="c1"># Mock provider (no API key needed)</span>
 <a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;5 patients&quot;</span><span class="w"> </span>--provider<span class="w"> </span>mock<span class="w"> </span>-o<span class="w"> </span>test.ndjson
+<a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a>
+<a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a><span class="c1"># Dify sandbox executor — sends code to a dify-sandbox service</span>
+<a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;5 patients&quot;</span><span class="w"> </span>--executor<span class="w"> </span>dify
+<a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a>
+<a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a><span class="c1"># Dify sandbox with explicit URL</span>
+<a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;5 patients&quot;</span><span class="w"> </span>--executor<span class="w"> </span>dify<span class="w"> </span>--dify-url<span class="w"> </span>http://sandbox.internal:8194
+<a id="__codelineno-1-24" name="__codelineno-1-24" href="#__codelineno-1-24"></a>
+<a id="__codelineno-1-25" name="__codelineno-1-25" href="#__codelineno-1-25"></a><span class="c1"># Dify enterprise/cloud (set DIFY_SANDBOX_API_KEY for auth)</span>
+<a id="__codelineno-1-26" name="__codelineno-1-26" href="#__codelineno-1-26"></a><span class="c1"># export DIFY_SANDBOX_URL=https://dify.yourcompany.com</span>
+<a id="__codelineno-1-27" name="__codelineno-1-27" href="#__codelineno-1-27"></a><span class="c1"># export DIFY_SANDBOX_API_KEY=your-key</span>
+<a id="__codelineno-1-28" name="__codelineno-1-28" href="#__codelineno-1-28"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;5 patients&quot;</span><span class="w"> </span>--executor<span class="w"> </span>dify
+<a id="__codelineno-1-29" name="__codelineno-1-29" href="#__codelineno-1-29"></a>
+<a id="__codelineno-1-30" name="__codelineno-1-30" href="#__codelineno-1-30"></a><span class="c1"># E2B cloud sandbox (requires E2B_API_KEY env var)</span>
+<a id="__codelineno-1-31" name="__codelineno-1-31" href="#__codelineno-1-31"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;5 patients&quot;</span><span class="w"> </span>--executor<span class="w"> </span>e2b
 </code></pre></div>
+<h3 id="environment-variables">Environment Variables<a class="headerlink" href="#environment-variables" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Used by</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>DIFY_SANDBOX_URL</code></td>
+<td><code>--executor dify</code></td>
+<td>Dify sandbox URL (default: <code>http://localhost:8194</code>)</td>
+</tr>
+<tr>
+<td><code>DIFY_SANDBOX_API_KEY</code></td>
+<td><code>--executor dify</code></td>
+<td>API key for Dify enterprise/cloud (not needed for self-hosted)</td>
+</tr>
+<tr>
+<td><code>E2B_API_KEY</code></td>
+<td><code>--executor e2b</code></td>
+<td>API key for <a href="https://e2b.dev">E2B</a> cloud sandbox</td>
+</tr>
+</tbody>
+</table>
 <hr />
 <h2 id="fhir-synth-rules"><code>fhir-synth rules</code><a class="headerlink" href="#fhir-synth-rules" title="Permanent link">&para;</a></h2>
 <p>Generate structured rule definitions from natural language.</p>
@@ -1165,6 +1244,9 @@ Use <code>--split</code> to write one JSON file per patient into a directory ins
 <p>Generate executable Python code from prompts (without bundling).</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>fhir-synth<span class="w"> </span>codegen<span class="w"> </span><span class="s2">&quot;Create 50 patients&quot;</span><span class="w"> </span>--out<span class="w"> </span>code.py
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>fhir-synth<span class="w"> </span>codegen<span class="w"> </span><span class="s2">&quot;Create 50 patients&quot;</span><span class="w"> </span>--out<span class="w"> </span>code.py<span class="w"> </span>--execute
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="c1"># Execute with dify-sandbox isolation</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>fhir-synth<span class="w"> </span>codegen<span class="w"> </span><span class="s2">&quot;Create 50 patients&quot;</span><span class="w"> </span>--out<span class="w"> </span>code.py<span class="w"> </span>--execute<span class="w"> </span>--executor<span class="w"> </span>dify
 </code></pre></div>
 <hr />
 <h2 id="fhir-synth-bundle"><code>fhir-synth bundle</code><a class="headerlink" href="#fhir-synth-bundle" title="Permanent link">&para;</a></h2>
