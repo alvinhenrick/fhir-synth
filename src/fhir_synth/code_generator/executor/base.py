@@ -11,7 +11,7 @@ from typing import Any, Protocol, runtime_checkable
 
 # Packages needed inside remote/container executors for running generated code.
 # Only a subset of the project's full dependencies — CLI/LLM packages are not needed.
-_EXECUTION_PACKAGE_NAMES = frozenset({"fhir.resources", "pydantic", "python-dateutil"})
+_EXECUTION_PACKAGE_NAMES = frozenset({"fhir.resources", "pydantic", "python-dateutil", "faker"})
 
 
 def get_execution_packages() -> list[str]:
