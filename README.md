@@ -18,17 +18,8 @@ FHIR R4B Bundles (JSON + NDJSON)
 
 ## Install
 
-Install directly from GitHub (releases are published as GitHub Releases, not PyPI):
-
 ```bash
-# Latest release
-pip install git+https://github.com/alvinhenrick/fhir-synth.git@main
-
-# Specific version tag
-pip install git+https://github.com/alvinhenrick/fhir-synth.git@v1.0.0
-
-# With AWS Bedrock support
-pip install "fhir-synth[bedrock] @ git+https://github.com/alvinhenrick/fhir-synth.git@main"
+pip install git+https://github.com/alvinhenrick/fhir-synth.git
 ```
 
 ## Quick Start
@@ -41,26 +32,26 @@ echo "OPENAI_API_KEY=sk-..." > .env
 
 ### 2. Generate data from a prompt
 
-Describe what you need in plain English → get a valid FHIR R4B Bundle:
+Describe what you need in plain English → get NDJSON output (one patient bundle per line):
 
 ```bash
 # 10 diabetic patients with labs (uses gpt-4 by default)
-fhir-synth generate "10 diabetic patients with HbA1c observations" -o diabetes.json
+fhir-synth generate "10 diabetic patients with HbA1c observations" -o diabetes.ndjson
 
 # 5 patients with hypertension, encounters, and meds
-fhir-synth generate "5 patients with hypertension, office encounters, and antihypertensive medications" -o hypertension.json
+fhir-synth generate "5 patients with hypertension, office encounters, and antihypertensive medications" -o hypertension.ndjson
 
 # Save the generated code for inspection
-fhir-synth generate "20 patients with conditions and observations" -o data.json --save-code generated.py
+fhir-synth generate "20 patients with conditions and observations" -o data.ndjson --save-code generated.py
 
 # Split output into one JSON file per patient
 fhir-synth generate "10 diabetic patients" --split -o patients/
 
 # Apply custom metadata (security labels, tags, profiles)
-fhir-synth generate "10 patients" --meta-config examples/meta-normal.yaml -o output.json
+fhir-synth generate "10 patients" --meta-config examples/meta-normal.yaml -o output.ndjson
 
 # EMPI: Person → Patients across EMR systems
-fhir-synth generate "EMPI dataset" --empi --persons 3 -o empi.json
+fhir-synth generate "EMPI dataset" --empi --persons 3 -o empi.ndjson
 
 # AWS Bedrock provider with named profile
 fhir-synth generate "5 patients" \
@@ -74,9 +65,11 @@ fhir-synth generate "5 patients" --provider mock -o test.json
 **What happens under the hood:**
 1. Your prompt goes to the LLM (via [LiteLLM](https://docs.litellm.ai/) — 100+ providers)
 2. LLM generates Python code using `fhir.resources` (Pydantic FHIR models)
-3. Code is executed in a sandbox
-4. If it fails, the error is sent back to the LLM for self-healing (up to 2 retries)
-5. Resources are split by patient and saved as a FHIR R4B Bundle (JSON) + NDJSON
+3. Code is safety-checked (import whitelist + dangerous builtins scan) and auto-fixed (naive datetimes → UTC)
+4. Code executes in an isolated subprocess with a timeout
+5. Output is smoke-tested (non-empty, every resource has `resourceType`)
+6. If anything fails, the error is sent back to the LLM for self-healing (up to 2 retries)
+7. Resources are split by patient and saved as FHIR R4B Bundle (JSON) or NDJSON
 
 ### Output Modes
 
@@ -239,71 +232,25 @@ See the [Metadata Quick Reference](docs/guide/metadata-reference.md) for the ful
 
 ## LLM Providers
 
-FHIR Synth uses [LiteLLM](https://docs.litellm.ai/) to support 100+ LLM providers. The `generate` command defaults to `gpt-4`.
-
-### Setup
-
-Create a `.env` file in your project root with your provider's API key:
+The `generate` command defaults to `gpt-4`. Set your API key in a `.env` file:
 
 ```bash
-# OpenAI
 OPENAI_API_KEY=sk-...
-
-# Anthropic
 ANTHROPIC_API_KEY=sk-ant-...
-
-# Google Gemini
-GEMINI_API_KEY=...
-
-# Azure OpenAI
-AZURE_API_KEY=...
-AZURE_API_BASE=https://your-resource.openai.azure.com/
-AZURE_API_VERSION=2024-02-01
 ```
 
-### Provider Examples
+Supported via [LiteLLM](https://docs.litellm.ai/): OpenAI, Anthropic, AWS Bedrock, Azure, Google Gemini, and 100+ providers.
 
 | Provider | `--provider` value | Auth |
 |----------|-------------------|------|
-| OpenAI | `gpt-4`, `gpt-4o`, `gpt-4o-mini` | `OPENAI_API_KEY` |
-| Anthropic | `claude-3-opus-20240229`, `claude-3-5-sonnet-20241022` | `ANTHROPIC_API_KEY` |
-| AWS Bedrock | `bedrock/us.anthropic.claude-3-5-sonnet-20241022-v2:0` | `--aws-profile` / `--aws-region` |
+| OpenAI | `gpt-4`, `gpt-4o` | `OPENAI_API_KEY` |
+| Anthropic | `claude-3-opus-20240229` | `ANTHROPIC_API_KEY` |
+| AWS Bedrock | `bedrock/anthropic.claude-v2` | `--aws-profile` / `--aws-region` |
 | Google Gemini | `gemini/gemini-pro` | `GEMINI_API_KEY` |
-| Azure OpenAI | `azure/gpt-4` | `AZURE_API_KEY` + `AZURE_API_BASE` |
+| Azure | `azure/gpt-4` | `AZURE_API_KEY` |
 | Mock (testing) | `mock` | None |
 
-### AWS Bedrock
-
-Bedrock uses your existing AWS credentials. Install the optional `bedrock` extra:
-
-```bash
-pip install "fhir-synth[bedrock] @ git+https://github.com/alvinhenrick/fhir-synth.git@main"
-```
-
-Authenticate via named profile, environment variables, or SSO:
-
-```bash
-# Named profile (recommended)
-fhir-synth generate "10 patients" \
-  --provider bedrock/us.anthropic.claude-3-5-sonnet-20241022-v2:0 \
-  --aws-profile my-profile --aws-region us-east-1 -o output.json
-
-# Environment variables
-export AWS_PROFILE=my-profile
-export AWS_DEFAULT_REGION=us-east-1
-fhir-synth generate "10 patients" \
-  --provider bedrock/us.anthropic.claude-3-5-sonnet-20241022-v2:0 -o output.json
-
-# SSO
-aws sso login --profile my-sso-profile
-fhir-synth generate "10 patients" \
-  --provider bedrock/us.anthropic.claude-3-5-sonnet-20241022-v2:0 \
-  --aws-profile my-sso-profile -o output.json
-```
-
-Use `--provider mock` for testing without any API key.
-
-See the [LLM Providers Guide](https://alvinhenrick.github.io/fhir-synth/guide/providers/) for full details on all providers.
+Use `--provider mock` for testing without an API key.
 
 ## Architecture
 
@@ -323,7 +270,7 @@ See [Architecture](docs/architecture.md) for complete system design and data flo
 The project uses GitHub Actions with three chained workflows:
 
 - **CI** (`ci.yml`) — Runs on every push/PR: lint (`ruff`, `mypy`) + tests (`pytest`)
-- **Release** (`release.yml`) — Triggered after CI passes on `main`: auto-increments version and creates a GitHub Release (no PyPI — install via `pip install git+...`)
+- **Release** (`release.yml`) — Triggered after CI passes on `main`: auto-increments version and creates a GitHub Release
 - **Docs** (`docs.yml`) — Triggered after Release: builds and deploys MkDocs to GitHub Pages
 
 ## Development

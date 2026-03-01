@@ -5,23 +5,25 @@
 Describe what you need in plain English — FHIR Synth generates the code and executes it:
 
 ```bash
-# 10 diabetic patients with labs → single bundle + NDJSON
-fhir-synth generate "10 diabetic patients with HbA1c observations" -o diabetes.json
+# 10 diabetic patients with labs → single NDJSON file (one patient bundle per line)
+fhir-synth generate "10 diabetic patients with HbA1c observations" -o diabetes.ndjson
 
-# Split: one file per patient + NDJSON
+# Split: one JSON file per patient in a directory
 fhir-synth generate "10 diabetic patients with HbA1c observations" --split -o patients/
 
 # 5 patients with hypertension, encounters, and meds
-fhir-synth generate "5 patients with hypertension, office encounters, and antihypertensive medications" -o hypertension.json
+fhir-synth generate "5 patients with hypertension, office encounters, and antihypertensive medications" -o hypertension.ndjson
 ```
 
 ## What Happens Under the Hood
 
-1. Your prompt goes to the LLM
+1. Your prompt goes to the LLM (with FHIR spec, import guide, and sandbox constraints)
 2. LLM generates Python code using `fhir.resources` (Pydantic FHIR models)
-3. Code is executed in a sandbox
-4. If it fails, the error is sent back to the LLM for self-healing (up to 2 retries)
-5. Resources are wrapped in a FHIR R4B Bundle and saved
+3. Code is safety-checked (import whitelist + dangerous builtins scan) and auto-fixed (naive datetimes → UTC)
+4. Code executes in an isolated subprocess with a timeout
+5. Output is smoke-tested (non-empty, every resource has `resourceType`)
+6. If anything fails, the error is sent back to the LLM for self-healing (up to 2 retries)
+7. Resources are grouped by patient and saved as NDJSON
 
 ## Save Generated Code
 

@@ -187,7 +187,12 @@ def _introspect(name: str) -> ResourceMeta:
     for fname, finfo in cls.model_fields.items():
         if fname.endswith("__ext"):
             continue
-        is_req = finfo.is_required()
+        # Pydantic is_required() only checks if default is PydanticUndefined.
+        # fhir.resources mark FHIR-required fields via element_required in
+        # json_schema_extra (e.g. Observation.status has default=None but
+        # element_required=True and a custom validator rejects None).
+        extras = finfo.json_schema_extra if isinstance(finfo.json_schema_extra, dict) else {}
+        is_req = finfo.is_required() or bool(extras.get("element_required"))
         ann = str(finfo.annotation) if finfo.annotation else "Any"
         is_ref = "ReferenceType" in ann
         is_list = "List" in ann or "list" in ann

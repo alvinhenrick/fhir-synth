@@ -40,10 +40,10 @@ pip install "fhir-synth[bedrock] @ git+https://github.com/alvinhenrick/fhir-synt
 
 ```bash
 # Generate 10 diabetic patients with labs
-fhir-synth generate "10 diabetic patients with HbA1c observations" -o diabetes.json
+fhir-synth generate "10 diabetic patients with HbA1c observations" -o diabetes.ndjson
 
 # Try without an API key (mock LLM for testing)
-fhir-synth generate "5 patients" --provider mock -o test.json
+fhir-synth generate "5 patients" --provider mock -o test.ndjson
 ```
 
 ## Next Steps

@@ -65,7 +65,7 @@ fixed_code = fix_common_imports(code)
 
 ### Self-Healing Retry
 
-Failed code is sent back to the LLM for correction (up to 3 attempts):
+Failed code is sent back to the LLM for correction (up to 2 retries). The fix prompt includes the exact error, the failing code, the FHIR import guide, and specific hints for each error type.
 
 ```python
 from fhir_synth.code_generator import CodeGenerator
@@ -77,6 +77,23 @@ generator = CodeGenerator(llm, max_retries=2)
 # Auto-retries on failure with error feedback
 resources = generator.execute_generated_code(code)
 ```
+
+### Automatic Code Fixes
+
+Before execution, the code is automatically patched:
+
+- **Naive datetimes**: `datetime.now()` → `datetime.now(datetime.timezone.utc)` (FHIR instant fields require timezone)
+- **Wrong import paths**: `from fhir.resources.R4B.timingrepeat import TimingRepeat` → `from fhir.resources.R4B.timing import TimingRepeat`
+
+### Smoke Test
+
+After `generate_resources()` runs, the output is validated:
+
+- **Non-empty**: must return at least one resource
+- **Valid dicts**: every item must be a dict, not a raw Pydantic model
+- **Has resourceType**: every dict must include `resourceType`
+
+If the smoke test fails, the error is sent back to the LLM for self-healing.
 
 ## Chain-of-Thought Prompting
 
@@ -90,6 +107,7 @@ THINK STEP-BY-STEP:
 4. Choose codes → select appropriate ICD-10/LOINC/RxNorm codes
 5. Implement function → write generate_resources()
 6. Validate → ensure all references are valid
+7. EVERY resource dict MUST have resourceType — fill ALL required fields
 ```
 
 ## Few-Shot Learning
@@ -232,7 +250,7 @@ After collecting 100+ examples, consider using DSPy for prompt optimization.
 
 4. **Use Metadata Config**: Instead of complex prompts
    ```bash
-   --metadata-config config.yaml
+   --meta-config config.yaml
    ```
 
 ## Troubleshooting

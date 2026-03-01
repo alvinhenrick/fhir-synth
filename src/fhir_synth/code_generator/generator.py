@@ -128,9 +128,9 @@ class CodeGenerator:
                 continue
 
             try:
-                resources = execute_code(code)
+                resources = execute_code(code, timeout=timeout)
 
-                # Score code quality if enabled
+                # Score code qt his
                 if self.enable_scoring:
                     metrics = calculate_code_quality_score(code, resources)
                     logger.info(

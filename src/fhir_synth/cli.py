@@ -16,9 +16,8 @@ app = typer.Typer(help="Dynamic FHIR R4B synthetic data generator — prompt →
 @app.command()
 def generate(
     prompt: str = typer.Argument(..., help="Natural language description of data to generate"),
-    out: str = typer.Option("output.json", "--out", "-o", help="Output file (JSON bundle)"),
+    out: str = typer.Option("output.ndjson", "--out", "-o", help="Output file path"),
     provider: str = typer.Option("gpt-4", "--provider", "-p", help="LLM model/provider"),
-    bundle_type: str = typer.Option("transaction", "--type", "-t", help="Bundle type"),
     save_code: str | None = typer.Option(
         None, "--save-code", help="Also save generated code to this file"
     ),
@@ -32,7 +31,7 @@ def generate(
     split: bool = typer.Option(
         False,
         "--split",
-        help="Split output into one JSON file per patient (default: single bundle)",
+        help="Split output into one JSON file per patient in a directory",
     ),
     aws_profile: str | None = typer.Option(
         None, "--aws-profile", help="AWS profile for Bedrock (reads ~/.aws/credentials)"
@@ -41,21 +40,59 @@ def generate(
         None, "--aws-region", help="AWS region for Bedrock (e.g. us-east-1)"
     ),
 ) -> None:
-    """Generate synthetic FHIR data end-to-end: prompt → LLM → code → execute → bundle.
+    """Generate synthetic FHIR data end-to-end: prompt → LLM → code → execute → NDJSON.
 
-    This is the main command. Describe what data you need in plain English
-    and get a valid FHIR R4B Bundle back.
+    The default output is a single NDJSON file (one patient bundle per line).
+    Use --split to write one JSON file per patient into a directory instead.
 
-    Examples:
+    Example prompts:
 
-      fhir-synth generate "10 diabetic patients with HbA1c labs" -o diabetes.json
+      # Diabetes cohort with labs
+      fhir-synth generate "10 diabetic patients with HbA1c observations"
 
-      fhir-synth generate "5 patients" --provider bedrock/us.anthropic.claude-3-5-sonnet-20241022-v2:0 --aws-profile my-profile --aws-region us-east-1 -o output.json
+      # Cardiology patients with encounters and meds
+      fhir-synth generate "5 patients with hypertension, office encounters, and antihypertensive medications"
 
-      fhir-synth generate "EMPI dataset" --empi --persons 3 -o empi.json
+      # Emergency department visits
+      fhir-synth generate "8 patients with ER encounters for chest pain, troponin labs, and ECG procedures"
+
+      # Oncology cohort
+      fhir-synth generate "6 lung cancer patients with staging observations, chemotherapy medication requests, and CT scan diagnostic reports"
+
+      # Pediatric immunizations
+      fhir-synth generate "10 pediatric patients aged 0-5 with immunization records for DTaP, MMR, and IPV"
+
+      # Mental health
+      fhir-synth generate "5 patients with major depressive disorder, PHQ-9 observations, and SSRI prescriptions"
+
+      # Prenatal care
+      fhir-synth generate "4 pregnant patients with prenatal encounters, ultrasound procedures, and pregnancy-related observations"
+
+      # Multi-condition elderly
+      fhir-synth generate "10 elderly patients aged 65-90 with diabetes, hypertension, CKD, encounters, labs, and medications"
+
+      # Surgical patients
+      fhir-synth generate "5 patients with appendectomy procedures, pre-op encounters, and post-op follow-up encounters"
+
+      # Allergy and immunology
+      fhir-synth generate "8 patients with allergy intolerances to penicillin and peanuts, plus related encounters"
+
+      # EMPI cross-system linkage
+      fhir-synth generate "3 patients" --empi --persons 3 --systems emr1,emr2,lab_system
+
+      # With metadata (security labels, tags, profiles)
+      fhir-synth generate "10 patients" --meta-config examples/meta-normal.yaml
+
+      # Split into per-patient files
+      fhir-synth generate "20 patients with conditions" --split -o patients/
+
+      # AWS Bedrock provider
+      fhir-synth generate "5 patients" --provider bedrock/us.anthropic.claude-3-5-sonnet-20241022-v2:0 --aws-profile my-profile --aws-region us-east-1
+
+      # Save generated code for debugging
+      fhir-synth generate "10 patients with labs" --save-code generated.py
     """
     try:
-        from fhir_synth.bundle import BundleBuilder
         from fhir_synth.code_generator import CodeGenerator
         from fhir_synth.llm import get_provider
 
@@ -144,31 +181,24 @@ def generate(
             )
             typer.echo("   Applied metadata from config")
 
-        # Step 3 — build per-patient bundles (used for both modes + NDJSON)
+        # Step 3 — output results
         from fhir_synth.bundle import split_resources_by_patient, write_ndjson, write_split_bundles
 
         per_patient_bundles = split_resources_by_patient(resources)
 
         if split:
-            # --split: one JSON file per patient + NDJSON
+            # --split: one JSON file per patient in a directory
             out_dir = Path(out)
             paths = write_split_bundles(per_patient_bundles, out_dir)
-            ndjson_path = write_ndjson(per_patient_bundles, out_dir / "all_patients.ndjson")
             typer.echo(f"✓  {len(paths)} patient bundles → {out_dir}/")
-            typer.echo(f"✓  NDJSON → {ndjson_path}")
         else:
-            # Default: single combined bundle + NDJSON
-            builder = BundleBuilder(bundle_type=bundle_type)
-            builder.add_resources(resources)
-            bundle_dict = builder.build()
-
+            # Default: single NDJSON file (one bundle per patient per line)
             out_path = Path(out)
+            if out_path.suffix != ".ndjson":
+                out_path = out_path.with_suffix(".ndjson")
             out_path.parent.mkdir(parents=True, exist_ok=True)
-            out_path.write_text(json.dumps(bundle_dict, indent=2, default=str))
-
-            ndjson_path = write_ndjson(per_patient_bundles, out_path.with_suffix(".ndjson"))
-            typer.echo(f"✓  Bundle with {bundle_dict['total']} entries → {out}")
-            typer.echo(f"✓  NDJSON → {ndjson_path}")
+            ndjson_path = write_ndjson(per_patient_bundles, out_path)
+            typer.echo(f"✓  {len(per_patient_bundles)} patient bundles → {ndjson_path}")
     except Exception as exc:
         error_msg = str(exc)
 

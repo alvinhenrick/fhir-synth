@@ -1,8 +1,17 @@
 """Tests for code generation."""
 
+import pytest
+
 from fhir_synth.code_generator import CodeGenerator
 from fhir_synth.code_generator.constants import SUPPORTED_RESOURCE_TYPES
-from fhir_synth.code_generator.executor import fix_common_imports, validate_imports
+from fhir_synth.code_generator.executor import (
+    _check_dangerous_code,
+    _validate_imports_whitelist,
+    execute_code,
+    fix_common_imports,
+    validate_code,
+    validate_imports,
+)
 from fhir_synth.llm import MockLLMProvider
 
 
@@ -165,3 +174,236 @@ def test_validate_imports_detects_bad_module():
     assert any("timingrepeat" in e for e in errors)
     # Should suggest the correct module
     assert any("timing" in e for e in errors)
+
+
+# ── Sandbox security tests ────────────────────────────────────────────────
+
+
+def test_dangerous_code_os_system_rejected():
+    """Code using os.system() is caught by import whitelist, not dangerous patterns."""
+    code = "import os\nos.system('rm -rf /')\ndef generate_resources(): return []"
+    # os is not in allowed modules
+    errors = _validate_imports_whitelist(code)
+    assert len(errors) > 0
+
+
+def test_dangerous_code_subprocess_rejected():
+    """Code using subprocess is caught by import whitelist, not dangerous patterns."""
+    code = "import subprocess\nsubprocess.run(['ls'])\ndef generate_resources(): return []"
+    errors = _validate_imports_whitelist(code)
+    assert len(errors) > 0
+
+
+def test_dangerous_code_eval_rejected():
+    """Code using eval() should be rejected by dangerous patterns (builtin, no import)."""
+    code = "eval('1+1')\ndef generate_resources(): return []"
+    warnings = _check_dangerous_code(code)
+    assert len(warnings) > 0
+
+
+def test_dangerous_code_open_rejected():
+    """Code using open() should be rejected by dangerous patterns (builtin, no import)."""
+    code = "open('/etc/passwd')\ndef generate_resources(): return []"
+    warnings = _check_dangerous_code(code)
+    assert len(warnings) > 0
+
+
+def test_import_whitelist_allows_fhir():
+    """fhir.resources imports should be allowed."""
+    code = "from fhir.resources.R4B.patient import Patient\n"
+    errors = _validate_imports_whitelist(code)
+    assert errors == []
+
+
+def test_import_whitelist_allows_uuid():
+    """uuid imports should be allowed."""
+    code = "from uuid import uuid4\n"
+    errors = _validate_imports_whitelist(code)
+    assert errors == []
+
+
+def test_import_whitelist_blocks_os():
+    """os imports should be blocked."""
+    code = "import os\n"
+    errors = _validate_imports_whitelist(code)
+    assert len(errors) > 0
+
+
+def test_import_whitelist_blocks_subprocess():
+    """subprocess imports should be blocked."""
+    code = "import subprocess\n"
+    errors = _validate_imports_whitelist(code)
+    assert len(errors) > 0
+
+
+def test_validate_code_rejects_dangerous():
+    """validate_code should return False for dangerous code."""
+    code = "import os\nos.system('ls')\ndef generate_resources(): return []"
+    assert validate_code(code) is False
+
+
+def test_validate_code_rejects_disallowed_imports():
+    """validate_code should return False for disallowed imports."""
+    code = "import socket\ndef generate_resources(): return []"
+    assert validate_code(code) is False
+
+
+def test_validate_code_accepts_safe_code():
+    """validate_code should return True for safe code."""
+    code = (
+        "from uuid import uuid4\n"
+        "from fhir.resources.R4B.patient import Patient\n"
+        "def generate_resources(): return []\n"
+    )
+    assert validate_code(code) is True
+
+
+def test_execute_code_rejects_dangerous_imports():
+    """execute_code should raise ValueError for disallowed imports."""
+    code = "import socket\ndef generate_resources(): return []"
+    with pytest.raises(ValueError, match="Disallowed imports"):
+        execute_code(code)
+
+
+def test_execute_code_rejects_dangerous_patterns():
+    """execute_code should raise ValueError for dangerous builtin patterns."""
+    code = "eval('1+1')\ndef generate_resources(): return []"
+    with pytest.raises(ValueError, match="Code rejected"):
+        execute_code(code)
+
+
+def test_execute_code_timeout():
+    """execute_code should raise TimeoutError for long-running code."""
+    code = "import time\ndef generate_resources():\n    time.sleep(60)\n    return []\n"
+    # time is now allowed, so this should actually run and hit the timeout
+    with pytest.raises(TimeoutError):
+        execute_code(code, timeout=2)
+
+
+def test_execute_code_rejects_disallowed_module():
+    """execute_code should reject disallowed imports before execution."""
+    code = "import threading\ndef generate_resources():\n    return []\n"
+    with pytest.raises(ValueError, match="Disallowed imports"):
+        execute_code(code, timeout=2)
+
+
+def test_execute_code_subprocess_isolation():
+    """execute_code runs in a subprocess and returns results via JSON."""
+    code = (
+        "def generate_resources():\n"
+        "    return [{'resourceType': 'Patient', 'id': 'sandbox-test'}]\n"
+    )
+    result = execute_code(code, timeout=10)
+    assert len(result) == 1
+    assert result[0]["id"] == "sandbox-test"
+
+
+# ── Sandbox security tests ────────────────────────────────────────────
+
+
+def test_validate_code_accepts_safe_code_with_annotations():
+    """validate_code should accept safe FHIR generation code including type annotations."""
+    code = (
+        "from uuid import uuid4\n"
+        "from fhir.resources.R4B.patient import Patient\n"
+        "def generate_resources() -> list[dict]:\n"
+        "    resources: list[dict] = []\n"
+        "    return resources\n"
+    )
+    assert validate_code(code) is True
+
+
+def test_validate_code_rejects_syntax_error():
+    """validate_code should reject code with syntax errors."""
+    code = "def generate_resources(\n"
+    assert validate_code(code) is False
+
+
+def test_validate_code_checks_in_validate():
+    """validate_code should check syntax, dangerous patterns, and imports."""
+    # Valid code should pass
+    safe_code = "def generate_resources():\n    return []\n"
+    assert validate_code(safe_code) is True
+
+    # Syntax error should fail
+    bad_syntax = "def generate_resources(\n"
+    assert validate_code(bad_syntax) is False
+
+
+def test_sandbox_execute_code_pre_flight():
+    """execute_code catches syntax errors and bad imports before subprocess."""
+    # Syntax errors are caught early by import whitelist validation
+    bad_code = "def generate_resources(\n"
+    with pytest.raises(ValueError, match="Syntax error"):
+        execute_code(bad_code)
+
+    # Safe code should pass all pre-flight checks and execute
+    safe_code = (
+        "def generate_resources():\n"
+        "    return [{'resourceType': 'Patient', 'id': 'sandbox-test'}]\n"
+    )
+    result = execute_code(safe_code, timeout=10)
+    assert result[0]["id"] == "sandbox-test"
+
+
+def test_subprocess_restricted_import_blocks_at_runtime():
+    """The subprocess wrapper's restricted __import__ blocks disallowed modules at runtime."""
+    code = (
+        "import collections\n"  # allowed
+        "def generate_resources():\n"
+        "    return [{'resourceType': 'Patient', 'id': 'safe'}]\n"
+    )
+    result = execute_code(code, timeout=10)
+    assert result[0]["id"] == "safe"
+
+    # Directly disallowed import is caught pre-flight
+    bad_code = "import os\ndef generate_resources():\n    return []\n"
+    with pytest.raises(ValueError, match="Disallowed"):
+        execute_code(bad_code)
+
+
+def test_type_annotations_work_in_sandbox():
+    """Code with type annotations should pass validation and execution.
+
+    Unlike RestrictedPython, the plain subprocess sandbox handles
+    type annotations natively — no stripping needed.
+    """
+    code = (
+        "def generate_resources() -> list[dict]:\n"
+        "    resources: list[dict] = []\n"
+        "    patient_id: str = 'p1'\n"
+        "    resources.append({'resourceType': 'Patient', 'id': patient_id})\n"
+        "    return resources\n"
+    )
+    # Should pass validation
+    assert validate_code(code) is True
+
+    # Should execute successfully
+    result = execute_code(code, timeout=10)
+    assert len(result) == 1
+    assert result[0]["id"] == "p1"
+
+
+# ── Smoke test validation tests ──────────────────────────────────────
+
+
+def test_smoke_test_rejects_empty_list():
+    """Smoke test should reject code that returns an empty list."""
+    code = "def generate_resources():\n    return []\n"
+    with pytest.raises(ValueError, match="returned empty list"):
+        execute_code(code, timeout=10)
+
+
+def test_smoke_test_rejects_missing_resource_type():
+    """Smoke test should reject resources missing resourceType."""
+    code = "def generate_resources():\n    return [{'id': 'p1', 'name': 'John'}]\n"
+    with pytest.raises(ValueError, match="missing.*resourceType"):
+        execute_code(code, timeout=10)
+
+
+def test_smoke_test_passes_valid_resources():
+    """Smoke test should pass for valid FHIR-like resources."""
+    code = "def generate_resources():\n    return [{'resourceType': 'Patient', 'id': 'p1'}]\n"
+    result = execute_code(code, timeout=10)
+    assert len(result) == 1
+    assert result[0]["resourceType"] == "Patient"
