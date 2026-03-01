@@ -5,10 +5,10 @@
 - Python 3.12 or higher
 - An LLM API key (OpenAI, Anthropic, etc.) — or use `--provider mock` for testing
 
-## Install from PyPI
+## Install from GitHub
 
 ```bash
-pip install fhir-synth
+pip install git+https://github.com/alvinhenrick/fhir-synth.git
 ```
 
 ## Install from Source

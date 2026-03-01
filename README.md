@@ -19,7 +19,7 @@ FHIR R4B Bundles (JSON + NDJSON)
 ## Install
 
 ```bash
-pip install fhir-synth
+pip install git+https://github.com/alvinhenrick/fhir-synth.git
 ```
 
 ## Quick Start
@@ -65,9 +65,11 @@ fhir-synth generate "5 patients" --provider mock -o test.json
 **What happens under the hood:**
 1. Your prompt goes to the LLM (via [LiteLLM](https://docs.litellm.ai/) — 100+ providers)
 2. LLM generates Python code using `fhir.resources` (Pydantic FHIR models)
-3. Code is executed in a sandbox
-4. If it fails, the error is sent back to the LLM for self-healing (up to 2 retries)
-5. Resources are split by patient and saved as a FHIR R4B Bundle (JSON) + NDJSON
+3. Code is safety-checked (import whitelist + dangerous builtins scan) and auto-fixed (naive datetimes → UTC)
+4. Code executes in an isolated subprocess with a timeout
+5. Output is smoke-tested (non-empty, every resource has `resourceType`)
+6. If anything fails, the error is sent back to the LLM for self-healing (up to 2 retries)
+7. Resources are split by patient and saved as FHIR R4B Bundle (JSON) or NDJSON
 
 ### Output Modes
 
