@@ -2,6 +2,34 @@
 
 Use FHIR Synth as a library in your Python code.
 
+## LLM Providers
+
+```python
+from fhir_synth.llm import get_provider
+
+# OpenAI (default)
+llm = get_provider("gpt-4")
+
+# Anthropic Claude
+llm = get_provider("claude-3-5-sonnet-20241022")
+
+# AWS Bedrock with named profile
+llm = get_provider(
+    "bedrock/us.anthropic.claude-3-5-sonnet-20241022-v2:0",
+    aws_profile="my-profile",
+    aws_region="us-east-1",
+)
+
+# AWS Bedrock (relies on env vars / default profile)
+llm = get_provider("bedrock/us.anthropic.claude-3-5-sonnet-20241022-v2:0")
+
+# Google Gemini
+llm = get_provider("gemini/gemini-pro")
+
+# Mock provider (no API key needed — for testing)
+llm = get_provider("mock")
+```
+
 ## Code Generation
 
 ```python

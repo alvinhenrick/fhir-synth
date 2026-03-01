@@ -12,7 +12,7 @@ from fhir_synth.fhir_spec import (
     spec_summary,
 )
 
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 
 # Load environment variables from .env file at package init
 # This ensures API keys and other env vars are available when using as a library
