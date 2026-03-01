@@ -10,12 +10,12 @@ import logging
 import subprocess
 import sys
 import tempfile
-import textwrap
 from pathlib import Path
 from typing import Any
 
 from fhir_synth.code_generator.executor.base import ExecutionResult
 from fhir_synth.code_generator.executor.validation import (
+    build_runner_script,
     check_dangerous_code,
     fix_naive_date_times,
     validate_imports_whitelist,
@@ -62,41 +62,9 @@ class LocalSubprocessExecutor:
         code = fix_naive_date_times(code)
 
         # ── Build the wrapper that runs inside the subprocess ─────────
-        wrapper = textwrap.dedent("""\
-            import json as _json
-            import sys as _sys
+        wrapper = build_runner_script(code)
 
-            # ── Execute user code ────────────────────────────────────
-            _user_code = {user_code_repr}
-            _glb = {{}}
-            exec(compile(_user_code, "<generated>", "exec"), _glb)
-
-            if "generate_resources" not in _glb:
-                print(_json.dumps({{"__error__": "Code must define generate_resources()"}}))
-                _sys.exit(1)
-
-            _result = _glb["generate_resources"]()
-            if not isinstance(_result, list):
-                _result = [_result]
-
-            # ── Smoke test: validate output looks like FHIR resources ─
-            if not _result:
-                print(_json.dumps({{"__error__": "generate_resources() returned empty list — it must return at least one resource dict"}}))
-                _sys.exit(1)
-            for _i, _r in enumerate(_result[:5]):
-                if not isinstance(_r, dict):
-                    print(_json.dumps({{"__error__": f"Resource {{_i}} is {{type(_r).__name__}}, expected dict — use .model_dump(exclude_none=True) on Pydantic models"}}))
-                    _sys.exit(1)
-                if "resourceType" not in _r:
-                    print(_json.dumps({{"__error__": f"Resource {{_i}} is missing 'resourceType' (keys: {{list(_r.keys())[:5]}}) — use .model_dump(exclude_none=True) on Pydantic models"}}))
-                    _sys.exit(1)
-
-            print(_json.dumps(_result, default=str))
-        """).format(
-            user_code_repr=repr(code),
-        )
-
-        # ── Write to temp file & run ─────────────────────────────────
+        # ── Write to a temp file & run ─────────────────────────────────
         tmp = tempfile.NamedTemporaryFile(
             mode="w", suffix=".py", prefix="fhir_synth_", delete=False
         )

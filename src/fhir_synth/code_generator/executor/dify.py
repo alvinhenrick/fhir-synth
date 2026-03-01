@@ -11,17 +11,17 @@ Start the sandbox locally::
 
 Requires ``httpx``::
 
-    pip install "fhir-synth[sandbox]"
+    pip install "fhir-synth[dify]"
 """
 
 import json
 import logging
 import os
-import textwrap
 from typing import Any
 
-from fhir_synth.code_generator.executor.base import ExecutionResult
+from fhir_synth.code_generator.executor.base import ExecutionResult, get_execution_packages
 from fhir_synth.code_generator.executor.validation import (
+    build_runner_script,
     check_dangerous_code,
     fix_naive_date_times,
     validate_imports_whitelist,
@@ -35,10 +35,21 @@ _DEFAULT_URL = "http://localhost:8194"
 class DifySandboxExecutor:
     """Execute generated code via the dify-sandbox HTTP API.
 
+    Works with both self-hosted dify-sandbox and Dify enterprise/cloud.
+
+    The sandbox URL is resolved in order:
+
+    1. ``base_url`` constructor argument
+    2. ``DIFY_SANDBOX_URL`` environment variable
+    3. ``http://localhost:8194`` (default)
+
+    For Dify enterprise/cloud, set ``DIFY_SANDBOX_API_KEY`` to authenticate.
+    Self-hosted sandbox does not require an API key.
+
     Args:
         base_url: Base URL of the dify-sandbox service.
-        api_key: API key for authentication (header ``X-Api-Key``).
-            Falls back to the ``DIFY_SANDBOX_API_KEY`` env var.
+        api_key: API key for Dify enterprise. Falls back to
+            ``DIFY_SANDBOX_API_KEY`` env var. Not needed for self-hosted.
         timeout: HTTP request timeout in seconds.
         preinstall_packages: Packages to install before running the code.
             Defaults to the FHIR packages needed by generated code.
@@ -46,19 +57,16 @@ class DifySandboxExecutor:
 
     def __init__(
         self,
-        base_url: str = _DEFAULT_URL,
+        base_url: str | None = None,
         api_key: str | None = None,
         timeout: int = 120,
         preinstall_packages: list[str] | None = None,
     ) -> None:
-        self.base_url = base_url.rstrip("/")
+        resolved_url = base_url or os.environ.get("DIFY_SANDBOX_URL") or _DEFAULT_URL
+        self.base_url = resolved_url.rstrip("/")
         self.api_key = api_key or os.environ.get("DIFY_SANDBOX_API_KEY", "")
         self.timeout = timeout
-        self.preinstall_packages = preinstall_packages or [
-            "fhir.resources>=7.0",
-            "pydantic>=2.0",
-            "python-dateutil>=2.8",
-        ]
+        self.preinstall_packages = preinstall_packages or get_execution_packages()
         self._client: Any = None  # lazy httpx.Client
 
     # ── Public API ─────────────────────────────────────────────────────
@@ -71,7 +79,7 @@ class DifySandboxExecutor:
             timeout: Override timeout (0 = use default).
 
         Returns:
-            :class:`ExecutionResult` with parsed FHIR resource dicts.
+            class:`ExecutionResult` with parsed FHIR resource dicts.
         """
         timeout = timeout or self.timeout
 
@@ -139,65 +147,15 @@ class DifySandboxExecutor:
         """Lazy-init the httpx client."""
         if self._client is None:
             try:
-                import httpx  # type: ignore[import-untyped]
+                import httpx
             except ImportError:
                 raise ImportError(
                     "DifySandboxExecutor requires the 'httpx' package. "
-                    'Install it with: pip install "fhir-synth[sandbox]"'
+                    'Install it with: pip install "fhir-synth[dify]"'
                 )
             self._client = httpx.Client()
         return self._client
 
     def _build_script(self, code: str) -> str:
         """Build the full Python script sent to the sandbox."""
-        parts: list[str] = []
-
-        # Pre-install packages if configured
-        if self.preinstall_packages:
-            pkgs = " ".join(f'"{p}"' for p in self.preinstall_packages)
-            parts.append(
-                textwrap.dedent(f"""\
-                    import subprocess, sys
-                    subprocess.check_call(
-                        [sys.executable, "-m", "pip", "install", "--quiet",
-                         "--disable-pip-version-check", {pkgs}],
-                        stdout=subprocess.DEVNULL,
-                    )
-                """)
-            )
-
-        # User code + runner
-        parts.append(
-            textwrap.dedent("""\
-                import json as _json
-                import sys as _sys
-
-                _user_code = {user_code_repr}
-                _glb = {{}}
-                exec(compile(_user_code, "<generated>", "exec"), _glb)
-
-                if "generate_resources" not in _glb:
-                    print(_json.dumps({{"__error__": "Code must define generate_resources()"}}))
-                    _sys.exit(1)
-
-                _result = _glb["generate_resources"]()
-                if not isinstance(_result, list):
-                    _result = [_result]
-
-                if not _result:
-                    print(_json.dumps({{"__error__": "generate_resources() returned empty list"}}))
-                    _sys.exit(1)
-
-                for _i, _r in enumerate(_result[:5]):
-                    if not isinstance(_r, dict):
-                        print(_json.dumps({{"__error__": f"Resource {{_i}} is {{type(_r).__name__}}, expected dict"}}))
-                        _sys.exit(1)
-                    if "resourceType" not in _r:
-                        print(_json.dumps({{"__error__": f"Resource {{_i}} missing 'resourceType'"}}))
-                        _sys.exit(1)
-
-                print(_json.dumps(_result, default=str))
-            """).format(user_code_repr=repr(code))
-        )
-
-        return "\n".join(parts)
+        return build_runner_script(code, pip_install_packages=self.preinstall_packages or None)

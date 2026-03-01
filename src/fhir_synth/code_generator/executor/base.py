@@ -6,15 +6,52 @@ calling code is backend-agnostic.
 
 import enum
 from dataclasses import dataclass, field
+from importlib.metadata import requires
 from typing import Any, Protocol, runtime_checkable
+
+# Packages needed inside remote/container executors for running generated code.
+# Only a subset of the project's full dependencies — CLI/LLM packages are not needed.
+_EXECUTION_PACKAGE_NAMES = frozenset({"fhir.resources", "pydantic", "python-dateutil"})
+
+
+def get_execution_packages() -> list[str]:
+    """Read execution-relevant dependencies from installed fhir-synth metadata.
+
+    Returns pinned specs like ``["fhir-resources>=7.0", "pydantic>=2.0", ...]``
+    by filtering the project's declared dependencies (from ``pyproject.toml``)
+    to only those needed for running generated code inside a container or
+    sandbox.  CLI, LLM, and dev packages are excluded.
+    """
+    try:
+        reqs = requires("fhir-synth") or []
+    except Exception:
+        # Fallback if package metadata is unavailable (e.g. editable install quirk)
+        return sorted(_EXECUTION_PACKAGE_NAMES)
+
+    # Build a normalized lookup set (PEP 503: dots/underscores → dashes, lowercase)
+    normalized_names = {
+        name.replace(".", "-").replace("_", "-").lower() for name in _EXECUTION_PACKAGE_NAMES
+    }
+
+    packages: list[str] = []
+    for req in reqs:
+        # Skip optional/extra dependencies (they contain "; extra ==")
+        if "; " in req:
+            continue
+        # Extract the package name (before any version specifier)
+        raw_name = req.split(">")[0].split("<")[0].split("=")[0].split("!")[0].split("[")[0].strip()
+        normalized = raw_name.replace(".", "-").replace("_", "-").lower()
+        if normalized in normalized_names:
+            packages.append(req.strip())
+    return packages or sorted(_EXECUTION_PACKAGE_NAMES)
 
 
 class ExecutorBackend(enum.StrEnum):
     """Supported executor backends."""
 
     LOCAL = "local"
-    DOCKER = "docker"
     DIFY = "dify"
+    E2B = "e2b"
 
 
 @dataclass
@@ -37,7 +74,7 @@ class Executor(Protocol):
     """Protocol that every executor backend must satisfy."""
 
     def execute(self, code: str, timeout: int = 30) -> ExecutionResult:
-        """Execute *code* and return an :class:`ExecutionResult`.
+        """Execute *code* and return an: class:`ExecutionResult`.
 
         Args:
             code: Python source that defines ``generate_resources() -> list[dict]``.
@@ -57,25 +94,24 @@ class Executor(Protocol):
 def get_executor(
     backend: str | ExecutorBackend = ExecutorBackend.LOCAL,
     *,
-    docker_image: str | None = None,
     dify_url: str | None = None,
-    dify_api_key: str | None = None,
+    e2b_api_key: str | None = None,
 ) -> Executor:
     """Factory that returns a concrete executor for the requested backend.
 
     Args:
-        backend: One of ``"local"``, ``"docker"``, ``"dify"`` (or an:             class:`ExecutorBackend` enum member).
-        docker_image: Docker image override (only used when *backend* is
-            ``"docker"``).
+        backend: One of ``"local"``, ``"dify"``, or ``"e2b"`` (or an
+            :class:`ExecutorBackend` enum member).
         dify_url: Base URL for the dify-sandbox service (only used when
             *backend* is ``"dify"``).
-        dify_api_key: API key for dify-sandbox authentication.
+        e2b_api_key: API key for E2B (only used when *backend* is ``"e2b"``).
+            Falls back to ``E2B_API_KEY`` env var.
 
     Returns:
         An object satisfying the: class:`Executor` protocol.
 
     Raises:
-        ValueError: If *backend* is not recognised.
+        ValueError: If *backend* is not recognized.
         ImportError: If the backend requires an optional dependency, that is
             not installed.
     """
@@ -91,23 +127,21 @@ def get_executor(
 
         return LocalSubprocessExecutor()
 
-    if backend is ExecutorBackend.DOCKER:
-        from fhir_synth.code_generator.executor.docker import DockerExecutor
-
-        kwargs: dict[str, Any] = {}
-        if docker_image:
-            kwargs["image"] = docker_image
-        return DockerExecutor(**kwargs)
-
     if backend is ExecutorBackend.DIFY:
         from fhir_synth.code_generator.executor.dify import DifySandboxExecutor
 
-        kwargs = {}
+        kwargs: dict[str, Any] = {}
         if dify_url:
             kwargs["base_url"] = dify_url
-        if dify_api_key:
-            kwargs["api_key"] = dify_api_key
         return DifySandboxExecutor(**kwargs)
+
+    if backend is ExecutorBackend.E2B:
+        from fhir_synth.code_generator.executor.e2b import E2BExecutor
+
+        kwargs = {}
+        if e2b_api_key:
+            kwargs["api_key"] = e2b_api_key
+        return E2BExecutor(**kwargs)
 
     # Should be unreachable
     raise ValueError(f"Unhandled backend: {backend}")

@@ -8,12 +8,11 @@ import pytest
 
 from fhir_synth.code_generator.executor import (
     DifySandboxExecutor,
-    DockerExecutor,
+    E2BExecutor,
     ExecutionResult,
     Executor,
     ExecutorBackend,
     LocalSubprocessExecutor,
-    execute_code,
     get_executor,
 )
 
@@ -40,11 +39,11 @@ class TestExecutorProtocol:
     def test_local_satisfies_protocol(self):
         assert isinstance(LocalSubprocessExecutor(), Executor)
 
-    def test_docker_satisfies_protocol(self):
-        assert isinstance(DockerExecutor(), Executor)
-
     def test_dify_satisfies_protocol(self):
         assert isinstance(DifySandboxExecutor(), Executor)
+
+    def test_e2b_satisfies_protocol(self):
+        assert isinstance(E2BExecutor(), Executor)
 
 
 # ── Factory ────────────────────────────────────────────────────────────────
@@ -55,35 +54,35 @@ class TestGetExecutor:
         ex = get_executor("local")
         assert isinstance(ex, LocalSubprocessExecutor)
 
-    def test_docker_string(self):
-        ex = get_executor("docker")
-        assert isinstance(ex, DockerExecutor)
-
     def test_dify_string(self):
         ex = get_executor("dify")
         assert isinstance(ex, DifySandboxExecutor)
+
+    def test_e2b_string(self):
+        ex = get_executor("e2b")
+        assert isinstance(ex, E2BExecutor)
 
     def test_enum_value(self):
         ex = get_executor(ExecutorBackend.LOCAL)
         assert isinstance(ex, LocalSubprocessExecutor)
 
     def test_case_insensitive(self):
-        ex = get_executor("Docker")
-        assert isinstance(ex, DockerExecutor)
+        ex = get_executor("Dify")
+        assert isinstance(ex, DifySandboxExecutor)
 
     def test_unknown_raises(self):
         with pytest.raises(ValueError, match="Unknown executor backend"):
             get_executor("nonexistent")
 
-    def test_docker_image_passed(self):
-        ex = get_executor("docker", docker_image="my-image:latest")
-        assert isinstance(ex, DockerExecutor)
-        assert ex.image == "my-image:latest"
-
     def test_dify_url_passed(self):
         ex = get_executor("dify", dify_url="http://sandbox:9999")
         assert isinstance(ex, DifySandboxExecutor)
         assert ex.base_url == "http://sandbox:9999"
+
+    def test_e2b_api_key_passed(self):
+        ex = get_executor("e2b", e2b_api_key="e2b_test_key")
+        assert isinstance(ex, E2BExecutor)
+        assert ex.api_key == "e2b_test_key"
 
 
 # ── LocalSubprocessExecutor ───────────────────────────────────────────────
@@ -129,88 +128,6 @@ def generate_resources():
             executor.execute(code, timeout=1)
 
 
-# ── Backward compatibility ────────────────────────────────────────────────
-
-
-class TestBackwardCompatibility:
-    def test_execute_code_function(self):
-        """The old execute_code() function should still work."""
-        code = """
-def generate_resources():
-    return [{'resourceType': 'Patient', 'id': 'compat-test'}]
-"""
-        result = execute_code(code)
-        assert isinstance(result, list)
-        assert result[0]["id"] == "compat-test"
-
-    def test_old_private_names_importable(self):
-        """Old private names _check_dangerous_code etc. are still importable."""
-        from fhir_synth.code_generator.executor import (
-            _check_dangerous_code,
-            _validate_imports_whitelist,
-        )
-
-        assert callable(_check_dangerous_code)
-        assert callable(_validate_imports_whitelist)
-
-
-# ── DockerExecutor (mocked) ──────────────────────────────────────────────
-
-
-class TestDockerExecutor:
-    def test_missing_docker_package_raises_import_error(self):
-        executor = DockerExecutor()
-        executor._client = None  # reset
-        with patch.dict("sys.modules", {"docker": None}):
-            with pytest.raises(ImportError, match="docker"):
-                executor._get_client()
-
-    def test_execute_with_mocked_docker(self):
-        import json
-
-        mock_container = MagicMock()
-        mock_container.wait.return_value = {"StatusCode": 0}
-        resources = [{"resourceType": "Patient", "id": "docker-p1"}]
-        mock_container.logs.side_effect = [
-            json.dumps(resources).encode(),  # stdout
-            b"",  # stderr
-        ]
-
-        mock_client = MagicMock()
-        mock_client.containers.run.return_value = mock_container
-
-        executor = DockerExecutor()
-        executor._client = mock_client
-
-        code = """
-def generate_resources():
-    return [{'resourceType': 'Patient', 'id': 'docker-p1'}]
-"""
-        result = executor.execute(code)
-        assert len(result.artifacts) == 1
-        assert result.artifacts[0]["id"] == "docker-p1"
-        mock_client.containers.run.assert_called_once()
-        mock_container.remove.assert_called_once_with(force=True)
-
-    def test_docker_non_zero_exit(self):
-        mock_container = MagicMock()
-        mock_container.wait.return_value = {"StatusCode": 1}
-        mock_container.logs.side_effect = [
-            b"",  # stdout
-            b"SyntaxError: invalid syntax",  # stderr
-        ]
-
-        mock_client = MagicMock()
-        mock_client.containers.run.return_value = mock_container
-
-        executor = DockerExecutor()
-        executor._client = mock_client
-
-        code = "def generate_resources():\n    return []"
-        with pytest.raises(RuntimeError, match="exited with code 1"):
-            executor.execute(code)
-
-
 # ── DifySandboxExecutor (mocked) ─────────────────────────────────────────
 
 
@@ -221,6 +138,31 @@ class TestDifySandboxExecutor:
         with patch.dict("sys.modules", {"httpx": None}):
             with pytest.raises(ImportError, match="httpx"):
                 executor._get_client()
+
+    def test_url_from_env_var(self):
+        """DIFY_SANDBOX_URL env var is used when no base_url is passed."""
+        import os
+
+        with patch.dict(os.environ, {"DIFY_SANDBOX_URL": "http://sandbox.internal:8194"}):
+            executor = DifySandboxExecutor()
+            assert executor.base_url == "http://sandbox.internal:8194"
+
+    def test_explicit_url_overrides_env_var(self):
+        """Explicit base_url takes priority over env var."""
+        import os
+
+        with patch.dict(os.environ, {"DIFY_SANDBOX_URL": "http://from-env:8194"}):
+            executor = DifySandboxExecutor(base_url="http://explicit:8194")
+            assert executor.base_url == "http://explicit:8194"
+
+    def test_default_url_when_nothing_set(self):
+        """Falls back to localhost when no env var or arg."""
+        import os
+
+        with patch.dict(os.environ, {}, clear=True):
+            os.environ.pop("DIFY_SANDBOX_URL", None)
+            executor = DifySandboxExecutor()
+            assert executor.base_url == "http://localhost:8194"
 
     def test_execute_with_mocked_httpx(self):
         import json
@@ -240,7 +182,7 @@ class TestDifySandboxExecutor:
         mock_client = MagicMock()
         mock_client.post.return_value = mock_response
 
-        executor = DifySandboxExecutor(api_key="test-key")
+        executor = DifySandboxExecutor()
         executor._client = mock_client
 
         code = (
@@ -272,6 +214,49 @@ class TestDifySandboxExecutor:
         code = "def generate_resources():\n    return []"
         with pytest.raises(RuntimeError, match="sandbox error"):
             executor.execute(code)
+
+
+# ── E2BExecutor (mocked) ──────────────────────────────────────────────────
+
+
+class TestE2BExecutor:
+    def test_missing_e2b_package_raises_import_error(self):
+        executor = E2BExecutor(api_key="test-key")
+        with patch.dict("sys.modules", {"e2b_code_interpreter": None}):
+            with pytest.raises(ImportError, match="e2b-code-interpreter"):
+                executor.execute("def generate_resources():\n    return []")
+
+    def test_missing_api_key_raises_value_error(self):
+        import os
+
+        with patch.dict(os.environ, {}, clear=True):
+            os.environ.pop("E2B_API_KEY", None)
+            executor = E2BExecutor(api_key="")
+            # Mock the import so we get past it to the API key check
+            mock_sandbox_cls = MagicMock()
+            with patch.dict(
+                "sys.modules", {"e2b_code_interpreter": MagicMock(Sandbox=mock_sandbox_cls)}
+            ):
+                with patch(
+                    "fhir_synth.code_generator.executor.e2b.Sandbox",
+                    create=True,
+                ):
+                    with pytest.raises(ValueError, match="E2B_API_KEY"):
+                        executor.execute("def generate_resources():\n    return []")
+
+    def test_api_key_from_env_var(self):
+        import os
+
+        with patch.dict(os.environ, {"E2B_API_KEY": "e2b_from_env"}):
+            executor = E2BExecutor()
+            assert executor.api_key == "e2b_from_env"
+
+    def test_explicit_api_key_overrides_env(self):
+        import os
+
+        with patch.dict(os.environ, {"E2B_API_KEY": "e2b_from_env"}):
+            executor = E2BExecutor(api_key="e2b_explicit")
+            assert executor.api_key == "e2b_explicit"
 
 
 # ── CodeGenerator integration ─────────────────────────────────────────────

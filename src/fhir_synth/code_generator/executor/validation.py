@@ -1,13 +1,14 @@
 """Shared validation helpers for code execution.
 
 These functions run **before** any backend executes code.  They are
-backend-agnostic and can be reused by local, Docker, and dify executors.
+backend-agnostic and can be reused by local, dify, and e2b executors.
 """
 
 import ast
 import importlib.util
 import logging
 import re
+import textwrap
 
 from fhir_synth.code_generator.constants import (
     ALLOWED_MODULE_PREFIXES,
@@ -178,3 +179,68 @@ def fix_naive_date_times(code: str) -> str:
     code = _NAIVE_NOW_RE.sub("datetime.now(datetime.timezone.utc)", code)
     code = _NAIVE_UTCNOW_RE.sub("datetime.now(datetime.timezone.utc)", code)
     return code
+
+
+# ── Shared runner script ───────────────────────────────────────────────────
+
+_RUNNER_TEMPLATE = textwrap.dedent("""\
+    import json as _json
+    import sys as _sys
+
+    _user_code = {user_code_repr}
+    _glb = {{}}
+    exec(compile(_user_code, "<generated>", "exec"), _glb)
+
+    if "generate_resources" not in _glb:
+        print(_json.dumps({{"__error__": "Code must define generate_resources()"}}))
+        _sys.exit(1)
+
+    _result = _glb["generate_resources"]()
+    if not isinstance(_result, list):
+        _result = [_result]
+
+    if not _result:
+        print(_json.dumps({{"__error__": "generate_resources() returned empty list — it must return at least one resource dict"}}))
+        _sys.exit(1)
+
+    for _i, _r in enumerate(_result[:5]):
+        if not isinstance(_r, dict):
+            print(_json.dumps({{"__error__": f"Resource {{_i}} is {{type(_r).__name__}}, expected dict — use .model_dump(exclude_none=True) on Pydantic models"}}))
+            _sys.exit(1)
+        if "resourceType" not in _r:
+            print(_json.dumps({{"__error__": f"Resource {{_i}} is missing 'resourceType' (keys: {{list(_r.keys())[:5]}}) — use .model_dump(exclude_none=True) on Pydantic models"}}))
+            _sys.exit(1)
+
+    print(_json.dumps(_result, default=str))
+""")
+
+
+def build_runner_script(code: str, *, pip_install_packages: list[str] | None = None) -> str:
+    """Build the Python script that wraps user code for execution.
+
+    This is the single source of truth for the runner used by all executor
+    backends.  It exec's the user code, calls ``generate_resources()``,
+    validates the output, and prints JSON to stdout.
+
+    Args:
+        code: The user-generated Python source code.
+        pip_install_packages: Optional list of packages to pip-install
+            before running the user code (used by remote executors).
+    """
+    parts: list[str] = []
+
+    if pip_install_packages:
+        pkgs = " ".join(f'"{p}"' for p in pip_install_packages)
+        parts.append(
+            textwrap.dedent(f"""\
+                import subprocess, sys
+                subprocess.check_call(
+                    [sys.executable, "-m", "pip", "install", "--quiet",
+                     "--disable-pip-version-check", {pkgs}],
+                    stdout=subprocess.DEVNULL,
+                )
+            """)
+        )
+
+    parts.append(_RUNNER_TEMPLATE.format(user_code_repr=repr(code)))
+    return "\n".join(parts)

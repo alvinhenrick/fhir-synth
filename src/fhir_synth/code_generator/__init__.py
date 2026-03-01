@@ -8,7 +8,7 @@ from fhir_synth.code_generator.constants import (
 from fhir_synth.code_generator.converter import PromptToRulesConverter
 from fhir_synth.code_generator.executor import (
     DifySandboxExecutor,
-    DockerExecutor,
+    E2BExecutor,
     ExecutionResult,
     Executor,
     ExecutorBackend,
@@ -23,7 +23,7 @@ __all__ = [
     "ALLOWED_MODULES",
     "CodeGenerator",
     "DifySandboxExecutor",
-    "DockerExecutor",
+    "E2BExecutor",
     "ExecutionResult",
     "Executor",
     "ExecutorBackend",
