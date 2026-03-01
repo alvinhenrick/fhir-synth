@@ -39,6 +39,18 @@ def generate(
     aws_region: str | None = typer.Option(
         None, "--aws-region", help="AWS region for Bedrock (e.g. us-east-1)"
     ),
+    executor_backend: str = typer.Option(
+        "local",
+        "--executor",
+        "-e",
+        help="Execution backend: local, docker, or dify",
+    ),
+    executor_image: str | None = typer.Option(
+        None, "--executor-image", help="Docker image for docker executor"
+    ),
+    dify_url: str | None = typer.Option(
+        None, "--dify-url", help="Base URL for dify-sandbox (default: http://localhost:8194)"
+    ),
 ) -> None:
     """Generate synthetic FHIR data end-to-end: prompt → LLM → code → execute → NDJSON.
 
@@ -91,13 +103,27 @@ def generate(
 
       # Save generated code for debugging
       fhir-synth generate "10 patients with labs" --save-code generated.py
+
+      # Use Docker executor for sandboxed execution
+      fhir-synth generate "5 patients" --executor docker
+
+      # Use Docker executor with a custom image
+      fhir-synth generate "5 patients" --executor docker --executor-image my-fhir-image:latest
+
+      # Use dify-sandbox executor
+      fhir-synth generate "5 patients" --executor dify --dify-url http://localhost:8194
     """
     try:
-        from fhir_synth.code_generator import CodeGenerator
+        from fhir_synth.code_generator import CodeGenerator, get_executor
         from fhir_synth.llm import get_provider
 
         llm = get_provider(provider, aws_profile=aws_profile, aws_region=aws_region)
-        code_gen = CodeGenerator(llm)
+        executor = get_executor(
+            executor_backend,
+            docker_image=executor_image,
+            dify_url=dify_url,
+        )
+        code_gen = CodeGenerator(llm, executor=executor)
 
         # Load metadata configuration from YAML if provided
         prompt_text = prompt
@@ -288,14 +314,31 @@ def codegen(
     aws_region: str | None = typer.Option(
         None, "--aws-region", help="AWS region for Bedrock (e.g. us-east-1)"
     ),
+    executor_backend: str = typer.Option(
+        "local",
+        "--executor",
+        "-e",
+        help="Execution backend: local, docker, or dify",
+    ),
+    executor_image: str | None = typer.Option(
+        None, "--executor-image", help="Docker image for docker executor"
+    ),
+    dify_url: str | None = typer.Option(
+        None, "--dify-url", help="Base URL for dify-sandbox (default: http://localhost:8194)"
+    ),
 ) -> None:
     """Generate Python code for resource creation from a prompt."""
     try:
-        from fhir_synth.code_generator import CodeGenerator
+        from fhir_synth.code_generator import CodeGenerator, get_executor
         from fhir_synth.llm import get_provider
 
         llm = get_provider(provider, aws_profile=aws_profile, aws_region=aws_region)
-        code_gen = CodeGenerator(llm, max_retries=2)
+        executor = get_executor(
+            executor_backend,
+            docker_image=executor_image,
+            dify_url=dify_url,
+        )
+        code_gen = CodeGenerator(llm, max_retries=2, executor=executor)
         prompt_text = prompt
         if empi:
             system_list = [s.strip() for s in systems.split(",") if s.strip()]

@@ -21,6 +21,11 @@ fhir-synth generate "10 diabetic patients with HbA1c observations" -o diabetes.n
 | `--systems` | `emr1,emr2` | EMR system ids (EMPI) |
 | `--no-orgs` | off | Skip Organization resources (EMPI) |
 | `--meta-config` | — | Path to metadata YAML config file |
+| `-e / --executor` | `local` | Execution backend: `local`, `docker`, or `dify` |
+| `--executor-image` | — | Docker image override (for `--executor docker`) |
+| `--dify-url` | — | Base URL for dify-sandbox (for `--executor dify`) |
+| `--aws-profile` | — | AWS profile for Bedrock |
+| `--aws-region` | — | AWS region for Bedrock |
 
 Default output is a single NDJSON file (one patient bundle per line).
 Use `--split` to write one JSON file per patient into a directory instead.
@@ -45,6 +50,15 @@ fhir-synth generate "20 patients with conditions" -o data.ndjson --save-code gen
 
 # Mock provider (no API key needed)
 fhir-synth generate "5 patients" --provider mock -o test.ndjson
+
+# Docker executor — runs code in an ephemeral container
+fhir-synth generate "5 patients" --executor docker
+
+# Docker executor with custom image (pre-built with fhir.resources)
+fhir-synth generate "5 patients" --executor docker --executor-image my-fhir-image:latest
+
+# Dify sandbox executor — sends code to a dify-sandbox service
+fhir-synth generate "5 patients" --executor dify --dify-url http://localhost:8194
 ```
 
 ---
@@ -66,6 +80,9 @@ Generate executable Python code from prompts (without bundling).
 ```bash
 fhir-synth codegen "Create 50 patients" --out code.py
 fhir-synth codegen "Create 50 patients" --out code.py --execute
+
+# Execute with Docker isolation
+fhir-synth codegen "Create 50 patients" --out code.py --execute --executor docker
 ```
 
 ---
