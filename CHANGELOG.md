@@ -2,6 +2,22 @@
 
 <!-- version list -->
 
+## v1.2.0 (2026-03-01)
+
+### Code Style
+
+- Clean up code formatting and remove unnecessary whitespace
+  ([`7edbd90`](https://github.com/alvinhenrick/fhir-synth/commit/7edbd90fde94efca92fc62ff3ae03924cefdaf59))
+
+### Documentation
+
+- Update changelog format and mkdocs configuration for snippets
+  ([`f902076`](https://github.com/alvinhenrick/fhir-synth/commit/f9020766615e04d40a9f8a72c9fd57d900d9e1da))
+
+- Update documentation for LLM providers and AWS Bedrock integration
+  ([`18700ac`](https://github.com/alvinhenrick/fhir-synth/commit/18700acaf78cdae7f82c57718c945c9629221e93))
+
+
 ## v1.1.0 (2026-02-28)
 
 ### Documentation
