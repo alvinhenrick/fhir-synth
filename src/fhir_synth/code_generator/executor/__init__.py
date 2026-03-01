@@ -2,12 +2,11 @@
 
 Provides three backends:
 
-- :class:`LocalSubprocessExecutor` — runs code in a local subprocess (default).
-- :class:`DockerExecutor` — runs code in an ephemeral Docker container.
-- :class:`DifySandboxExecutor` — sends code to a dify-sandbox HTTP service.
+-: class:`LocalSubprocessExecutor` — runs code in a local subprocess (default).
+-: class:`DockerExecutor` — runs code in an ephemeral Docker container.
+-: class:`DifySandboxExecutor` — sends code to a dify-sandbox HTTP service.
 
-All backends share the :class:`Executor` protocol and return an
-:class:`ExecutionResult`.
+All backends share the: class:`Executor` protocol and return an: class:`ExecutionResult`.
 """
 
 # ── Protocol & types ───────────────────────────────────────────────────────

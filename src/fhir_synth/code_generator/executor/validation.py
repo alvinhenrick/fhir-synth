@@ -4,8 +4,6 @@ These functions run **before** any backend executes code.  They are
 backend-agnostic and can be reused by local, Docker, and dify executors.
 """
 
-from __future__ import annotations
-
 import ast
 import importlib.util
 import logging
