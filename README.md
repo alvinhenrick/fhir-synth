@@ -4,6 +4,8 @@ Dynamic FHIR R4B synthetic data generator using LLM-powered code generation and 
 
 Generate realistic synthetic healthcare data from natural language prompts. Tell it what you want, and it generates the code to create it.
 
+> *Inspired by [Synthea](https://github.com/synthetichealth/synthea). Created and designed by human. Code guided by AI, for AI.*
+
 ## What It Does
 
 ```

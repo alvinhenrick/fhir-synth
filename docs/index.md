@@ -4,6 +4,8 @@ Dynamic FHIR R4B synthetic data generator using LLM-powered code generation and 
 
 Generate realistic synthetic healthcare data from natural language prompts. Tell it what you want, and it generates the code to create it.
 
+> *Inspired by [Synthea](https://github.com/synthetichealth/synthea). Created and designed by human. Code guided by AI, for AI.*
+
 ## How It Works
 
 ```
@@ -22,6 +24,7 @@ FHIR R4B Bundles
 - **LLM-Powered Code Generation**: Uses GPT-4, Claude, Bedrock, or 100+ providers via [LiteLLM](https://docs.litellm.ai/)
 - **Self-Healing Execution**: If generated code fails, errors are sent back to the LLM for automatic retry
 - **Declarative Rule Engine**: Define generation rules as structured data
+- **Faker Integration**: Uses [Faker](https://faker.readthedocs.io/) for realistic demographic and clinical data
 - **EMPI Support**: Generate Person → Patient linkages across EMR systems
 - **Custom Metadata**: Add security labels, tags, profiles, and source via YAML config
 - **Full FHIR R4B**: Supports all 141 R4B resource types via `fhir.resources` Pydantic models
