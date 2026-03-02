@@ -1038,6 +1038,9 @@
 <h1 id="fhir-synth">FHIR Synth<a class="headerlink" href="#fhir-synth" title="Permanent link">&para;</a></h1>
 <p>Dynamic FHIR R4B synthetic data generator using LLM-powered code generation and declarative rules.</p>
 <p>Generate realistic synthetic healthcare data from natural language prompts. Tell it what you want, and it generates the code to create it.</p>
+<blockquote>
+<p><em>Inspired by <a href="https://github.com/synthetichealth/synthea">Synthea</a>. Created and designed by human. Code guided by AI, for AI.</em></p>
+</blockquote>
 <h2 id="how-it-works">How It Works<a class="headerlink" href="#how-it-works" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>Your Prompt
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    ↓
@@ -1053,6 +1056,7 @@
 <li><strong>LLM-Powered Code Generation</strong>: Uses GPT-4, Claude, Bedrock, or 100+ providers via <a href="https://docs.litellm.ai/">LiteLLM</a></li>
 <li><strong>Self-Healing Execution</strong>: If generated code fails, errors are sent back to the LLM for automatic retry</li>
 <li><strong>Declarative Rule Engine</strong>: Define generation rules as structured data</li>
+<li><strong>Faker Integration</strong>: Uses <a href="https://faker.readthedocs.io/">Faker</a> for realistic demographic and clinical data</li>
 <li><strong>EMPI Support</strong>: Generate Person → Patient linkages across EMR systems</li>
 <li><strong>Custom Metadata</strong>: Add security labels, tags, profiles, and source via YAML config</li>
 <li><strong>Full FHIR R4B</strong>: Supports all 141 R4B resource types via <code>fhir.resources</code> Pydantic models</li>
