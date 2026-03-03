@@ -2,6 +2,25 @@
 
 <!-- version list -->
 
+## v1.4.0 (2026-03-03)
+
+### Code Style
+
+- Clean up docstring formatting and remove unnecessary whitespace
+  ([`0455db1`](https://github.com/alvinhenrick/fhir-synth/commit/0455db1a8f977b47a2b5ac2a8ad435720f8ad82b))
+
+### Documentation
+
+- Update documentation to include Faker integration and inspiration source
+  ([`98fba67`](https://github.com/alvinhenrick/fhir-synth/commit/98fba6737d8476638625e71113a86cd5c559ebf9))
+
+### Features
+
+- Enhance patient data generation with demographic diversity, comorbidity realism, and SDOH
+  observations
+  ([`001f054`](https://github.com/alvinhenrick/fhir-synth/commit/001f0540c826e57c1bd11572c98320eac2245457))
+
+
 ## v1.3.0 (2026-03-01)
 
 ### Code Style
