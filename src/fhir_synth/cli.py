@@ -48,6 +48,11 @@ def generate(
     dify_url: str | None = typer.Option(
         None, "--dify-url", help="Base URL for dify-sandbox (or set DIFY_SANDBOX_URL env var)"
     ),
+    use_dspy: bool = typer.Option(
+        False,
+        "--dspy",
+        help="Enable DSPy chain-of-thought reasoning for improved accuracy (experimental)",
+    ),
 ) -> None:
     """Generate synthetic FHIR data end-to-end: prompt → LLM → code → execute → NDJSON.
 
@@ -112,6 +117,7 @@ def generate(
     """
     try:
         from fhir_synth.code_generator import CodeGenerator, get_executor
+        from fhir_synth.code_generator.dspy_generator import DSPyCodeGenerator
         from fhir_synth.llm import get_provider
 
         llm = get_provider(provider, aws_profile=aws_profile, aws_region=aws_region)
@@ -119,7 +125,14 @@ def generate(
             executor_backend,
             dify_url=dify_url,
         )
-        code_gen = CodeGenerator(llm, executor=executor)
+
+        # Choose generator based on --dspy flag
+        code_gen: CodeGenerator | DSPyCodeGenerator
+        if use_dspy:
+            typer.echo("🧠 Using DSPy ProgramOfThought mode")
+            code_gen = DSPyCodeGenerator(llm, executor=executor)
+        else:
+            code_gen = CodeGenerator(llm, executor=executor)
 
         # Load metadata configuration from YAML if provided
         prompt_text = prompt
@@ -178,20 +191,26 @@ def generate(
             )
             prompt_text = f"{empi_hint}\n\n{prompt}"
 
-        # Step 1 — generate code
-        typer.echo("⚙  Generating code from prompt …")
-        code = code_gen.generate_code_from_prompt(prompt_text)
+        if use_dspy and not save_code:
+            # DSPy ProgramOfThought: single generate→execute→retry pipeline
+            typer.echo("⚙  Generating and executing via ProgramOfThought …")
+            assert isinstance(code_gen, DSPyCodeGenerator)
+            resources = code_gen.generate(prompt_text)
+            typer.echo(f"   Got {len(resources)} resources")
+        else:
+            # Two-step: generate code, then execute
+            typer.echo("⚙  Generating code from prompt …")
+            code = code_gen.generate_code_from_prompt(prompt_text)
 
-        if save_code:
-            Path(save_code).write_text(code)
-            typer.echo(f"   Saved code → {save_code}")
+            if save_code:
+                Path(save_code).write_text(code)
+                typer.echo(f"   Saved code → {save_code}")
 
-        # Step 2 — execute code (self-healing retries built-in)
-        typer.echo("▶  Executing generated code …")
-        resources = code_gen.execute_generated_code(code)
-        typer.echo(f"   Got {len(resources)} resources")
+            typer.echo("▶  Executing generated code …")
+            resources = code_gen.execute_generated_code(code)
+            typer.echo(f"   Got {len(resources)} resources")
 
-        # Step 2.5 — apply metadata from YAML config if specified
+        # Apply metadata from YAML config if specified
         if metadata_config and "meta" in metadata_config:
             meta = metadata_config["meta"]
             code_gen.apply_metadata_to_resources(
@@ -203,7 +222,7 @@ def generate(
             )
             typer.echo("   Applied metadata from config")
 
-        # Step 3 — output results
+        # Output results
         from fhir_synth.bundle import split_resources_by_patient, write_ndjson, write_split_bundles
 
         per_patient_bundles = split_resources_by_patient(resources)

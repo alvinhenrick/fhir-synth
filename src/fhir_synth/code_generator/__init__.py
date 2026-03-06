@@ -6,6 +6,7 @@ from fhir_synth.code_generator.constants import (
     SUPPORTED_RESOURCE_TYPES,
 )
 from fhir_synth.code_generator.converter import PromptToRulesConverter
+from fhir_synth.code_generator.dspy_generator import DSPyCodeGenerator
 from fhir_synth.code_generator.executor import (
     DifySandboxExecutor,
     E2BExecutor,
@@ -22,6 +23,7 @@ __all__ = [
     "ALLOWED_MODULE_PREFIXES",
     "ALLOWED_MODULES",
     "CodeGenerator",
+    "DSPyCodeGenerator",
     "DifySandboxExecutor",
     "E2BExecutor",
     "ExecutionResult",
