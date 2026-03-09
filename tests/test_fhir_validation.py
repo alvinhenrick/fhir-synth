@@ -78,4 +78,3 @@ class TestValidationResult:
         vr = ValidationResult(total=10, valid=8, invalid=2)
         assert vr.pass_rate == 0.8
         assert not vr.is_valid
-

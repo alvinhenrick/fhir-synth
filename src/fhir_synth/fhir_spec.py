@@ -282,29 +282,98 @@ def _discover_clinical_resources() -> list[str]:
 CLINICAL_RESOURCES: list[str] = _discover_clinical_resources()
 
 
+def _short_type(annotation: str) -> str:
+    """Extract a clean short type name from a Pydantic annotation string."""
+    # "typing.Annotated[datetime.datetime, DateTime()]" → "DateTime"
+    # "abc.ReferenceType" → "Reference"
+    # "<class 'abc.CodeableConceptType'>" → "CodeableConcept"
+    # "typing.Annotated[str, Code()]" → "Code"
+    for pattern, label in [
+        ("DateTime()", "DateTime"),
+        ("Instant()", "Instant"),
+        ("Date()", "Date"),
+        ("Code()", "Code"),
+        ("Id()", "Id"),
+        ("Uri()", "Uri"),
+        ("Markdown()", "Markdown"),
+        ("ReferenceType", "Reference"),
+        ("CodeableConceptType", "CodeableConcept"),
+        ("CodingType", "Coding"),
+        ("PeriodType", "Period"),
+        ("QuantityType", "Quantity"),
+        ("IdentifierType", "Identifier"),
+        ("HumanNameType", "HumanName"),
+        ("AddressType", "Address"),
+        ("ContactPointType", "ContactPoint"),
+        ("AttachmentType", "Attachment"),
+        ("NarrativeType", "Narrative"),
+        ("MetaType", "Meta"),
+        ("DurationType", "Duration"),
+        ("bool", "boolean"),
+    ]:
+        if pattern in annotation:
+            return label
+    return "str" if "str" in annotation else "object"
+
+
 def spec_summary(resource_types: list[str] | None = None) -> str:
     """Compact text summary of the FHIR spec for the given resources.
 
     Designed to be injected into LLM system prompts so the model knows
-    exactly which fields are required / optional / references.
+    exactly which fields are required / optional / references, along with
+    their types (DateTime, Period, CodeableConcept, etc.).
     """
     types = resource_types or CLINICAL_RESOURCES
-    lines: list[str] = [f"FHIR R4B Spec — {len(types)} resource types\n"]
+    lines: list[str] = [
+        f"FHIR R4B Spec — {len(types)} resource types\n",
+        "DATA TYPE FORMAT RULES (from the FHIR spec):",
+        "  DateTime: date-only OR full datetime with timezone.",
+        '    ✓ "2025-03-08"  ✓ "2025-03"  ✓ "2025"  ✓ "2025-03-08T10:30:00+00:00"',
+        '    ✗ "2025-03-08T10:30:00"  (has time but no timezone — INVALID)',
+        "  Instant: MUST be full datetime with timezone. No date-only.",
+        '    ✓ "2025-03-08T10:30:00+00:00"  ✓ "2025-03-08T10:30:00Z"',
+        '    ✗ "2025-03-08"  ✗ "2025-03-08T10:30:00"',
+        "  In code: always construct with timezone when time is needed:",
+        "    datetime(2025, 3, 8, 10, 30, tzinfo=timezone.utc).isoformat()",
+        "    For date-only DateTime fields: date(2025, 3, 8).isoformat()",
+        "  Decimal: use Decimal (from decimal import Decimal), not float.",
+        "",
+    ]
+
+    # Skip these internal/noise fields to keep the spec compact
+    _skip = frozenset({
+        "fhir_comments", "implicitRules", "language", "contained",
+        "extension", "modifierExtension", "text",
+    })
 
     for rt in types:
         try:
             meta = _introspect(rt)
         except ValueError:
             continue
-        req = ", ".join(meta.required_fields) or "(none)"
-        refs = ", ".join(meta.reference_fields) or "(none)"
-        opt_sample = ", ".join(meta.optional_fields[:8])
-        if len(meta.optional_fields) > 8:
-            opt_sample += " …"
+
         lines.append(f"{rt}:")
-        lines.append(f"  required: {req}")
-        lines.append(f"  references: {refs}")
-        lines.append(f"  optional: {opt_sample}")
+
+        # Required fields with types
+        req_parts = []
+        for f in meta.all_fields:
+            if f.required:
+                req_parts.append(f"    {f.name}: {_short_type(f.type_annotation)}  [REQUIRED]")
+        if req_parts:
+            lines.extend(req_parts)
+
+        # Key optional fields with types (skip noise fields, cap at 12)
+        opt_parts = []
+        for f in meta.all_fields:
+            if not f.required and f.name not in _skip:
+                t = _short_type(f.type_annotation)
+                tag = " [ref]" if f.is_reference else ""
+                opt_parts.append(f"    {f.name}: {t}{tag}")
+        if opt_parts:
+            for line in opt_parts[:12]:
+                lines.append(line)
+            if len(opt_parts) > 12:
+                lines.append(f"    … and {len(opt_parts) - 12} more fields")
         lines.append("")
 
     return "\n".join(lines)
@@ -328,10 +397,9 @@ def import_guide(resource_types: list[str] | None = None) -> str:
     """
     types = resource_types or CLINICAL_RESOURCES
 
-    lines: list[str] = ["VALID IMPORT PATHS (use these exactly):\n"]
+    lines: list[str] = ["VALID IMPORT PATHS (use these exactly):\n", "# Resource types"]
 
     # 1. Resource modules
-    lines.append("# Resource types")
     for rt in types:
         modname = _MODULE_MAP.get(rt)
         if modname:
@@ -346,9 +414,7 @@ def import_guide(resource_types: list[str] | None = None) -> str:
             lines.append(f"from fhir.resources.R4B.{modname} import {cls_str}")
 
     lines.append(
-        "\n# WARNING: Classes are in the modules listed above."
-        "\n# Do NOT invent module names like 'timingrepeat' or 'contactdetail'."
-        "\n# e.g., TimingRepeat is in 'timing', not 'timingrepeat'."
+        "\n# Use ONLY the module paths listed above. Do NOT invent module names."
     )
 
     return "\n".join(lines)
