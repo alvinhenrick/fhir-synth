@@ -165,6 +165,39 @@ def fix_common_imports(code: str) -> str:
     return _IMPORT_RE.sub(_fix_line, code)
 
 
+# ── Naive-datetime fix ────────────────────────────────────────────────────
+
+_NAIVE_NOW_RE = re.compile(r"datetime\.now\(\s*\)")
+_NAIVE_UTCNOW_RE = re.compile(r"datetime\.utcnow\(\s*\)")
+_ISOFORMAT_RE = re.compile(r"(\b\w+(?:\.\w+|\([^)]*\))*?)\.isoformat\(\)")
+
+_TZ_HELPER = '''\
+import re as _re
+from datetime import datetime as _dt, timezone as _tz
+_NAIVE_RE = _re.compile(r"^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?$")
+def _tz_iso(v):
+    if isinstance(v, _dt) and v.tzinfo is None:
+        v = v.replace(tzinfo=_tz.utc)
+    s = v if isinstance(v, str) else v.isoformat()
+    return s + "+00:00" if _NAIVE_RE.match(s) else s
+'''
+
+
+def fix_naive_date_times(code: str) -> str:
+    """Harden common naive datetime patterns in generated code.
+
+    - datetime.now()/utcnow() → timezone-aware UTC.
+    - expr.isoformat() → _tz_iso(expr) to ensure tz info on naive datetimes.
+    """
+    code = _NAIVE_NOW_RE.sub("datetime.now(datetime.timezone.utc)", code)
+    code = _NAIVE_UTCNOW_RE.sub("datetime.now(datetime.timezone.utc)", code)
+
+    if ".isoformat()" in code and "def _tz_iso" not in code:
+        code = _ISOFORMAT_RE.sub(r"_tz_iso(\1)", code)
+        code = _TZ_HELPER + code
+
+    return code
+
 
 # ── Shared runner script ───────────────────────────────────────────────────
 
