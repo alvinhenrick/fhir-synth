@@ -1,0 +1,14 @@
+CREATION ORDER — always create resources in dependency order:
+  1. Organization, Practitioner, Location  (standalone)
+  2. Patient                               (may reference Organization)
+  3. Person                                (links to Patient for EMPI)
+  4. Coverage                              (references Patient + Organization)
+  5. Encounter                             (references Patient)
+  6. Condition, Observation, Procedure,    (reference Patient + Encounter)
+     MedicationRequest, DiagnosticReport,
+     AllergyIntolerance, Immunization
+  7. CarePlan, Goal, ServiceRequest        (reference Patient + Conditions)
+  8. DocumentReference                     (references Patient + Encounter)
+  9. FamilyMemberHistory                   (references Patient)
+  10. Provenance                           (references any target resource)
+

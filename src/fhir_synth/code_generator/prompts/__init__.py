@@ -1,0 +1,132 @@
+"""Prompt management for FHIR code generation.
+
+All prompt content lives in Markdown files organised by concern:
+
+- ``system/`` — engineering rules, sandbox constraints, role definition
+- ``clinical/`` — clinician-authored domain knowledge (editable without touching Python)
+- ``templates/``— user-facing prompt templates with ``$variable`` placeholders
+
+This module re-exports the **same public API** that ``generator.py`` consumes:
+
+-: data:`SYSTEM_PROMPT`
+-: func:`build_code_prompt`
+-: func:`build_fix_prompt`
+-: func:`build_rules_prompt`
+-: func:`build_bundle_code_prompt`
+"""
+
+from fhir_synth.code_generator.constants import ALLOWED_MODULE_PREFIXES, ALLOWED_MODULES
+from fhir_synth.code_generator.prompts.loader import load_prompt, load_section, render
+from fhir_synth.fhir_spec import import_guide, spec_summary
+
+# ── Pre-compute sandbox values (same logic as old prompts.py) ──────────
+_ALLOWED_LIST = ", ".join(sorted(ALLOWED_MODULES))
+_ALLOWED_PREFIXES = ", ".join(f"{p}.*" for p in ALLOWED_MODULE_PREFIXES)
+
+
+def _build_system_prompt() -> str:
+    """Assemble the full system prompt from Markdown fragments.
+
+    Sections are loaded in order:
+      1. system/ — role, sandbox, hard rules, realism, reference map, creation order, step-by-step
+      2. clinical/ — all domain knowledge files
+    """
+    # Load the system section (has $allowed_list / $allowed_prefixes in sandbox.md)
+    system_raw = load_section("system")
+    system_text = render(
+        system_raw,
+        allowed_list=_ALLOWED_LIST,
+        allowed_prefixes=_ALLOWED_PREFIXES,
+    )
+
+    clinical_text = load_section("clinical")
+
+    return f"{system_text}\n\n{clinical_text}"
+
+
+# ── Module-level constant (built once at import time) ──────────────────
+SYSTEM_PROMPT: str = _build_system_prompt()
+
+
+# ── User-prompt builders ───────────────────────────────────────────────
+
+
+def build_code_prompt(requirement: str) -> str:
+    """Build a prompt for generating Python code.
+
+    Args:
+        requirement: Natural language description of resources to generate
+
+    Returns:
+        Formatted prompt string
+    """
+    template = load_prompt("templates/code_prompt.md")
+    return render(
+        template,
+        requirement=requirement,
+        fhir_imports=import_guide(),
+        fhir_spec=spec_summary(),
+    )
+
+
+def build_rules_prompt(requirement: str) -> str:
+    """Build a prompt for generating rule definitions.
+
+    Args:
+        requirement: Natural language description of generation rules
+
+    Returns:
+        Formatted prompt string
+    """
+    template = load_prompt("templates/rules_prompt.md")
+    return render(template, requirement=requirement)
+
+
+def build_bundle_code_prompt(resource_types: list[str], count_per_resource: int) -> str:
+    """Build a prompt for generating bundle creation code.
+
+    Args:
+        resource_types: List of FHIR resource types to include
+        count_per_resource: Number of each resource type to generate
+
+    Returns:
+        Formatted prompt string
+    """
+    template = load_prompt("templates/bundle_code_prompt.md")
+    return render(
+        template,
+        resources_str=", ".join(resource_types),
+        count_per_resource=str(count_per_resource),
+        fhir_imports=import_guide(resource_types),
+        fhir_spec=spec_summary(resource_types),
+    )
+
+
+def build_fix_prompt(code: str, error: str) -> str:
+    """Build a prompt for fixing broken code.
+
+    Args:
+        code: The code that failed
+        error: The error message / traceback
+
+    Returns:
+        Formatted prompt string
+    """
+    template = load_prompt("templates/fix_prompt.md")
+    return render(
+        template,
+        code=code,
+        error=error,
+        fhir_imports=import_guide(),
+        allowed_list=_ALLOWED_LIST,
+        allowed_prefixes=_ALLOWED_PREFIXES,
+    )
+
+
+__all__ = [
+    "SYSTEM_PROMPT",
+    "build_bundle_code_prompt",
+    "build_code_prompt",
+    "build_fix_prompt",
+    "build_rules_prompt",
+]
