@@ -4,95 +4,68 @@ Requirement: $requirement
 
 $fhir_imports
 
-FHIR SPEC (required, reference, and optional fields for common resource types):
+FHIR SPEC (fields with types — see DATA TYPE FORMAT RULES at top):
 $fhir_spec
 
-Remember:
-- def generate_resources() -> list[dict]:
-- import from fhir.resources.R4B (e.g. from fhir.resources.R4B.patient import Patient)
-- .model_dump(exclude_none=True) on every resource
-- uuid4 for IDs, Decimal for numeric values
-- real clinical codes (ICD-10, LOINC, RxNorm, SNOMED)
-- diverse, realistic data with patient variation (age groups, gender, race, language, insurance)
-- realistic comorbidity clusters (not random independent conditions)
-- vital signs with proper components (e.g. BP has systolic + diastolic components)
-- lab results with referenceRange and interpretation codes
-- include SDOH observations when generating comprehensive patient data
-- allergy and immunization records with proper code systems (SNOMED, CVX)
-
-EXAMPLE (for reference - adapt to your requirement):
+EXAMPLE (for reference — shows key patterns: timezone-aware datetimes, Period, references):
 ```python
 from fhir.resources.R4B.patient import Patient
+from fhir.resources.R4B.encounter import Encounter
 from fhir.resources.R4B.condition import Condition
 from fhir.resources.R4B.codeableconcept import CodeableConcept
 from fhir.resources.R4B.coding import Coding
 from fhir.resources.R4B.reference import Reference
-from fhir.resources.R4B.extension import Extension
+from fhir.resources.R4B.period import Period
 from uuid import uuid4
-from datetime import date
+from datetime import datetime, timezone, timedelta, date
 from decimal import Decimal
+from faker import Faker
 import random
 
 def generate_resources() -> list[dict]:
     resources = []
+    fake = Faker()
 
-    # Generate patient with US Core extensions for race/ethnicity
     patient_id = str(uuid4())
-    gender = random.choice(["male", "female", "other"])
     patient = Patient(
         id=patient_id,
-        name=[{"given": ["John"], "family": "Doe"}],
-        gender=gender,
-        birthDate="1970-01-01",
-        extension=[
-            Extension(
-                url="http://hl7.org/fhir/us/core/StructureDefinition/us-core-race",
-                extension=[
-                    Extension(url="ombCategory", valueCoding=Coding(
-                        system="urn:oid:2.16.840.1.113883.6.238",
-                        code="2106-3", display="White"
-                    )),
-                    Extension(url="text", valueString="White")
-                ]
-            )
-        ],
-        communication=[{
-            "language": {"coding": [{"system": "urn:ietf:bcp:47", "code": "en"}]},
-            "preferred": True
-        }]
+        name=[{"given": [fake.first_name()], "family": fake.last_name()}],
+        gender=random.choice(["male", "female"]),
+        birthDate=date(random.randint(1950, 2000), random.randint(1, 12), random.randint(1, 28)).isoformat(),
     )
     resources.append(patient.model_dump(exclude_none=True))
 
-    # Generate related condition with severity and clinical status
+    # Encounter with Period (DateTime fields — MUST have timezone)
+    enc_id = str(uuid4())
+    start = datetime.now(timezone.utc) - timedelta(days=random.randint(7, 90))
+    end = start + timedelta(hours=1)
+    encounter = Encounter(
+        id=enc_id,
+        status="finished",
+        class_fhir=Coding(system="http://terminology.hl7.org/CodeSystem/v3-ActCode", code="AMB"),
+        subject=Reference(reference=f"Patient/{patient_id}"),
+        period=Period(start=start.isoformat(), end=end.isoformat()),
+    )
+    resources.append(encounter.model_dump(exclude_none=True))
+
+    # Condition referencing Patient and Encounter
     condition = Condition(
         id=str(uuid4()),
-        clinicalStatus=CodeableConcept(
-            coding=[Coding(
-                system="http://terminology.hl7.org/CodeSystem/condition-clinical",
-                code="active", display="Active"
-            )]
-        ),
-        verificationStatus=CodeableConcept(
-            coding=[Coding(
-                system="http://terminology.hl7.org/CodeSystem/condition-ver-status",
-                code="confirmed", display="Confirmed"
-            )]
-        ),
-        severity=CodeableConcept(
-            coding=[Coding(
-                system="http://snomed.info/sct",
-                code="24484000", display="Severe"
-            )]
-        ),
+        clinicalStatus=CodeableConcept(coding=[Coding(
+            system="http://terminology.hl7.org/CodeSystem/condition-clinical",
+            code="active", display="Active",
+        )]),
+        verificationStatus=CodeableConcept(coding=[Coding(
+            system="http://terminology.hl7.org/CodeSystem/condition-ver-status",
+            code="confirmed", display="Confirmed",
+        )]),
         subject=Reference(reference=f"Patient/{patient_id}"),
-        code=CodeableConcept(
-            coding=[Coding(
-                system="http://hl7.org/fhir/sid/icd-10-cm",
-                code="E11.9",
-                display="Type 2 diabetes mellitus"
-            )]
-        ),
-        onsetDateTime="2018-06-15"
+        encounter=Reference(reference=f"Encounter/{enc_id}"),
+        code=CodeableConcept(coding=[Coding(
+            system="http://hl7.org/fhir/sid/icd-10-cm",
+            code="E11.9", display="Type 2 diabetes mellitus",
+        )]),
+        onsetDateTime=date(2018, 6, 15).isoformat(),  # date-only DateTime is valid
     )
     resources.append(condition.model_dump(exclude_none=True))
 
@@ -100,4 +73,3 @@ def generate_resources() -> list[dict]:
 ```
 
 Now generate code for: $requirement
-
