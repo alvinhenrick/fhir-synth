@@ -141,9 +141,10 @@ class CodeGenerator:
                 result = self.executor.execute(code, timeout=timeout)
                 resources = result.artifacts
 
-                # Score code quality
+                # Always score code quality (includes FHIR Pydantic validation)
+                metrics = calculate_code_quality_score(code, resources)
+
                 if self.enable_scoring:
-                    metrics = calculate_code_quality_score(code, resources)
                     logger.info(
                         f"Code quality: {metrics['score']:.2f} ({metrics['grade']}) - "
                         f"{len(metrics.get('warnings', []))} warnings"
@@ -151,6 +152,39 @@ class CodeGenerator:
                     if metrics.get("warnings"):
                         for warning in metrics["warnings"]:
                             logger.debug(f"  • {warning}")
+
+                # If FHIR validation failed, retry with error details
+                fhir_vr = metrics.get("fhir_validation")
+                if fhir_vr and fhir_vr["invalid"] > 0:
+                    error_lines = [
+                        f"  {e['resourceType']}/{e['id']}: {'; '.join(e['errors'])}"
+                        for e in fhir_vr["errors"][:10]
+                    ]
+                    error_detail = "\n".join(error_lines)
+
+                    if attempt < self.max_retries:
+                        logger.info(
+                            "FHIR validation: %d/%d invalid (attempt %d/%d), retrying…",
+                            fhir_vr["invalid"],
+                            fhir_vr["total"],
+                            attempt + 1,
+                            self.max_retries + 1,
+                        )
+                        last_error = ValueError(
+                            f"FHIR validation failed for {fhir_vr['invalid']}/{fhir_vr['total']} "
+                            f"resources. Fix these errors:\n{error_detail}"
+                        )
+                        code = self._retry_with_error(code, str(last_error))
+                        continue
+                    else:
+                        # Last attempt — log the failures but return what we have
+                        logger.warning(
+                            "FHIR validation: %d/%d resources invalid after %d attempts:\n%s",
+                            fhir_vr["invalid"],
+                            fhir_vr["total"],
+                            self.max_retries + 1,
+                            error_detail,
+                        )
 
                 return resources
             except ImportError as exc:

@@ -4,6 +4,7 @@ from fhir_synth.code_generator.prompts import (
     SYSTEM_PROMPT,
     build_bundle_code_prompt,
     build_code_prompt,
+    build_empi_prompt,
     build_fix_prompt,
     build_rules_prompt,
 )
@@ -78,6 +79,7 @@ class TestSystemPrompt:
         assert "EDGE CASES" in SYSTEM_PROMPT
         assert "COVERAGE" in SYSTEM_PROMPT
         assert "PROVENANCE" in SYSTEM_PROMPT
+        assert "EMPI" in SYSTEM_PROMPT
 
     def test_contains_reference_map(self):
         assert "REFERENCE FIELD MAP" in SYSTEM_PROMPT
@@ -153,4 +155,33 @@ class TestBuildBundleCodePrompt:
     def test_includes_fhir_spec(self):
         result = build_bundle_code_prompt(["Patient"], 1)
         assert "FHIR SPEC" in result
+
+
+# ── build_empi_prompt ─────────────────────────────────────────────────────
+
+
+class TestBuildEmpiPrompt:
+    def test_includes_user_prompt(self):
+        result = build_empi_prompt("10 diabetic patients", persons=3)
+        assert "10 diabetic patients" in result
+
+    def test_includes_persons_and_systems(self):
+        result = build_empi_prompt("test", persons=5, systems=["emr1", "lab"])
+        assert "5" in result
+        assert "emr1" in result
+        assert "lab" in result
+
+    def test_includes_org_hint(self):
+        result = build_empi_prompt("test", persons=1, include_organizations=True)
+        assert "Organization" in result
+
+    def test_no_orgs_hint(self):
+        result = build_empi_prompt("test", persons=1, include_organizations=False)
+        assert "Do not create Organization" in result
+
+    def test_default_systems(self):
+        result = build_empi_prompt("test", persons=1)
+        assert "emr1" in result
+        assert "emr2" in result
+
 

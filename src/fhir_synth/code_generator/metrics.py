@@ -3,6 +3,8 @@
 import ast
 from typing import Any
 
+from fhir_synth.code_generator.fhir_validation import validate_resources
+
 
 def calculate_code_quality_score(
     code: str, resources: list[dict[str, Any]] | None = None
@@ -11,7 +13,7 @@ def calculate_code_quality_score(
 
     Args:
         code: Generated Python code
-        resources: Generated resources (optional, for deeper validation)
+        resources: Generated resources (optional, for FHIR validation)
 
     Returns:
         Dictionary with score (0.0-1.0) and detailed metrics
@@ -59,7 +61,7 @@ def calculate_code_quality_score(
         metrics["score"] -= 0.5
         metrics["warnings"].append("Syntax error in code")
 
-    # Check 4: Imports from fhir.resources.R4B
+    # Check 5: Imports from fhir.resources.R4B
     if "from fhir.resources.R4B" in code:
         metrics["checks"]["uses_fhir_r4b"] = True
     else:
@@ -67,36 +69,27 @@ def calculate_code_quality_score(
         metrics["score"] -= 0.1
         metrics["warnings"].append("Should import from fhir.resources.R4B")
 
-    # Check 5: Avoid common bad patterns
-    if "from fhir.resources.R4B.timingrepeat import" in code:
-        metrics["checks"]["no_bad_imports"] = False
-        metrics["score"] -= 0.2
-        metrics["warnings"].append("Bad import: timingrepeat module doesn't exist")
-    else:
-        metrics["checks"]["no_bad_imports"] = True
 
-    # Check 6: If resources provided, validate structure
+    # Check 6: FHIR Pydantic model validation (always-on)
+    # This catches missing required fields, bad references, wrong types —
+    # everything the old heuristic checks tried to do, but correctly.
     if resources:
-        patients = [r for r in resources if r.get("resourceType") == "Patient"]
-        clinical = [
-            r
-            for r in resources
-            if r.get("resourceType")
-            in ["Condition", "Observation", "MedicationRequest", "Procedure"]
-        ]
-
-        metrics["checks"]["has_patients"] = len(patients) > 0
-        if len(patients) == 0 and len(clinical) > 0:
-            metrics["score"] -= 0.2
-            metrics["warnings"].append("Clinical resources without Patient resources")
-
-        # Check references
-        if clinical and patients:
-            has_refs = any("subject" in r or "patient" in r for r in clinical)
-            metrics["checks"]["has_references"] = has_refs
-            if not has_refs:
-                metrics["score"] -= 0.2
-                metrics["warnings"].append("Clinical resources don't reference patients")
+        vr = validate_resources(resources)
+        metrics["checks"]["fhir_valid"] = vr.is_valid
+        metrics["fhir_validation"] = {
+            "total": vr.total,
+            "valid": vr.valid,
+            "invalid": vr.invalid,
+            "pass_rate": vr.pass_rate,
+            "errors": vr.errors[:10],
+        }
+        if not vr.is_valid:
+            penalty = min(0.3, 0.3 * (vr.invalid / vr.total))
+            metrics["score"] -= penalty
+            metrics["warnings"].append(
+                f"FHIR validation: {vr.invalid}/{vr.total} resources invalid "
+                f"({vr.pass_rate:.0%} pass rate)"
+            )
 
     # Final scoring
     metrics["score"] = max(0.0, min(1.0, metrics["score"]))
@@ -142,4 +135,10 @@ def print_quality_report(metrics: dict[str, Any]) -> None:
     for check, result in metrics["checks"].items():
         status = "✅" if result is True else "⚠️" if result == "partial" else "❌"
         print(f"  {status} {check.replace('_', ' ').title()}: {result}")
+
+    if "fhir_validation" in metrics:
+        fv = metrics["fhir_validation"]
+        print(f"\n🏥 FHIR Validation: {fv['valid']}/{fv['total']} valid ({fv['pass_rate']:.0%})")
+        for err in fv.get("errors", [])[:5]:
+            print(f"  ❌ {err['resourceType']}/{err['id']}: {', '.join(err['errors'][:2])}")
     print()

@@ -1,9 +1,7 @@
 HARD RULES — every response MUST follow these:
 1. Define exactly one function: def generate_resources() -> list[dict]:
 2. Import from fhir.resources.R4B using ONLY the exact module paths listed in the IMPORT GUIDE
-   provided with each prompt. Do NOT guess module names — many classes live in parent modules:
-   ✓ CORRECT: from fhir.resources.R4B.timing import Timing, TimingRepeat
-   ✗ WRONG: from fhir.resources.R4B.timingrepeat import TimingRepeat (module doesn't exist)
+   provided with each prompt. Do NOT guess or invent module names.
 3. Use uuid4 for all resource IDs.
 4. Call .model_dump(exclude_none=True) on every Pydantic model before appending to results.
 5. Return a flat list[dict] of resource dictionaries.

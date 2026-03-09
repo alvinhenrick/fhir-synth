@@ -123,10 +123,47 @@ def build_fix_prompt(code: str, error: str) -> str:
     )
 
 
+def build_empi_prompt(
+    user_prompt: str,
+    persons: int,
+    systems: list[str] | None = None,
+    include_organizations: bool = True,
+) -> str:
+    """Build a prompt that includes EMPI linkage instructions.
+
+    Instead of post-processing EMPI in Python, this tells the LLM to
+    generate Person→Patient linkage directly in the code it produces.
+
+    Args:
+        user_prompt: Original user prompt
+        persons: Number of Person resources
+        systems: List of EMR system identifiers
+        include_organizations: Whether to include Organization resources
+
+    Returns:
+        Augmented prompt with EMPI instructions
+    """
+    systems = systems or ["emr1", "emr2"]
+    orgs_hint = (
+        "Create Organization resources for each system and link Patients via managingOrganization."
+        if include_organizations
+        else "Do not create Organization resources."
+    )
+    template = load_prompt("templates/empi_prompt.md")
+    return render(
+        template,
+        persons=str(persons),
+        systems=", ".join(systems),
+        orgs_hint=orgs_hint,
+        user_prompt=user_prompt,
+    )
+
+
 __all__ = [
     "SYSTEM_PROMPT",
     "build_bundle_code_prompt",
     "build_code_prompt",
+    "build_empi_prompt",
     "build_fix_prompt",
     "build_rules_prompt",
 ]
