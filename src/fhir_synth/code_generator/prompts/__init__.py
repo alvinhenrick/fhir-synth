@@ -99,6 +99,7 @@ def build_fix_prompt(code: str, error: str) -> str:
         code=code,
         error=error,
         fhir_imports=import_guide(),
+        fhir_spec=spec_summary(),
         allowed_list=_ALLOWED_LIST,
         allowed_prefixes=_ALLOWED_PREFIXES,
     )

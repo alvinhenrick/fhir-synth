@@ -165,21 +165,6 @@ def fix_common_imports(code: str) -> str:
     return _IMPORT_RE.sub(_fix_line, code)
 
 
-# ── Naive-datetime fix ────────────────────────────────────────────────────
-
-_NAIVE_NOW_RE = re.compile(r"datetime\.now\(\s*\)")
-_NAIVE_UTCNOW_RE = re.compile(r"datetime\.utcnow\(\s*\)")
-
-
-def fix_naive_date_times(code: str) -> str:
-    """Replace naive ``datetime.now()`` with timezone-aware UTC versions.
-
-    FHIR ``instant`` fields require a timezone offset.
-    """
-    code = _NAIVE_NOW_RE.sub("datetime.now(datetime.timezone.utc)", code)
-    code = _NAIVE_UTCNOW_RE.sub("datetime.now(datetime.timezone.utc)", code)
-    return code
-
 
 # ── Shared runner script ───────────────────────────────────────────────────
 

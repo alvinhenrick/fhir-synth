@@ -26,6 +26,12 @@ def generate_resources() -> list[dict]:
     resources = []
     fake = Faker()
 
+    # Helper: always return timezone-aware ISO strings for DateTime/Instant fields.
+    def dt_iso(value: datetime) -> str:
+        if value.tzinfo is None:
+            value = value.replace(tzinfo=timezone.utc)
+        return value.isoformat()
+
     patient_id = str(uuid4())
     patient = Patient(
         id=patient_id,
@@ -44,7 +50,7 @@ def generate_resources() -> list[dict]:
         status="finished",
         class_fhir=Coding(system="http://terminology.hl7.org/CodeSystem/v3-ActCode", code="AMB"),
         subject=Reference(reference=f"Patient/{patient_id}"),
-        period=Period(start=start.isoformat(), end=end.isoformat()),
+        period=Period(start=dt_iso(start), end=dt_iso(end)),
     )
     resources.append(encounter.model_dump(exclude_none=True))
 
