@@ -69,7 +69,6 @@ def calculate_code_quality_score(
         metrics["score"] -= 0.1
         metrics["warnings"].append("Should import from fhir.resources.R4B")
 
-
     # Check 6: FHIR Pydantic model validation (always-on)
     # This catches missing required fields, bad references, wrong types —
     # everything the old heuristic checks tried to do, but correctly.

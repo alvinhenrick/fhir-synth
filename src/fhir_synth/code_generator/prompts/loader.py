@@ -83,4 +83,3 @@ def render(template_text: str, **kwargs: str) -> str:
         Rendered string.
     """
     return Template(template_text).safe_substitute(kwargs)
-

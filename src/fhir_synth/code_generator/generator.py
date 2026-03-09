@@ -15,7 +15,6 @@ from fhir_synth.code_generator.executor import (
 from fhir_synth.code_generator.metrics import calculate_code_quality_score
 from fhir_synth.code_generator.prompts import (
     SYSTEM_PROMPT,
-    build_bundle_code_prompt,
     build_code_prompt,
     build_fix_prompt,
     build_rules_prompt,
@@ -76,30 +75,6 @@ class CodeGenerator:
         result = self.llm.generate_json(SYSTEM_PROMPT, user_prompt)
         return result
 
-    def generate_bundle_code(self, resource_types: list[str], count_per_resource: int = 10) -> str:
-        """Generate code for creating a FHIR bundle with multiple resource types.
-
-        Args:
-            resource_types: List of FHIR resource types to include (e.g., ["Patient", "Condition"])
-            count_per_resource: Number of each resource type to generate
-
-        Returns:
-            Generated Python code
-        """
-        user_prompt = build_bundle_code_prompt(resource_types, count_per_resource)
-        code = self.llm.generate_text(SYSTEM_PROMPT, user_prompt)
-        return extract_code(code)
-
-    def validate_code(self, code: str) -> bool:
-        """Validate that generated code is safe and syntactically correct.
-
-        Args:
-            code: Python code to validate
-
-        Returns:
-            True if valid, False otherwise
-        """
-        return validate_code(code)
 
     def execute_generated_code(self, code: str, timeout: int = 30) -> list[dict[str, Any]]:
         """Execute generated code safely, with self-healing retry on failure.

@@ -4,7 +4,6 @@ from dotenv import load_dotenv
 
 from fhir_synth.fhir_spec import (
     class_to_module,
-    data_type_modules,
     get_resource_class,
     import_guide,
     required_fields,
@@ -22,7 +21,6 @@ load_dotenv()
 __all__ = [
     "__version__",
     "class_to_module",
-    "data_type_modules",
     "get_resource_class",
     "import_guide",
     "resource_names",

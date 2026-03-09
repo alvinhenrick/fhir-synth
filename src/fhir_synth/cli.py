@@ -199,8 +199,7 @@ def generate(
             )
             for err in vr.errors[:5]:
                 typer.echo(
-                    f"      ❌ {err['resourceType']}/{err['id']}: "
-                    f"{'; '.join(err['errors'][:2])}",
+                    f"      ❌ {err['resourceType']}/{err['id']}: {'; '.join(err['errors'][:2])}",
                     err=True,
                 )
 

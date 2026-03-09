@@ -7,11 +7,11 @@ FHIR-Synth includes automated code quality scoring and robust error handling for
 Every generated code is evaluated against best practices:
 
 ```python
-from fhir_synth.code_generator import calculate_code_quality_score, print_quality_report
+from fhir_synth.code_generator import calculate_code_quality_score
 
 # Score generated code
 metrics = calculate_code_quality_score(code, resources)
-print_quality_report(metrics)
+print(f"Score: {metrics['score']:.2f} ({metrics['grade']})")
 ```
 
 ### Quality Checks
@@ -22,7 +22,7 @@ print_quality_report(metrics)
 | **Model Dump** | 20% | All resources call `.model_dump(exclude_none=True)` |
 | **Has Function** | 30% | Defines `generate_resources()` function |
 | **FHIR R4B** | 10% | Imports from `fhir.resources.R4B` |
-| **No Bad Imports** | 20% | Avoids common import errors |
+| **FHIR Validation** | up to 30% | Resources pass Pydantic `model_validate()` |
 | **Has Patients** | 20% | Includes Patient resources when needed |
 | **Has References** | 20% | Clinical resources properly reference patients |
 

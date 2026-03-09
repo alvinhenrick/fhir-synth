@@ -3,7 +3,6 @@
 from fhir_synth.code_generator.constants import (
     ALLOWED_MODULE_PREFIXES,
     ALLOWED_MODULES,
-    SUPPORTED_RESOURCE_TYPES,
 )
 from fhir_synth.code_generator.converter import PromptToRulesConverter
 from fhir_synth.code_generator.executor import (
@@ -31,7 +30,6 @@ __all__ = [
     "ExecutorBackend",
     "LocalSubprocessExecutor",
     "PromptToRulesConverter",
-    "SUPPORTED_RESOURCE_TYPES",
     "ValidationResult",
     "build_empi_prompt",
     "calculate_code_quality_score",

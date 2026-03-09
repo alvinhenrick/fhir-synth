@@ -3,7 +3,6 @@
 import pytest
 
 from fhir_synth.code_generator import CodeGenerator
-from fhir_synth.code_generator.constants import SUPPORTED_RESOURCE_TYPES
 from fhir_synth.code_generator.executor import (
     LocalSubprocessExecutor,
     check_dangerous_code,
@@ -93,7 +92,9 @@ def test_self_healing_retry_fixes_broken_code():
 
 
 def test_supported_resource_types_has_no_concatenation_bugs():
-    for rt in SUPPORTED_RESOURCE_TYPES:
+    from fhir_synth.fhir_spec import resource_names
+
+    for rt in resource_names():
         assert rt[0].isupper(), f"{rt} does not start with uppercase"
         assert " " not in rt, f"{rt} contains a space"
         assert len(rt) < 50, f"{rt} looks like a concatenation bug"

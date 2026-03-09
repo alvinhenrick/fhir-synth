@@ -2,7 +2,6 @@
 
 from fhir_synth.code_generator.prompts import (
     SYSTEM_PROMPT,
-    build_bundle_code_prompt,
     build_code_prompt,
     build_empi_prompt,
     build_fix_prompt,
@@ -140,22 +139,6 @@ class TestBuildRulesPrompt:
         assert "variation_config" in result
 
 
-# ── build_bundle_code_prompt ──────────────────────────────────────────────
-
-
-class TestBuildBundleCodePrompt:
-    def test_includes_resource_types(self):
-        result = build_bundle_code_prompt(["Patient", "Condition"], 5)
-        assert "Patient, Condition" in result
-
-    def test_includes_count(self):
-        result = build_bundle_code_prompt(["Patient"], 20)
-        assert "20" in result
-
-    def test_includes_fhir_spec(self):
-        result = build_bundle_code_prompt(["Patient"], 1)
-        assert "FHIR SPEC" in result
-
 
 # ── build_empi_prompt ─────────────────────────────────────────────────────
 
@@ -183,5 +166,3 @@ class TestBuildEmpiPrompt:
         result = build_empi_prompt("test", persons=1)
         assert "emr1" in result
         assert "emr2" in result
-
-

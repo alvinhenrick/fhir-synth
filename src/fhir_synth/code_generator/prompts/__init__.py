@@ -12,7 +12,7 @@ This module re-exports the **same public API** that ``generator.py`` consumes:
 -: func:`build_code_prompt`
 -: func:`build_fix_prompt`
 -: func:`build_rules_prompt`
--: func:`build_bundle_code_prompt`
+-: func:`build_empi_prompt`
 """
 
 from fhir_synth.code_generator.constants import ALLOWED_MODULE_PREFIXES, ALLOWED_MODULES
@@ -82,25 +82,6 @@ def build_rules_prompt(requirement: str) -> str:
     return render(template, requirement=requirement)
 
 
-def build_bundle_code_prompt(resource_types: list[str], count_per_resource: int) -> str:
-    """Build a prompt for generating bundle creation code.
-
-    Args:
-        resource_types: List of FHIR resource types to include
-        count_per_resource: Number of each resource type to generate
-
-    Returns:
-        Formatted prompt string
-    """
-    template = load_prompt("templates/bundle_code_prompt.md")
-    return render(
-        template,
-        resources_str=", ".join(resource_types),
-        count_per_resource=str(count_per_resource),
-        fhir_imports=import_guide(resource_types),
-        fhir_spec=spec_summary(resource_types),
-    )
-
 
 def build_fix_prompt(code: str, error: str) -> str:
     """Build a prompt for fixing broken code.
@@ -161,7 +142,6 @@ def build_empi_prompt(
 
 __all__ = [
     "SYSTEM_PROMPT",
-    "build_bundle_code_prompt",
     "build_code_prompt",
     "build_empi_prompt",
     "build_fix_prompt",

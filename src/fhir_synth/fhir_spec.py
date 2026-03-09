@@ -10,7 +10,6 @@ Public API
 - ``resource_names()`` – sorted list of all resource type names
 - ``get_resource_class`` – import and return the Pydantic class for a name
 - ``required_fields`` – required field names for a resource type
-- ``field_schema`` – full field metadata for a resource type
 - ``reference_targets`` – which resource types a reference field can point to
 - ``spec_summary`` – compact text summary suitable for LLM prompts
 - ``class_to_module`` – look up the correct module for any Pydantic class
@@ -141,10 +140,6 @@ def class_to_module(class_name: str) -> str | None:
     return _CLASS_MODULE_MAP.get(class_name)
 
 
-def data_type_modules() -> list[str]:
-    """Sorted list of all discovered data-type module names."""
-    return sorted(_DATA_TYPE_MAP.values())
-
 
 # ── Lazy loaders (import + introspect on first access, then cached) ───────
 
@@ -228,20 +223,6 @@ def required_fields(name: str) -> tuple[str, ...]:
     """Required field names for a resource type."""
     return _introspect(name).required_fields
 
-
-def field_schema(name: str) -> list[dict[str, Any]]:
-    """Field metadata as plain dicts (JSON-safe)."""
-    meta = _introspect(name)
-    return [
-        {
-            "name": f.name,
-            "required": f.required,
-            "type": f.type_annotation,
-            "is_reference": f.is_reference,
-            "is_list": f.is_list,
-        }
-        for f in meta.all_fields
-    ]
 
 
 def reference_targets(name: str) -> dict[str, str]:
@@ -341,10 +322,17 @@ def spec_summary(resource_types: list[str] | None = None) -> str:
     ]
 
     # Skip these internal/noise fields to keep the spec compact
-    _skip = frozenset({
-        "fhir_comments", "implicitRules", "language", "contained",
-        "extension", "modifierExtension", "text",
-    })
+    _skip = frozenset(
+        {
+            "fhir_comments",
+            "implicitRules",
+            "language",
+            "contained",
+            "extension",
+            "modifierExtension",
+            "text",
+        }
+    )
 
     for rt in types:
         try:
@@ -413,8 +401,6 @@ def import_guide(resource_types: list[str] | None = None) -> str:
             cls_str = ", ".join(sorted(classes))
             lines.append(f"from fhir.resources.R4B.{modname} import {cls_str}")
 
-    lines.append(
-        "\n# Use ONLY the module paths listed above. Do NOT invent module names."
-    )
+    lines.append("\n# Use ONLY the module paths listed above. Do NOT invent module names.")
 
     return "\n".join(lines)

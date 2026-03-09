@@ -12,7 +12,6 @@ from typing import Any
 from fhir_synth.fhir_spec import get_resource_class
 
 
-
 @dataclass
 class ValidationResult:
     """Result of validating a batch of FHIR resources."""
@@ -95,6 +94,5 @@ def validate_resources(resources: list[dict[str, Any]]) -> ValidationResult:
             )
         else:
             result.valid += 1
-
 
     return result
