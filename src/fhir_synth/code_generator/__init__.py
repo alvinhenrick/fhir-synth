@@ -17,7 +17,7 @@ from fhir_synth.code_generator.executor import (
 )
 from fhir_synth.code_generator.fhir_validation import ValidationResult, validate_resources
 from fhir_synth.code_generator.generator import CodeGenerator
-from fhir_synth.code_generator.metrics import calculate_code_quality_score, print_quality_report
+from fhir_synth.code_generator.metrics import calculate_code_quality_score
 from fhir_synth.code_generator.prompts import build_empi_prompt
 
 __all__ = [
@@ -36,6 +36,5 @@ __all__ = [
     "build_empi_prompt",
     "calculate_code_quality_score",
     "get_executor",
-    "print_quality_report",
     "validate_resources",
 ]

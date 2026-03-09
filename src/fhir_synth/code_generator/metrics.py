@@ -103,42 +103,12 @@ def _get_grade(score: float) -> str:
     """Convert score to letter grade."""
     if score >= 0.95:
         return "A+"
-    elif score >= 0.90:
+    if score >= 0.90:
         return "A"
-    elif score >= 0.85:
+    if score >= 0.85:
         return "B+"
-    elif score >= 0.80:
+    if score >= 0.80:
         return "B"
-    elif score >= 0.70:
+    if score >= 0.70:
         return "C"
-    else:
-        return "F"
-
-
-def print_quality_report(metrics: dict[str, Any]) -> None:
-    """Print a formatted quality report.
-
-    Args:
-        metrics: Metrics from calculate_code_quality_score()
-    """
-    print("\n📊 Code Quality Report")
-    print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-    print(f"Score: {metrics['score']:.2f} / 1.00 ({metrics['grade']})")
-    print(f"Status: {'✅ PASSED' if metrics['passed'] else '❌ FAILED'}")
-
-    if metrics["warnings"]:
-        print(f"\n⚠️  Warnings ({len(metrics['warnings'])}):")
-        for warning in metrics["warnings"]:
-            print(f"  • {warning}")
-
-    print("\n✓ Checks:")
-    for check, result in metrics["checks"].items():
-        status = "✅" if result is True else "⚠️" if result == "partial" else "❌"
-        print(f"  {status} {check.replace('_', ' ').title()}: {result}")
-
-    if "fhir_validation" in metrics:
-        fv = metrics["fhir_validation"]
-        print(f"\n🏥 FHIR Validation: {fv['valid']}/{fv['total']} valid ({fv['pass_rate']:.0%})")
-        for err in fv.get("errors", [])[:5]:
-            print(f"  ❌ {err['resourceType']}/{err['id']}: {', '.join(err['errors'][:2])}")
-    print()
+    return "F"
