@@ -31,7 +31,6 @@ from fhir_synth.code_generator.executor.validation import (
     validate_code,
     validate_imports,
     validate_imports_whitelist,
-    fix_naive_date_times,
 )
 
 __all__ = [
@@ -52,5 +51,4 @@ __all__ = [
     "validate_code",
     "validate_imports",
     "validate_imports_whitelist",
-    "fix_naive_date_times",
 ]

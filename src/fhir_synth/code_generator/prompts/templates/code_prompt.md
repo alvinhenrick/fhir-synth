@@ -7,6 +7,9 @@ $fhir_imports
 FHIR SPEC (fields with types — see DATA TYPE FORMAT RULES at top):
 $fhir_spec
 
+⚠️  ALWAYS create a dt_iso() helper function in your code to ensure DateTime/Instant fields
+    have timezone information. The example below demonstrates this pattern — copy it exactly.
+
 EXAMPLE (for reference — shows key patterns: timezone-aware datetimes, Period, references):
 ```python
 from fhir.resources.R4B.patient import Patient
@@ -39,7 +42,7 @@ def generate_resources() -> list[dict]:
         gender=random.choice(["male", "female"]),
         birthDate=date(random.randint(1950, 2000), random.randint(1, 12), random.randint(1, 28)).isoformat(),
     )
-    resources.append(patient.model_dump(exclude_none=True))
+    resources.append(patient.model_dump(exclude_none=True, mode='json'))
 
     # Encounter with Period (DateTime fields — MUST have timezone)
     enc_id = str(uuid4())
@@ -52,7 +55,7 @@ def generate_resources() -> list[dict]:
         subject=Reference(reference=f"Patient/{patient_id}"),
         period=Period(start=dt_iso(start), end=dt_iso(end)),
     )
-    resources.append(encounter.model_dump(exclude_none=True))
+    resources.append(encounter.model_dump(exclude_none=True, mode='json'))
 
     # Condition referencing Patient and Encounter
     condition = Condition(
@@ -73,7 +76,7 @@ def generate_resources() -> list[dict]:
         )]),
         onsetDateTime=date(2018, 6, 15).isoformat(),  # date-only DateTime is valid
     )
-    resources.append(condition.model_dump(exclude_none=True))
+    resources.append(condition.model_dump(exclude_none=True, mode='json'))
 
     return resources
 ```

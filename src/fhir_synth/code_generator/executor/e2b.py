@@ -18,7 +18,6 @@ from fhir_synth.code_generator.executor.validation import (
     build_runner_script,
     check_dangerous_code,
     validate_imports_whitelist,
-    fix_naive_date_times,
 )
 
 logger = logging.getLogger(__name__)
@@ -67,9 +66,6 @@ class E2BExecutor:
         import_errors = validate_imports_whitelist(code)
         if import_errors:
             raise ValueError(f"Disallowed imports: {'; '.join(import_errors)}")
-
-        # ── Normalize naive datetime patterns ───────────────────────────
-        code = fix_naive_date_times(code)
 
         # ── Build the script ──────────────────────────────────────────
         script = self._build_script(code)

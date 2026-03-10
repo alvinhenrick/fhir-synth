@@ -338,28 +338,3 @@ def test_smoke_test_passes_valid_resources():
     result = _executor.execute(code, timeout=10)
     assert len(result.artifacts) == 1
     assert result.artifacts[0]["resourceType"] == "Patient"
-
-
-def test_fix_naive_date_times_wraps_isoformat():
-    from fhir_synth.code_generator.executor.validation import fix_naive_date_times
-
-    code = '''
-from datetime import datetime, timedelta, date
-
-def generate_resources():
-    start = datetime(2025, 3, 8, 10, 30)
-    end = start + timedelta(hours=1)
-    onset = date(2025, 3, 8)
-    return [
-        {"start": start.isoformat(), "end": end.isoformat()},
-        {"onset": onset.isoformat()},
-    ]
-'''
-    fixed = fix_naive_date_times(code)
-    glb: dict[str, object] = {}
-    exec(compile(fixed, "<test>", "exec"), glb)
-    result = glb["generate_resources"]()
-
-    assert result[0]["start"].endswith("+00:00")
-    assert result[0]["end"].endswith("+00:00")
-    assert result[1]["onset"] == "2025-03-08"
