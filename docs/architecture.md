@@ -3,7 +3,7 @@
 ## System Overview
 
 ```mermaid
-%%{init: {'theme':'base', 'themeVariables': { 'primaryColor':'#E8F4F8','primaryTextColor':'#1a1a1a','primaryBorderColor':'#0284c7','lineColor':'#64748b','secondaryColor':'#FEF3C7','tertiaryColor':'#DBEAFE','noteBkgColor':'#FEF9C3','noteTextColor':'#1a1a1a'}}}%%
+%%{init: {'theme':'base', 'themeVariables': { 'primaryColor':'#ffffff','primaryTextColor':'#1a1a1a','primaryBorderColor':'#94a3b8','lineColor':'#64748b','secondaryColor':'#ffffff','tertiaryColor':'#ffffff','clusterBkg':'#ffffff','clusterBorder':'#cbd5e1'}}}%%
 graph TB
     subgraph UI["🖥️ User Interface"]
         CLI["CLI (Typer)<br/>generate · codegen · bundle"]
