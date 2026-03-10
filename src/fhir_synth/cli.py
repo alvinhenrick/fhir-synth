@@ -263,51 +263,6 @@ def generate(
 
 
 @app.command()
-def rules(
-    prompt: str = typer.Argument(..., help="Natural language description of data"),
-    out: str = typer.Option(..., "--out", "-o", help="Output file for rules (JSON)"),
-    provider: str = typer.Option("mock", "--provider", help="LLM provider"),
-    empi: bool = typer.Option(False, "--empi", help="Include EMPI Person/Patient linkage"),
-    persons: int = typer.Option(1, "--persons", help="Number of Persons for EMPI"),
-    systems: str = typer.Option("emr1,emr2", "--systems", help="Comma-separated EMR system ids"),
-    no_orgs: bool = typer.Option(False, "--no-orgs", help="Do not create Organization resources"),
-    aws_profile: str | None = typer.Option(
-        None, "--aws-profile", help="AWS profile for Bedrock (reads ~/.aws/credentials)"
-    ),
-    aws_region: str | None = typer.Option(
-        None, "--aws-region", help="AWS region for Bedrock (e.g. us-east-1)"
-    ),
-) -> None:
-    """Generate declarative rules from a natural language prompt."""
-    try:
-        from fhir_synth.code_generator import PromptToRulesConverter
-        from fhir_synth.llm import get_provider
-
-        llm = get_provider(provider, aws_profile=aws_profile, aws_region=aws_region)
-        converter = PromptToRulesConverter(llm)
-
-        prompt_text = prompt
-        if empi:
-            from fhir_synth.code_generator.prompts import build_empi_prompt
-
-            system_list = [s.strip() for s in systems.split(",") if s.strip()]
-            prompt_text = build_empi_prompt(
-                user_prompt=prompt,
-                persons=persons,
-                systems=system_list or None,
-                include_organizations=not no_orgs,
-            )
-
-        rules_result = converter.convert_prompt_to_rules(prompt_text)
-
-        Path(out).write_text(json.dumps(rules_result, indent=2))
-        typer.echo(f"✓ Generated rules: {out}")
-    except Exception as exc:
-        typer.echo(f"Error: {exc}", err=True)
-        sys.exit(1)
-
-
-@app.command()
 def codegen(
     prompt: str = typer.Argument(..., help="Natural language description of data"),
     out: str = typer.Option(..., "--out", "-o", help="Output file for code"),

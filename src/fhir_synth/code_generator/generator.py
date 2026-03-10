@@ -17,7 +17,6 @@ from fhir_synth.code_generator.prompts import (
     SYSTEM_PROMPT,
     build_code_prompt,
     build_fix_prompt,
-    build_rules_prompt,
 )
 from fhir_synth.code_generator.utils import extract_code
 from fhir_synth.llm import LLMProvider
@@ -61,20 +60,6 @@ class CodeGenerator:
         user_prompt = build_code_prompt(prompt)
         code = self.llm.generate_text(SYSTEM_PROMPT, user_prompt)
         return extract_code(code)
-
-    def generate_rules_from_prompt(self, prompt: str) -> dict[str, Any]:
-        """Generate rule definitions from prompt.
-
-        Args:
-            prompt: Natural language description of generation rules
-
-        Returns:
-            Dictionary of rule definitions
-        """
-        user_prompt = build_rules_prompt(prompt)
-        result = self.llm.generate_json(SYSTEM_PROMPT, user_prompt)
-        return result
-
 
     def execute_generated_code(self, code: str, timeout: int = 30) -> list[dict[str, Any]]:
         """Execute generated code safely, with self-healing retry on failure.

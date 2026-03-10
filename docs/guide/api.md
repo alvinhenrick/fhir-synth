@@ -34,49 +34,34 @@ llm = get_provider("mock")
 
 ```python
 from fhir_synth.llm import get_provider
-from fhir_synth.code_generator import CodeGenerator
+from fhir_synth.code_generator import CodeGenerator, get_executor
 
 # Set up LLM provider
 llm = get_provider("gpt-4")  # or "mock" for testing
 
-# Generate and execute code
+# Generate and execute code (default: local subprocess executor)
 code_gen = CodeGenerator(llm)
 code = code_gen.generate_code_from_prompt("Create 20 diabetic patients with HbA1c observations")
 resources = code_gen.execute_generated_code(code)
-```
 
-## Rule Engine
+# Use a different executor backend
+executor = get_executor("dify", dify_url="http://sandbox.internal:8194")
+code_gen = CodeGenerator(llm, executor=executor)
+resources = code_gen.execute_generated_code(code)
 
-```python
-from fhir_synth.rule_engine import RuleEngine, Rule, RuleSet, MetaConfig
+# Apply custom metadata to generated resources
+from fhir_synth.code_generator import CodeGenerator
 
-engine = RuleEngine()
-engine.register_ruleset(
-    RuleSet(
-        resource_type="Patient",
-        description="Diabetic patients",
-        global_meta=MetaConfig(
-            tag=[{"system": "http://example.org/tags", "code": "synthetic"}],
-            source="http://example.org/fhir-synth",
-        ),
-        rules=[
-            Rule(
-                name="type_2",
-                description="Type 2 diabetes",
-                conditions={"type": 2},
-                actions={"resourceType": "Patient", "id": "p1"},
-                weight=1.0,
-                meta=MetaConfig(
-                    security=[{
-                        "system": "http://terminology.hl7.org/CodeSystem/v3-Confidentiality",
-                        "code": "N",
-                        "display": "Normal",
-                    }],
-                    profile=["http://hl7.org/fhir/us/core/StructureDefinition/us-core-patient"],
-                ),
-            )
-        ],
-    )
+resources = CodeGenerator.apply_metadata_to_resources(
+    resources,
+    security=[{
+        "system": "http://terminology.hl7.org/CodeSystem/v3-Confidentiality",
+        "code": "N",
+        "display": "Normal",
+    }],
+    tag=[{"system": "http://example.org/tags", "code": "synthetic-data"}],
+    profile=["http://hl7.org/fhir/us/core/StructureDefinition/us-core-patient"],
+    source="http://example.org/fhir-synth",
 )
 ```
 
@@ -120,20 +105,21 @@ from fhir_synth.fhir_utils import FHIRResourceFactory
 patient = FHIRResourceFactory.create_patient("p1", "Jane", "Doe", "1990-01-01")
 ```
 
-## Custom Metadata
+## Executor Backends
 
 ```python
-from fhir_synth.rule_engine import MetaConfig
+from fhir_synth.code_generator import get_executor, LocalSubprocessExecutor, DifySandboxExecutor, E2BExecutor
 
-meta = MetaConfig(
-    security=[{
-        "system": "http://terminology.hl7.org/CodeSystem/v3-Confidentiality",
-        "code": "R",
-        "display": "Restricted",
-    }],
-    tag=[{"system": "http://example.org/tags", "code": "synthetic-data"}],
-    profile=["http://hl7.org/fhir/us/core/StructureDefinition/us-core-patient"],
-    source="http://example.org/fhir-synth",
-)
+# Local subprocess (default)
+executor = get_executor("local")
+
+# Dify sandbox
+executor = get_executor("dify", dify_url="http://localhost:8194")
+
+# E2B cloud sandbox
+executor = get_executor("e2b")  # requires E2B_API_KEY env var
+
+# Use with CodeGenerator
+code_gen = CodeGenerator(llm, executor=executor)
 ```
 

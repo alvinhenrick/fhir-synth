@@ -1,5 +1,5 @@
 site_name: FHIR Synth
-site_description: Dynamic FHIR R4B synthetic data generator using LLM-powered code generation and declarative rules
+site_description: Dynamic FHIR R4B synthetic data generator using LLM-powered code generation
 site_url: https://alvinhenrick.github.io/fhir-synth/
 repo_url: https://github.com/alvinhenrick/fhir-synth
 repo_name: alvinhenrick/fhir-synth
@@ -83,7 +83,6 @@ nav:
   - Architecture: architecture.md
   - API Reference:
       - Code Generator: api/code_generator.md
-      - Rule Engine: api/rule_engine.md
       - Bundle: api/bundle.md
       - FHIR Utils: api/fhir_utils.md
       - LLM: api/llm.md

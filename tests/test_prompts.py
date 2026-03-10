@@ -5,7 +5,6 @@ from fhir_synth.code_generator.prompts import (
     build_code_prompt,
     build_empi_prompt,
     build_fix_prompt,
-    build_rules_prompt,
 )
 from fhir_synth.code_generator.prompts.loader import load_prompt, load_section, render
 
@@ -123,21 +122,6 @@ class TestBuildFixPrompt:
     def test_includes_sandbox_constraints(self):
         result = build_fix_prompt("x", "err")
         assert "SANDBOX CONSTRAINTS" in result
-
-
-# ── build_rules_prompt ────────────────────────────────────────────────────
-
-
-class TestBuildRulesPrompt:
-    def test_includes_requirement(self):
-        result = build_rules_prompt("generate hypertension data")
-        assert "generate hypertension data" in result
-
-    def test_includes_json_structure(self):
-        result = build_rules_prompt("test")
-        assert "rules" in result
-        assert "variation_config" in result
-
 
 
 # ── build_empi_prompt ─────────────────────────────────────────────────────

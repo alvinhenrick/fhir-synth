@@ -11,7 +11,6 @@ This module re-exports the **same public API** that ``generator.py`` consumes:
 -: data:`SYSTEM_PROMPT`
 -: func:`build_code_prompt`
 -: func:`build_fix_prompt`
--: func:`build_rules_prompt`
 -: func:`build_empi_prompt`
 """
 
@@ -67,20 +66,6 @@ def build_code_prompt(requirement: str) -> str:
         fhir_imports=import_guide(),
         fhir_spec=spec_summary(),
     )
-
-
-def build_rules_prompt(requirement: str) -> str:
-    """Build a prompt for generating rule definitions.
-
-    Args:
-        requirement: Natural language description of generation rules
-
-    Returns:
-        Formatted prompt string
-    """
-    template = load_prompt("templates/rules_prompt.md")
-    return render(template, requirement=requirement)
-
 
 
 def build_fix_prompt(code: str, error: str) -> str:
@@ -146,5 +131,4 @@ __all__ = [
     "build_code_prompt",
     "build_empi_prompt",
     "build_fix_prompt",
-    "build_rules_prompt",
 ]

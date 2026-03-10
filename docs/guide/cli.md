@@ -75,16 +75,6 @@ fhir-synth generate "5 patients" --executor e2b
 
 ---
 
-## `fhir-synth rules`
-
-Generate structured rule definitions from natural language.
-
-```bash
-fhir-synth rules "100 diabetic patients with insulin therapy" --out rules.json --provider gpt-4
-```
-
----
-
 ## `fhir-synth codegen`
 
 Generate executable Python code from prompts (without bundling).

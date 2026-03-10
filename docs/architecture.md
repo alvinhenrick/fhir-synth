@@ -5,13 +5,12 @@
 ```mermaid
 graph TB
     subgraph UI["🖥️ User Interface"]
-        CLI["CLI (Typer)\ngenerate · rules · codegen · bundle"]
-        API["Python API\nCodeGenerator · RuleEngine\nBundleBuilder · FHIRResourceFactory"]
+        CLI["CLI (Typer)\ngenerate · codegen · bundle"]
+        API["Python API\nCodeGenerator · BundleBuilder\nFHIRResourceFactory"]
     end
 
     subgraph CORE["⚙️ Core Modules"]
-        CG["code_generator/\nCodeGenerator · PromptToRulesConverter\nprompts · constants · utils"]
-        RE["rule_engine/\nRuleEngine · Rule · RuleSet\nGenerationRules · EMPI"]
+        CG["code_generator/\nCodeGenerator\nprompts · constants · utils"]
         BB["bundle/\nBundleBuilder · BundleManager\nBundleFactory"]
         FU["fhir_utils/\nFHIRResourceFactory\nLazyResourceMap"]
         FS["fhir_spec.py\nAuto-discovery of all\n141 R4B resource types"]
@@ -34,10 +33,8 @@ graph TB
     end
 
     CLI --> CG
-    CLI --> RE
     CLI --> BB
     API --> CG
-    API --> RE
     API --> BB
     API --> FU
 
@@ -48,8 +45,6 @@ graph TB
 
     CG --> LLM
     CG --> FS
-    RE --> FS
-    BB --> RE
     BB --> FS
     FU --> FS
     LLM --> LITELLM

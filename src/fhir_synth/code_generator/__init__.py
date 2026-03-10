@@ -4,7 +4,6 @@ from fhir_synth.code_generator.constants import (
     ALLOWED_MODULE_PREFIXES,
     ALLOWED_MODULES,
 )
-from fhir_synth.code_generator.converter import PromptToRulesConverter
 from fhir_synth.code_generator.executor import (
     DifySandboxExecutor,
     E2BExecutor,
@@ -29,7 +28,6 @@ __all__ = [
     "Executor",
     "ExecutorBackend",
     "LocalSubprocessExecutor",
-    "PromptToRulesConverter",
     "ValidationResult",
     "build_empi_prompt",
     "calculate_code_quality_score",
