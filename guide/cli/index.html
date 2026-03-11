@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Dynamic FHIR R4B synthetic data generator using LLM-powered code generation and declarative rules">
+        <meta name="description" content="Dynamic FHIR R4B synthetic data generator using LLM-powered code generation">
       
       
       
@@ -617,15 +617,6 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#fhir-synth-rules" class="md-nav__link">
-    <span class="md-ellipsis">
-      fhir-synth rules
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#fhir-synth-codegen" class="md-nav__link">
     <span class="md-ellipsis">
       fhir-synth codegen
@@ -852,27 +843,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../../api/rule_engine/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Rule Engine
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../../api/bundle/" class="md-nav__link">
         
   
@@ -1046,15 +1016,6 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#fhir-synth-rules" class="md-nav__link">
-    <span class="md-ellipsis">
-      fhir-synth rules
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#fhir-synth-codegen" class="md-nav__link">
     <span class="md-ellipsis">
       fhir-synth codegen
@@ -1114,6 +1075,11 @@
 <td><code>-p / --provider</code></td>
 <td><code>gpt-4</code></td>
 <td>LLM model/provider</td>
+</tr>
+<tr>
+<td><code>--fhir-version</code></td>
+<td><code>R4B</code></td>
+<td>FHIR version: <code>R4B</code>, <code>STU3</code> (case-insensitive)</td>
 </tr>
 <tr>
 <td><code>--split</code></td>
@@ -1206,6 +1172,10 @@ Use <code>--split</code> to write one JSON file per patient into a directory ins
 <a id="__codelineno-1-29" name="__codelineno-1-29" href="#__codelineno-1-29"></a>
 <a id="__codelineno-1-30" name="__codelineno-1-30" href="#__codelineno-1-30"></a><span class="c1"># E2B cloud sandbox (requires E2B_API_KEY env var)</span>
 <a id="__codelineno-1-31" name="__codelineno-1-31" href="#__codelineno-1-31"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;5 patients&quot;</span><span class="w"> </span>--executor<span class="w"> </span>e2b
+<a id="__codelineno-1-32" name="__codelineno-1-32" href="#__codelineno-1-32"></a>
+<a id="__codelineno-1-33" name="__codelineno-1-33" href="#__codelineno-1-33"></a><span class="c1"># Generate STU3 resources instead of R4B (case-insensitive)</span>
+<a id="__codelineno-1-34" name="__codelineno-1-34" href="#__codelineno-1-34"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;10 patients with diabetes&quot;</span><span class="w"> </span>--fhir-version<span class="w"> </span>stu3<span class="w"> </span>-o<span class="w"> </span>output.ndjson
+<a id="__codelineno-1-35" name="__codelineno-1-35" href="#__codelineno-1-35"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;5 patients&quot;</span><span class="w"> </span>--fhir-version<span class="w"> </span>STU3<span class="w"> </span>-o<span class="w"> </span>output.ndjson
 </code></pre></div>
 <h3 id="environment-variables">Environment Variables<a class="headerlink" href="#environment-variables" title="Permanent link">&para;</a></h3>
 <table>
@@ -1235,24 +1205,19 @@ Use <code>--split</code> to write one JSON file per patient into a directory ins
 </tbody>
 </table>
 <hr />
-<h2 id="fhir-synth-rules"><code>fhir-synth rules</code><a class="headerlink" href="#fhir-synth-rules" title="Permanent link">&para;</a></h2>
-<p>Generate structured rule definitions from natural language.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>fhir-synth<span class="w"> </span>rules<span class="w"> </span><span class="s2">&quot;100 diabetic patients with insulin therapy&quot;</span><span class="w"> </span>--out<span class="w"> </span>rules.json<span class="w"> </span>--provider<span class="w"> </span>gpt-4
-</code></pre></div>
-<hr />
 <h2 id="fhir-synth-codegen"><code>fhir-synth codegen</code><a class="headerlink" href="#fhir-synth-codegen" title="Permanent link">&para;</a></h2>
 <p>Generate executable Python code from prompts (without bundling).</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>fhir-synth<span class="w"> </span>codegen<span class="w"> </span><span class="s2">&quot;Create 50 patients&quot;</span><span class="w"> </span>--out<span class="w"> </span>code.py
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>fhir-synth<span class="w"> </span>codegen<span class="w"> </span><span class="s2">&quot;Create 50 patients&quot;</span><span class="w"> </span>--out<span class="w"> </span>code.py<span class="w"> </span>--execute
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>
-<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="c1"># Execute with dify-sandbox isolation</span>
-<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>fhir-synth<span class="w"> </span>codegen<span class="w"> </span><span class="s2">&quot;Create 50 patients&quot;</span><span class="w"> </span>--out<span class="w"> </span>code.py<span class="w"> </span>--execute<span class="w"> </span>--executor<span class="w"> </span>dify
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>fhir-synth<span class="w"> </span>codegen<span class="w"> </span><span class="s2">&quot;Create 50 patients&quot;</span><span class="w"> </span>--out<span class="w"> </span>code.py
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>fhir-synth<span class="w"> </span>codegen<span class="w"> </span><span class="s2">&quot;Create 50 patients&quot;</span><span class="w"> </span>--out<span class="w"> </span>code.py<span class="w"> </span>--execute
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="c1"># Execute with dify-sandbox isolation</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>fhir-synth<span class="w"> </span>codegen<span class="w"> </span><span class="s2">&quot;Create 50 patients&quot;</span><span class="w"> </span>--out<span class="w"> </span>code.py<span class="w"> </span>--execute<span class="w"> </span>--executor<span class="w"> </span>dify
 </code></pre></div>
 <hr />
 <h2 id="fhir-synth-bundle"><code>fhir-synth bundle</code><a class="headerlink" href="#fhir-synth-bundle" title="Permanent link">&para;</a></h2>
-<p>Create FHIR R4B Bundles from NDJSON data or EMPI defaults.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>fhir-synth<span class="w"> </span>bundle<span class="w"> </span>--resources<span class="w"> </span>data.ndjson<span class="w"> </span>--out<span class="w"> </span>bundle.json<span class="w"> </span>--type<span class="w"> </span>transaction
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>fhir-synth<span class="w"> </span>bundle<span class="w"> </span>--empi<span class="w"> </span>--persons<span class="w"> </span><span class="m">5</span><span class="w"> </span>--systems<span class="w"> </span>emr1,emr2,emr3<span class="w"> </span>--no-orgs<span class="w"> </span>--out<span class="w"> </span>empi_bundle.json
+<p>Create FHIR Bundles from NDJSON data or EMPI defaults.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>fhir-synth<span class="w"> </span>bundle<span class="w"> </span>--resources<span class="w"> </span>data.ndjson<span class="w"> </span>--out<span class="w"> </span>bundle.json<span class="w"> </span>--type<span class="w"> </span>transaction
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>fhir-synth<span class="w"> </span>bundle<span class="w"> </span>--empi<span class="w"> </span>--persons<span class="w"> </span><span class="m">5</span><span class="w"> </span>--systems<span class="w"> </span>emr1,emr2,emr3<span class="w"> </span>--no-orgs<span class="w"> </span>--out<span class="w"> </span>empi_bundle.json
 </code></pre></div>
 
 

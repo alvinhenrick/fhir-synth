@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Dynamic FHIR R4B synthetic data generator using LLM-powered code generation and declarative rules">
+        <meta name="description" content="Dynamic FHIR R4B synthetic data generator using LLM-powered code generation">
       
       
       
@@ -736,27 +736,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../api/rule_engine/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Rule Engine
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../api/bundle/" class="md-nav__link">
         
   
@@ -894,6 +873,30 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#v150-2026-03-11" class="md-nav__link">
+    <span class="md-ellipsis">
+      v1.5.0 (2026-03-11)
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v1.5.0 (2026-03-11)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#features" class="md-nav__link">
+    <span class="md-ellipsis">
+      Features
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#v140-2026-03-03" class="md-nav__link">
     <span class="md-ellipsis">
       v1.4.0 (2026-03-03)
@@ -922,7 +925,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#features" class="md-nav__link">
+  <a href="#features_1" class="md-nav__link">
     <span class="md-ellipsis">
       Features
     </span>
@@ -955,7 +958,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#features_1" class="md-nav__link">
+  <a href="#features_2" class="md-nav__link">
     <span class="md-ellipsis">
       Features
     </span>
@@ -1021,7 +1024,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#features_2" class="md-nav__link">
+  <a href="#features_3" class="md-nav__link">
     <span class="md-ellipsis">
       Features
     </span>
@@ -1087,6 +1090,30 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#v150-2026-03-11" class="md-nav__link">
+    <span class="md-ellipsis">
+      v1.5.0 (2026-03-11)
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v1.5.0 (2026-03-11)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#features" class="md-nav__link">
+    <span class="md-ellipsis">
+      Features
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#v140-2026-03-03" class="md-nav__link">
     <span class="md-ellipsis">
       v1.4.0 (2026-03-03)
@@ -1115,7 +1142,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#features" class="md-nav__link">
+  <a href="#features_1" class="md-nav__link">
     <span class="md-ellipsis">
       Features
     </span>
@@ -1148,7 +1175,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#features_1" class="md-nav__link">
+  <a href="#features_2" class="md-nav__link">
     <span class="md-ellipsis">
       Features
     </span>
@@ -1214,7 +1241,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#features_2" class="md-nav__link">
+  <a href="#features_3" class="md-nav__link">
     <span class="md-ellipsis">
       Features
     </span>
@@ -1266,6 +1293,80 @@
 <h1 id="changelog">CHANGELOG<a class="headerlink" href="#changelog" title="Permanent link">&para;</a></h1>
 <!-- version list -->
 
+<h2 id="v150-2026-03-11">v1.5.0 (2026-03-11)<a class="headerlink" href="#v150-2026-03-11" title="Permanent link">&para;</a></h2>
+<h3 id="features">Features<a class="headerlink" href="#features" title="Permanent link">&para;</a></h3>
+<ul>
+<li>
+<p>Add comprehensive guidelines for patient variation, comorbidity patterns, and realism in FHIR
+  resource generation
+  (<a href="https://github.com/alvinhenrick/fhir-synth/commit/2653c2ddef3de3991bb4ac7697821d55ecc9211a"><code>2653c2d</code></a>)</p>
+</li>
+<li>
+<p>Add fix_naive_date_times function to handle naive datetime patterns
+  (<a href="https://github.com/alvinhenrick/fhir-synth/commit/db31ab148ab7c4b43713010ef4b52b04545c4553"><code>db31ab1</code></a>)</p>
+</li>
+<li>
+<p>Enforce timezone-aware DateTime handling and update related documentation
+  (<a href="https://github.com/alvinhenrick/fhir-synth/commit/b3fb3c1a1df27f32ddb2dc92e70487232e2eb14d"><code>b3fb3c1</code></a>)</p>
+</li>
+<li>
+<p>Enhance architecture diagram with improved formatting and connections
+  (<a href="https://github.com/alvinhenrick/fhir-synth/commit/3350977280782028b9167ec4aefb6f25a891e2c8"><code>3350977</code></a>)</p>
+</li>
+<li>
+<p>Enhance patient resource generation with realistic demographics and encounter details
+  (<a href="https://github.com/alvinhenrick/fhir-synth/commit/3ff5f2c0c98435b0065fa2a337278e9dacb418a1"><code>3ff5f2c</code></a>)</p>
+</li>
+<li>
+<p>Implement EMPI prompt generation and FHIR resource validation
+  (<a href="https://github.com/alvinhenrick/fhir-synth/commit/c690d1d1a2a106f84b72813cad12b778cc6ead80"><code>c690d1d</code></a>)</p>
+</li>
+<li>
+<p>Improve code formatting and readability in cli.py and fhir_spec.py
+  (<a href="https://github.com/alvinhenrick/fhir-synth/commit/bf7a352274f74cd09afc7d43a0cb93a74b8e6e22"><code>bf7a352</code></a>)</p>
+</li>
+<li>
+<p>Refine FHIR spec documentation and error handling guidelines
+  (<a href="https://github.com/alvinhenrick/fhir-synth/commit/bf484dc4c6ed0d3f471c11e6a9a60e8fe23002a6"><code>bf484dc</code></a>)</p>
+</li>
+<li>
+<p>Remove build_bundle_code_prompt function and update related references
+  (<a href="https://github.com/alvinhenrick/fhir-synth/commit/cb3a905f4f292d8248c7fbb3c56626b7a2e793d3"><code>cb3a905</code></a>)</p>
+</li>
+<li>
+<p>Remove build_rules_prompt function and related references
+  (<a href="https://github.com/alvinhenrick/fhir-synth/commit/584a95d3ca603693a7b903360e8314121f057ddb"><code>584a95d</code></a>)</p>
+</li>
+<li>
+<p>Remove fix_naive_date_times function and update related references
+  (<a href="https://github.com/alvinhenrick/fhir-synth/commit/3b0baf020f56a4341ea68cf421891292b0153aec"><code>3b0baf0</code></a>)</p>
+</li>
+<li>
+<p>Remove print_quality_report function and simplify grade calculation logic
+  (<a href="https://github.com/alvinhenrick/fhir-synth/commit/f3a2bd8b597eba2d2e4ecf3719866fbf2379d5d4"><code>f3a2bd8</code></a>)</p>
+</li>
+<li>
+<p>Remove unused imports for improved code cleanliness in constants.py, fhir_spec.py, manager.py, and
+  test_prompts.py
+  (<a href="https://github.com/alvinhenrick/fhir-synth/commit/e87a7ac23f5ce914b49fc9f9ac866764c5981ba8"><code>e87a7ac</code></a>)</p>
+</li>
+<li>
+<p>Support multiple FHIR versions (R4B, STU3) in prompts and documentation
+  (<a href="https://github.com/alvinhenrick/fhir-synth/commit/fa0005e6645d9461d1825feb0108fc74d700d7ce"><code>fa0005e</code></a>)</p>
+</li>
+<li>
+<p>Update architecture diagram with enhanced theme variables for improved clarity
+  (<a href="https://github.com/alvinhenrick/fhir-synth/commit/5022f7d1d56d076070451f932073a65162e1de33"><code>5022f7d</code></a>)</p>
+</li>
+<li>
+<p>Update hard rules and EMPI linkage requirements for clarity and precision
+  (<a href="https://github.com/alvinhenrick/fhir-synth/commit/da0a5568f76e691a0287eb8ecca426984712f62f"><code>da0a556</code></a>)</p>
+</li>
+<li>
+<p>Update validation step to use model_dump with exclude_none and json mode
+  (<a href="https://github.com/alvinhenrick/fhir-synth/commit/4a0326e3e64aeae2ba9fb681292f36b6dfed65ef"><code>4a0326e</code></a>)</p>
+</li>
+</ul>
 <h2 id="v140-2026-03-03">v1.4.0 (2026-03-03)<a class="headerlink" href="#v140-2026-03-03" title="Permanent link">&para;</a></h2>
 <h3 id="code-style">Code Style<a class="headerlink" href="#code-style" title="Permanent link">&para;</a></h3>
 <ul>
@@ -1277,7 +1378,7 @@
 <li>Update documentation to include Faker integration and inspiration source
   (<a href="https://github.com/alvinhenrick/fhir-synth/commit/98fba6737d8476638625e71113a86cd5c559ebf9"><code>98fba67</code></a>)</li>
 </ul>
-<h3 id="features">Features<a class="headerlink" href="#features" title="Permanent link">&para;</a></h3>
+<h3 id="features_1">Features<a class="headerlink" href="#features_1" title="Permanent link">&para;</a></h3>
 <ul>
 <li>Enhance patient data generation with demographic diversity, comorbidity realism, and SDOH
   observations
@@ -1289,7 +1390,7 @@
 <li>Fix formatting issues in docstrings and remove unnecessary imports
   (<a href="https://github.com/alvinhenrick/fhir-synth/commit/986f511ed2db9d452d1bf94e8adb5a126e0ab3fd"><code>986f511</code></a>)</li>
 </ul>
-<h3 id="features_1">Features<a class="headerlink" href="#features_1" title="Permanent link">&para;</a></h3>
+<h3 id="features_2">Features<a class="headerlink" href="#features_2" title="Permanent link">&para;</a></h3>
 <ul>
 <li>
 <p>Add E2B executor backend for running code in isolated micro-VMs
@@ -1327,7 +1428,7 @@
 <li>Update documentation for fhir-synth CLI; enhance output modes and AWS Bedrock integration details
   (<a href="https://github.com/alvinhenrick/fhir-synth/commit/1c4284bac5f189fedf2dd7900ebeb732b168e20f"><code>1c4284b</code></a>)</li>
 </ul>
-<h3 id="features_2">Features<a class="headerlink" href="#features_2" title="Permanent link">&para;</a></h3>
+<h3 id="features_3">Features<a class="headerlink" href="#features_3" title="Permanent link">&para;</a></h3>
 <ul>
 <li>
 <p>Add AWS Bedrock support; include options for AWS profile and region in CLI

@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Dynamic FHIR R4B synthetic data generator using LLM-powered code generation and declarative rules">
+        <meta name="description" content="Dynamic FHIR R4B synthetic data generator using LLM-powered code generation">
       
       
       
@@ -743,27 +743,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../rule_engine/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Rule Engine
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../bundle/" class="md-nav__link">
         
   
@@ -910,18 +889,27 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#fhir_synth.fhir_spec.class_to_module" class="md-nav__link">
+  <a href="#fhir_synth.fhir_spec.set_fhir_version" class="md-nav__link">
     <span class="md-ellipsis">
-      class_to_module
+      set_fhir_version
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#fhir_synth.fhir_spec.data_type_modules" class="md-nav__link">
+  <a href="#fhir_synth.fhir_spec.get_fhir_version" class="md-nav__link">
     <span class="md-ellipsis">
-      data_type_modules
+      get_fhir_version
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fhir_synth.fhir_spec.class_to_module" class="md-nav__link">
+    <span class="md-ellipsis">
+      class_to_module
     </span>
   </a>
   
@@ -949,15 +937,6 @@
   <a href="#fhir_synth.fhir_spec.required_fields" class="md-nav__link">
     <span class="md-ellipsis">
       required_fields
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#fhir_synth.fhir_spec.field_schema" class="md-nav__link">
-    <span class="md-ellipsis">
-      field_schema
     </span>
   </a>
   
@@ -1095,18 +1074,27 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#fhir_synth.fhir_spec.class_to_module" class="md-nav__link">
+  <a href="#fhir_synth.fhir_spec.set_fhir_version" class="md-nav__link">
     <span class="md-ellipsis">
-      class_to_module
+      set_fhir_version
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#fhir_synth.fhir_spec.data_type_modules" class="md-nav__link">
+  <a href="#fhir_synth.fhir_spec.get_fhir_version" class="md-nav__link">
     <span class="md-ellipsis">
-      data_type_modules
+      get_fhir_version
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fhir_synth.fhir_spec.class_to_module" class="md-nav__link">
+    <span class="md-ellipsis">
+      class_to_module
     </span>
   </a>
   
@@ -1134,15 +1122,6 @@
   <a href="#fhir_synth.fhir_spec.required_fields" class="md-nav__link">
     <span class="md-ellipsis">
       required_fields
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#fhir_synth.fhir_spec.field_schema" class="md-nav__link">
-    <span class="md-ellipsis">
-      field_schema
     </span>
   </a>
   
@@ -1213,17 +1192,18 @@
 
     <div class="doc doc-contents first">
 
-        <p>Auto-discover the full FHIR R4B specification from fhir.resources.</p>
-<p>This module introspects the <code>fhir.resources.R4B</code> package at import time to
-build a complete catalogue of resource types, data types, and their fields.
+        <p>Auto-discover the full FHIR specification from fhir.resources.</p>
+<p>This module introspects the <code>fhir.resources</code> package to build a complete
+catalogue of resource types, data types, and their fields. Supports multiple
+FHIR versions (R4B, STU3) through dynamic imports.
 Classification uses the class hierarchy (<code>Resource</code> / <code>DomainResource</code> vs
 <code>Element</code>) — <strong>nothing is hardcoded</strong>.</p>
 <h4 id="fhir_synth.fhir_spec--public-api">Public API<a class="headerlink" href="#fhir_synth.fhir_spec--public-api" title="Permanent link">&para;</a></h4>
 <ul>
+<li><code>set_fhir_version()</code> – set the FHIR version (call before other functions)</li>
 <li><code>resource_names()</code> – sorted list of all resource type names</li>
 <li><code>get_resource_class</code> – import and return the Pydantic class for a name</li>
 <li><code>required_fields</code> – required field names for a resource type</li>
-<li><code>field_schema</code> – full field metadata for a resource type</li>
 <li><code>reference_targets</code> – which resource types a reference field can point to</li>
 <li><code>spec_summary</code> – compact text summary suitable for LLM prompts</li>
 <li><code>class_to_module</code> – look up the correct module for any Pydantic class</li>
@@ -1279,23 +1259,23 @@ Classification uses the class hierarchy (<code>Resource</code> / <code>DomainRes
 
               <details class="mkdocstrings-source">
                 <summary>Source code in <code>src/fhir_synth/fhir_spec.py</code></summary>
-                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-40">40</a></span>
-<span class="normal"><a href="#__codelineno-0-41">41</a></span>
-<span class="normal"><a href="#__codelineno-0-42">42</a></span>
-<span class="normal"><a href="#__codelineno-0-43">43</a></span>
-<span class="normal"><a href="#__codelineno-0-44">44</a></span>
-<span class="normal"><a href="#__codelineno-0-45">45</a></span>
-<span class="normal"><a href="#__codelineno-0-46">46</a></span>
-<span class="normal"><a href="#__codelineno-0-47">47</a></span>
-<span class="normal"><a href="#__codelineno-0-48">48</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-40" name="__codelineno-0-40"></a><span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<a id="__codelineno-0-41" name="__codelineno-0-41"></a><span class="k">class</span><span class="w"> </span><span class="nc">FieldMeta</span><span class="p">:</span>
-<a id="__codelineno-0-42" name="__codelineno-0-42"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Metadata about a single field on a FHIR resource.&quot;&quot;&quot;</span>
-<a id="__codelineno-0-43" name="__codelineno-0-43"></a>
-<a id="__codelineno-0-44" name="__codelineno-0-44"></a>    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
-<a id="__codelineno-0-45" name="__codelineno-0-45"></a>    <span class="n">required</span><span class="p">:</span> <span class="nb">bool</span>
-<a id="__codelineno-0-46" name="__codelineno-0-46"></a>    <span class="n">type_annotation</span><span class="p">:</span> <span class="nb">str</span>
-<a id="__codelineno-0-47" name="__codelineno-0-47"></a>    <span class="n">is_reference</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
-<a id="__codelineno-0-48" name="__codelineno-0-48"></a>    <span class="n">is_list</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-90">90</a></span>
+<span class="normal"><a href="#__codelineno-0-91">91</a></span>
+<span class="normal"><a href="#__codelineno-0-92">92</a></span>
+<span class="normal"><a href="#__codelineno-0-93">93</a></span>
+<span class="normal"><a href="#__codelineno-0-94">94</a></span>
+<span class="normal"><a href="#__codelineno-0-95">95</a></span>
+<span class="normal"><a href="#__codelineno-0-96">96</a></span>
+<span class="normal"><a href="#__codelineno-0-97">97</a></span>
+<span class="normal"><a href="#__codelineno-0-98">98</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-90" name="__codelineno-0-90"></a><span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<a id="__codelineno-0-91" name="__codelineno-0-91"></a><span class="k">class</span><span class="w"> </span><span class="nc">FieldMeta</span><span class="p">:</span>
+<a id="__codelineno-0-92" name="__codelineno-0-92"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Metadata about a single field on a FHIR resource.&quot;&quot;&quot;</span>
+<a id="__codelineno-0-93" name="__codelineno-0-93"></a>
+<a id="__codelineno-0-94" name="__codelineno-0-94"></a>    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+<a id="__codelineno-0-95" name="__codelineno-0-95"></a>    <span class="n">required</span><span class="p">:</span> <span class="nb">bool</span>
+<a id="__codelineno-0-96" name="__codelineno-0-96"></a>    <span class="n">type_annotation</span><span class="p">:</span> <span class="nb">str</span>
+<a id="__codelineno-0-97" name="__codelineno-0-97"></a>    <span class="n">is_reference</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+<a id="__codelineno-0-98" name="__codelineno-0-98"></a>    <span class="n">is_list</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
 </code></pre></div></td></tr></table></div>
               </details>
 
@@ -1350,37 +1330,37 @@ Classification uses the class hierarchy (<code>Resource</code> / <code>DomainRes
 
               <details class="mkdocstrings-source">
                 <summary>Source code in <code>src/fhir_synth/fhir_spec.py</code></summary>
-                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-51">51</a></span>
-<span class="normal"><a href="#__codelineno-0-52">52</a></span>
-<span class="normal"><a href="#__codelineno-0-53">53</a></span>
-<span class="normal"><a href="#__codelineno-0-54">54</a></span>
-<span class="normal"><a href="#__codelineno-0-55">55</a></span>
-<span class="normal"><a href="#__codelineno-0-56">56</a></span>
-<span class="normal"><a href="#__codelineno-0-57">57</a></span>
-<span class="normal"><a href="#__codelineno-0-58">58</a></span>
-<span class="normal"><a href="#__codelineno-0-59">59</a></span>
-<span class="normal"><a href="#__codelineno-0-60">60</a></span>
-<span class="normal"><a href="#__codelineno-0-61">61</a></span>
-<span class="normal"><a href="#__codelineno-0-62">62</a></span>
-<span class="normal"><a href="#__codelineno-0-63">63</a></span>
-<span class="normal"><a href="#__codelineno-0-64">64</a></span>
-<span class="normal"><a href="#__codelineno-0-65">65</a></span>
-<span class="normal"><a href="#__codelineno-0-66">66</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-51" name="__codelineno-0-51"></a><span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<a id="__codelineno-0-52" name="__codelineno-0-52"></a><span class="k">class</span><span class="w"> </span><span class="nc">ResourceMeta</span><span class="p">:</span>
-<a id="__codelineno-0-53" name="__codelineno-0-53"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Metadata about a FHIR R4B resource type.&quot;&quot;&quot;</span>
-<a id="__codelineno-0-54" name="__codelineno-0-54"></a>
-<a id="__codelineno-0-55" name="__codelineno-0-55"></a>    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
-<a id="__codelineno-0-56" name="__codelineno-0-56"></a>    <span class="n">module</span><span class="p">:</span> <span class="nb">str</span>
-<a id="__codelineno-0-57" name="__codelineno-0-57"></a>    <span class="n">required_fields</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
-<a id="__codelineno-0-58" name="__codelineno-0-58"></a>    <span class="n">all_fields</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">FieldMeta</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="p">(),</span> <span class="nb">repr</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-<a id="__codelineno-0-59" name="__codelineno-0-59"></a>
-<a id="__codelineno-0-60" name="__codelineno-0-60"></a>    <span class="nd">@property</span>
-<a id="__codelineno-0-61" name="__codelineno-0-61"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">optional_fields</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
-<a id="__codelineno-0-62" name="__codelineno-0-62"></a>        <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_fields</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">f</span><span class="o">.</span><span class="n">required</span><span class="p">)</span>
-<a id="__codelineno-0-63" name="__codelineno-0-63"></a>
-<a id="__codelineno-0-64" name="__codelineno-0-64"></a>    <span class="nd">@property</span>
-<a id="__codelineno-0-65" name="__codelineno-0-65"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">reference_fields</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
-<a id="__codelineno-0-66" name="__codelineno-0-66"></a>        <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_fields</span> <span class="k">if</span> <span class="n">f</span><span class="o">.</span><span class="n">is_reference</span><span class="p">)</span>
+                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-101">101</a></span>
+<span class="normal"><a href="#__codelineno-0-102">102</a></span>
+<span class="normal"><a href="#__codelineno-0-103">103</a></span>
+<span class="normal"><a href="#__codelineno-0-104">104</a></span>
+<span class="normal"><a href="#__codelineno-0-105">105</a></span>
+<span class="normal"><a href="#__codelineno-0-106">106</a></span>
+<span class="normal"><a href="#__codelineno-0-107">107</a></span>
+<span class="normal"><a href="#__codelineno-0-108">108</a></span>
+<span class="normal"><a href="#__codelineno-0-109">109</a></span>
+<span class="normal"><a href="#__codelineno-0-110">110</a></span>
+<span class="normal"><a href="#__codelineno-0-111">111</a></span>
+<span class="normal"><a href="#__codelineno-0-112">112</a></span>
+<span class="normal"><a href="#__codelineno-0-113">113</a></span>
+<span class="normal"><a href="#__codelineno-0-114">114</a></span>
+<span class="normal"><a href="#__codelineno-0-115">115</a></span>
+<span class="normal"><a href="#__codelineno-0-116">116</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-101" name="__codelineno-0-101"></a><span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<a id="__codelineno-0-102" name="__codelineno-0-102"></a><span class="k">class</span><span class="w"> </span><span class="nc">ResourceMeta</span><span class="p">:</span>
+<a id="__codelineno-0-103" name="__codelineno-0-103"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Metadata about a FHIR R4B resource type.&quot;&quot;&quot;</span>
+<a id="__codelineno-0-104" name="__codelineno-0-104"></a>
+<a id="__codelineno-0-105" name="__codelineno-0-105"></a>    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+<a id="__codelineno-0-106" name="__codelineno-0-106"></a>    <span class="n">module</span><span class="p">:</span> <span class="nb">str</span>
+<a id="__codelineno-0-107" name="__codelineno-0-107"></a>    <span class="n">required_fields</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
+<a id="__codelineno-0-108" name="__codelineno-0-108"></a>    <span class="n">all_fields</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">FieldMeta</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="p">(),</span> <span class="nb">repr</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<a id="__codelineno-0-109" name="__codelineno-0-109"></a>
+<a id="__codelineno-0-110" name="__codelineno-0-110"></a>    <span class="nd">@property</span>
+<a id="__codelineno-0-111" name="__codelineno-0-111"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">optional_fields</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
+<a id="__codelineno-0-112" name="__codelineno-0-112"></a>        <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_fields</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">f</span><span class="o">.</span><span class="n">required</span><span class="p">)</span>
+<a id="__codelineno-0-113" name="__codelineno-0-113"></a>
+<a id="__codelineno-0-114" name="__codelineno-0-114"></a>    <span class="nd">@property</span>
+<a id="__codelineno-0-115" name="__codelineno-0-115"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">reference_fields</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
+<a id="__codelineno-0-116" name="__codelineno-0-116"></a>        <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_fields</span> <span class="k">if</span> <span class="n">f</span><span class="o">.</span><span class="n">is_reference</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
               </details>
 
@@ -1409,6 +1389,174 @@ Classification uses the class hierarchy (<code>Resource</code> / <code>DomainRes
 <div class="doc doc-object doc-function">
 
 
+<h3 id="fhir_synth.fhir_spec.set_fhir_version" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class="highlight language-python"><span class="n">set_fhir_version</span><span class="p">(</span><span class="n">version</span><span class="p">)</span></code>
+
+<a href="#fhir_synth.fhir_spec.set_fhir_version" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Set the FHIR version to use (R4B, STU3, etc.).</p>
+<p>Must be called before any other functions in this module if you want
+to use a non-default version. This clears all cached data and re-discovers
+resources for the new version.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>version</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>FHIR version string (case-insensitive). Supported: R4B, STU3</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>src/fhir_synth/fhir_spec.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-37">37</a></span>
+<span class="normal"><a href="#__codelineno-0-38">38</a></span>
+<span class="normal"><a href="#__codelineno-0-39">39</a></span>
+<span class="normal"><a href="#__codelineno-0-40">40</a></span>
+<span class="normal"><a href="#__codelineno-0-41">41</a></span>
+<span class="normal"><a href="#__codelineno-0-42">42</a></span>
+<span class="normal"><a href="#__codelineno-0-43">43</a></span>
+<span class="normal"><a href="#__codelineno-0-44">44</a></span>
+<span class="normal"><a href="#__codelineno-0-45">45</a></span>
+<span class="normal"><a href="#__codelineno-0-46">46</a></span>
+<span class="normal"><a href="#__codelineno-0-47">47</a></span>
+<span class="normal"><a href="#__codelineno-0-48">48</a></span>
+<span class="normal"><a href="#__codelineno-0-49">49</a></span>
+<span class="normal"><a href="#__codelineno-0-50">50</a></span>
+<span class="normal"><a href="#__codelineno-0-51">51</a></span>
+<span class="normal"><a href="#__codelineno-0-52">52</a></span>
+<span class="normal"><a href="#__codelineno-0-53">53</a></span>
+<span class="normal"><a href="#__codelineno-0-54">54</a></span>
+<span class="normal"><a href="#__codelineno-0-55">55</a></span>
+<span class="normal"><a href="#__codelineno-0-56">56</a></span>
+<span class="normal"><a href="#__codelineno-0-57">57</a></span>
+<span class="normal"><a href="#__codelineno-0-58">58</a></span>
+<span class="normal"><a href="#__codelineno-0-59">59</a></span>
+<span class="normal"><a href="#__codelineno-0-60">60</a></span>
+<span class="normal"><a href="#__codelineno-0-61">61</a></span>
+<span class="normal"><a href="#__codelineno-0-62">62</a></span>
+<span class="normal"><a href="#__codelineno-0-63">63</a></span>
+<span class="normal"><a href="#__codelineno-0-64">64</a></span>
+<span class="normal"><a href="#__codelineno-0-65">65</a></span>
+<span class="normal"><a href="#__codelineno-0-66">66</a></span>
+<span class="normal"><a href="#__codelineno-0-67">67</a></span>
+<span class="normal"><a href="#__codelineno-0-68">68</a></span>
+<span class="normal"><a href="#__codelineno-0-69">69</a></span>
+<span class="normal"><a href="#__codelineno-0-70">70</a></span>
+<span class="normal"><a href="#__codelineno-0-71">71</a></span>
+<span class="normal"><a href="#__codelineno-0-72">72</a></span>
+<span class="normal"><a href="#__codelineno-0-73">73</a></span>
+<span class="normal"><a href="#__codelineno-0-74">74</a></span>
+<span class="normal"><a href="#__codelineno-0-75">75</a></span>
+<span class="normal"><a href="#__codelineno-0-76">76</a></span>
+<span class="normal"><a href="#__codelineno-0-77">77</a></span>
+<span class="normal"><a href="#__codelineno-0-78">78</a></span>
+<span class="normal"><a href="#__codelineno-0-79">79</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-37" name="__codelineno-0-37"></a><span class="k">def</span><span class="w"> </span><span class="nf">set_fhir_version</span><span class="p">(</span><span class="n">version</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<a id="__codelineno-0-38" name="__codelineno-0-38"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Set the FHIR version to use (R4B, STU3, etc.).</span>
+<a id="__codelineno-0-39" name="__codelineno-0-39"></a>
+<a id="__codelineno-0-40" name="__codelineno-0-40"></a><span class="sd">    Must be called before any other functions in this module if you want</span>
+<a id="__codelineno-0-41" name="__codelineno-0-41"></a><span class="sd">    to use a non-default version. This clears all cached data and re-discovers</span>
+<a id="__codelineno-0-42" name="__codelineno-0-42"></a><span class="sd">    resources for the new version.</span>
+<a id="__codelineno-0-43" name="__codelineno-0-43"></a>
+<a id="__codelineno-0-44" name="__codelineno-0-44"></a><span class="sd">    Args:</span>
+<a id="__codelineno-0-45" name="__codelineno-0-45"></a><span class="sd">        version: FHIR version string (case-insensitive). Supported: R4B, STU3</span>
+<a id="__codelineno-0-46" name="__codelineno-0-46"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-47" name="__codelineno-0-47"></a>    <span class="k">global</span> \
+<a id="__codelineno-0-48" name="__codelineno-0-48"></a>        <span class="n">_FHIR_VERSION</span><span class="p">,</span> \
+<a id="__codelineno-0-49" name="__codelineno-0-49"></a>        <span class="n">_MODULE_MAP</span><span class="p">,</span> \
+<a id="__codelineno-0-50" name="__codelineno-0-50"></a>        <span class="n">_DATA_TYPE_MAP</span><span class="p">,</span> \
+<a id="__codelineno-0-51" name="__codelineno-0-51"></a>        <span class="n">_CLASS_MODULE_MAP</span><span class="p">,</span> \
+<a id="__codelineno-0-52" name="__codelineno-0-52"></a>        <span class="n">_MODULE_CLASSES</span><span class="p">,</span> \
+<a id="__codelineno-0-53" name="__codelineno-0-53"></a>        <span class="n">CLINICAL_RESOURCES</span>
+<a id="__codelineno-0-54" name="__codelineno-0-54"></a>
+<a id="__codelineno-0-55" name="__codelineno-0-55"></a>    <span class="c1"># Normalize version to uppercase</span>
+<a id="__codelineno-0-56" name="__codelineno-0-56"></a>    <span class="n">version_upper</span> <span class="o">=</span> <span class="n">version</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
+<a id="__codelineno-0-57" name="__codelineno-0-57"></a>
+<a id="__codelineno-0-58" name="__codelineno-0-58"></a>    <span class="c1"># Map common variations to canonical names</span>
+<a id="__codelineno-0-59" name="__codelineno-0-59"></a>    <span class="n">version_map</span> <span class="o">=</span> <span class="p">{</span>
+<a id="__codelineno-0-60" name="__codelineno-0-60"></a>        <span class="s2">&quot;R4B&quot;</span><span class="p">:</span> <span class="s2">&quot;R4B&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-61" name="__codelineno-0-61"></a>        <span class="s2">&quot;STU3&quot;</span><span class="p">:</span> <span class="s2">&quot;STU3&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-62" name="__codelineno-0-62"></a>        <span class="s2">&quot;R4&quot;</span><span class="p">:</span> <span class="s2">&quot;R4B&quot;</span><span class="p">,</span>  <span class="c1"># Allow R4 as alias for R4B</span>
+<a id="__codelineno-0-63" name="__codelineno-0-63"></a>    <span class="p">}</span>
+<a id="__codelineno-0-64" name="__codelineno-0-64"></a>
+<a id="__codelineno-0-65" name="__codelineno-0-65"></a>    <span class="n">canonical_version</span> <span class="o">=</span> <span class="n">version_map</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">version_upper</span><span class="p">)</span>
+<a id="__codelineno-0-66" name="__codelineno-0-66"></a>    <span class="k">if</span> <span class="n">canonical_version</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+<a id="__codelineno-0-67" name="__codelineno-0-67"></a>        <span class="n">supported</span> <span class="o">=</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">version_map</span><span class="o">.</span><span class="n">values</span><span class="p">())))</span>
+<a id="__codelineno-0-68" name="__codelineno-0-68"></a>        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+<a id="__codelineno-0-69" name="__codelineno-0-69"></a>            <span class="sa">f</span><span class="s2">&quot;Unsupported FHIR version: </span><span class="si">{</span><span class="n">version</span><span class="si">!r}</span><span class="s2">. Supported: </span><span class="si">{</span><span class="n">supported</span><span class="si">}</span><span class="s2"> (case-insensitive)&quot;</span>
+<a id="__codelineno-0-70" name="__codelineno-0-70"></a>        <span class="p">)</span>
+<a id="__codelineno-0-71" name="__codelineno-0-71"></a>
+<a id="__codelineno-0-72" name="__codelineno-0-72"></a>    <span class="n">_FHIR_VERSION</span> <span class="o">=</span> <span class="n">canonical_version</span>
+<a id="__codelineno-0-73" name="__codelineno-0-73"></a>    <span class="c1"># Clear all caches when version changes</span>
+<a id="__codelineno-0-74" name="__codelineno-0-74"></a>    <span class="n">get_resource_class</span><span class="o">.</span><span class="n">cache_clear</span><span class="p">()</span>
+<a id="__codelineno-0-75" name="__codelineno-0-75"></a>    <span class="n">_introspect</span><span class="o">.</span><span class="n">cache_clear</span><span class="p">()</span>
+<a id="__codelineno-0-76" name="__codelineno-0-76"></a>    <span class="n">_get_base_classes</span><span class="o">.</span><span class="n">cache_clear</span><span class="p">()</span>
+<a id="__codelineno-0-77" name="__codelineno-0-77"></a>    <span class="c1"># Re-discover all resources for the new version</span>
+<a id="__codelineno-0-78" name="__codelineno-0-78"></a>    <span class="n">_MODULE_MAP</span><span class="p">,</span> <span class="n">_DATA_TYPE_MAP</span><span class="p">,</span> <span class="n">_CLASS_MODULE_MAP</span><span class="p">,</span> <span class="n">_MODULE_CLASSES</span> <span class="o">=</span> <span class="n">_discover_all</span><span class="p">()</span>
+<a id="__codelineno-0-79" name="__codelineno-0-79"></a>    <span class="n">CLINICAL_RESOURCES</span> <span class="o">=</span> <span class="n">_discover_clinical_resources</span><span class="p">()</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="fhir_synth.fhir_spec.get_fhir_version" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class="highlight language-python"><span class="n">get_fhir_version</span><span class="p">()</span></code>
+
+<a href="#fhir_synth.fhir_spec.get_fhir_version" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Return the current FHIR version.</p>
+
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>src/fhir_synth/fhir_spec.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-82">82</a></span>
+<span class="normal"><a href="#__codelineno-0-83">83</a></span>
+<span class="normal"><a href="#__codelineno-0-84">84</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-82" name="__codelineno-0-82"></a><span class="k">def</span><span class="w"> </span><span class="nf">get_fhir_version</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<a id="__codelineno-0-83" name="__codelineno-0-83"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Return the current FHIR version.&quot;&quot;&quot;</span>
+<a id="__codelineno-0-84" name="__codelineno-0-84"></a>    <span class="k">return</span> <span class="n">_FHIR_VERSION</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
 <h3 id="fhir_synth.fhir_spec.class_to_module" class="doc doc-heading">
 <code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class="highlight language-python"><span class="n">class_to_module</span><span class="p">(</span><span class="n">class_name</span><span class="p">)</span></code>
 
@@ -1422,38 +1570,11 @@ Classification uses the class hierarchy (<code>Resource</code> / <code>DomainRes
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/fhir_synth/fhir_spec.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-139">139</a></span>
-<span class="normal"><a href="#__codelineno-0-140">140</a></span>
-<span class="normal"><a href="#__codelineno-0-141">141</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-139" name="__codelineno-0-139"></a><span class="k">def</span><span class="w"> </span><span class="nf">class_to_module</span><span class="p">(</span><span class="n">class_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
-<a id="__codelineno-0-140" name="__codelineno-0-140"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Return the module name for a Pydantic class, or None if unknown.&quot;&quot;&quot;</span>
-<a id="__codelineno-0-141" name="__codelineno-0-141"></a>    <span class="k">return</span> <span class="n">_CLASS_MODULE_MAP</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">class_name</span><span class="p">)</span>
-</code></pre></div></td></tr></table></div>
-            </details>
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-<h3 id="fhir_synth.fhir_spec.data_type_modules" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class="highlight language-python"><span class="n">data_type_modules</span><span class="p">()</span></code>
-
-<a href="#fhir_synth.fhir_spec.data_type_modules" class="headerlink" title="Permanent link">&para;</a></h3>
-
-
-    <div class="doc doc-contents ">
-
-        <p>Sorted list of all discovered data-type module names.</p>
-
-
-            <details class="mkdocstrings-source">
-              <summary>Source code in <code>src/fhir_synth/fhir_spec.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-144">144</a></span>
-<span class="normal"><a href="#__codelineno-0-145">145</a></span>
-<span class="normal"><a href="#__codelineno-0-146">146</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-144" name="__codelineno-0-144"></a><span class="k">def</span><span class="w"> </span><span class="nf">data_type_modules</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
-<a id="__codelineno-0-145" name="__codelineno-0-145"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Sorted list of all discovered data-type module names.&quot;&quot;&quot;</span>
-<a id="__codelineno-0-146" name="__codelineno-0-146"></a>    <span class="k">return</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">_DATA_TYPE_MAP</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-200">200</a></span>
+<span class="normal"><a href="#__codelineno-0-201">201</a></span>
+<span class="normal"><a href="#__codelineno-0-202">202</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-200" name="__codelineno-0-200"></a><span class="k">def</span><span class="w"> </span><span class="nf">class_to_module</span><span class="p">(</span><span class="n">class_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<a id="__codelineno-0-201" name="__codelineno-0-201"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Return the module name for a Pydantic class, or None if unknown.&quot;&quot;&quot;</span>
+<a id="__codelineno-0-202" name="__codelineno-0-202"></a>    <span class="k">return</span> <span class="n">_CLASS_MODULE_MAP</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">class_name</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -1504,55 +1625,59 @@ Classification uses the class hierarchy (<code>Resource</code> / <code>DomainRes
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/fhir_synth/fhir_spec.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-152">152</a></span>
-<span class="normal"><a href="#__codelineno-0-153">153</a></span>
-<span class="normal"><a href="#__codelineno-0-154">154</a></span>
-<span class="normal"><a href="#__codelineno-0-155">155</a></span>
-<span class="normal"><a href="#__codelineno-0-156">156</a></span>
-<span class="normal"><a href="#__codelineno-0-157">157</a></span>
-<span class="normal"><a href="#__codelineno-0-158">158</a></span>
-<span class="normal"><a href="#__codelineno-0-159">159</a></span>
-<span class="normal"><a href="#__codelineno-0-160">160</a></span>
-<span class="normal"><a href="#__codelineno-0-161">161</a></span>
-<span class="normal"><a href="#__codelineno-0-162">162</a></span>
-<span class="normal"><a href="#__codelineno-0-163">163</a></span>
-<span class="normal"><a href="#__codelineno-0-164">164</a></span>
-<span class="normal"><a href="#__codelineno-0-165">165</a></span>
-<span class="normal"><a href="#__codelineno-0-166">166</a></span>
-<span class="normal"><a href="#__codelineno-0-167">167</a></span>
-<span class="normal"><a href="#__codelineno-0-168">168</a></span>
-<span class="normal"><a href="#__codelineno-0-169">169</a></span>
-<span class="normal"><a href="#__codelineno-0-170">170</a></span>
-<span class="normal"><a href="#__codelineno-0-171">171</a></span>
-<span class="normal"><a href="#__codelineno-0-172">172</a></span>
-<span class="normal"><a href="#__codelineno-0-173">173</a></span>
-<span class="normal"><a href="#__codelineno-0-174">174</a></span>
-<span class="normal"><a href="#__codelineno-0-175">175</a></span>
-<span class="normal"><a href="#__codelineno-0-176">176</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-152" name="__codelineno-0-152"></a><span class="nd">@cache</span>
-<a id="__codelineno-0-153" name="__codelineno-0-153"></a><span class="k">def</span><span class="w"> </span><span class="nf">get_resource_class</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">type</span><span class="p">[</span><span class="n">BaseModel</span><span class="p">]:</span>
-<a id="__codelineno-0-154" name="__codelineno-0-154"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Import and return the Pydantic model class for a resource type.</span>
-<a id="__codelineno-0-155" name="__codelineno-0-155"></a>
-<a id="__codelineno-0-156" name="__codelineno-0-156"></a><span class="sd">    Results are cached so each module is only imported once.</span>
-<a id="__codelineno-0-157" name="__codelineno-0-157"></a>
-<a id="__codelineno-0-158" name="__codelineno-0-158"></a><span class="sd">    Raises:</span>
-<a id="__codelineno-0-159" name="__codelineno-0-159"></a><span class="sd">        ValueError: If *name* is not a known resource type.</span>
-<a id="__codelineno-0-160" name="__codelineno-0-160"></a><span class="sd">    &quot;&quot;&quot;</span>
-<a id="__codelineno-0-161" name="__codelineno-0-161"></a>    <span class="n">modname</span> <span class="o">=</span> <span class="n">_MODULE_MAP</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
-<a id="__codelineno-0-162" name="__codelineno-0-162"></a>    <span class="k">if</span> <span class="n">modname</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-<a id="__codelineno-0-163" name="__codelineno-0-163"></a>        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-<a id="__codelineno-0-164" name="__codelineno-0-164"></a>            <span class="sa">f</span><span class="s2">&quot;Unknown FHIR resource type: </span><span class="si">{</span><span class="n">name</span><span class="si">!r}</span><span class="s2">. Known: </span><span class="si">{</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">_MODULE_MAP</span><span class="p">)[:</span><span class="mi">20</span><span class="p">])</span><span class="si">}</span><span class="s2"> …&quot;</span>
-<a id="__codelineno-0-165" name="__codelineno-0-165"></a>        <span class="p">)</span>
-<a id="__codelineno-0-166" name="__codelineno-0-166"></a>    <span class="n">mod</span> <span class="o">=</span> <span class="n">importlib</span><span class="o">.</span><span class="n">import_module</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;fhir.resources.R4B.</span><span class="si">{</span><span class="n">modname</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-167" name="__codelineno-0-167"></a>    <span class="bp">cls</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">mod</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-<a id="__codelineno-0-168" name="__codelineno-0-168"></a>    <span class="k">if</span> <span class="bp">cls</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-<a id="__codelineno-0-169" name="__codelineno-0-169"></a>        <span class="c1"># Try case-insensitive lookup</span>
-<a id="__codelineno-0-170" name="__codelineno-0-170"></a>        <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="nb">dir</span><span class="p">(</span><span class="n">mod</span><span class="p">):</span>
-<a id="__codelineno-0-171" name="__codelineno-0-171"></a>            <span class="k">if</span> <span class="n">attr</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="n">name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">mod</span><span class="p">,</span> <span class="n">attr</span><span class="p">),</span> <span class="s2">&quot;model_fields&quot;</span><span class="p">):</span>
-<a id="__codelineno-0-172" name="__codelineno-0-172"></a>                <span class="bp">cls</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">mod</span><span class="p">,</span> <span class="n">attr</span><span class="p">)</span>
-<a id="__codelineno-0-173" name="__codelineno-0-173"></a>                <span class="k">break</span>
-<a id="__codelineno-0-174" name="__codelineno-0-174"></a>    <span class="k">if</span> <span class="bp">cls</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-<a id="__codelineno-0-175" name="__codelineno-0-175"></a>        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Could not find class </span><span class="si">{</span><span class="n">name</span><span class="si">!r}</span><span class="s2"> in fhir.resources.R4B.</span><span class="si">{</span><span class="n">modname</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-176" name="__codelineno-0-176"></a>    <span class="k">return</span> <span class="bp">cls</span>  <span class="c1"># type: ignore[no-any-return]</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-208">208</a></span>
+<span class="normal"><a href="#__codelineno-0-209">209</a></span>
+<span class="normal"><a href="#__codelineno-0-210">210</a></span>
+<span class="normal"><a href="#__codelineno-0-211">211</a></span>
+<span class="normal"><a href="#__codelineno-0-212">212</a></span>
+<span class="normal"><a href="#__codelineno-0-213">213</a></span>
+<span class="normal"><a href="#__codelineno-0-214">214</a></span>
+<span class="normal"><a href="#__codelineno-0-215">215</a></span>
+<span class="normal"><a href="#__codelineno-0-216">216</a></span>
+<span class="normal"><a href="#__codelineno-0-217">217</a></span>
+<span class="normal"><a href="#__codelineno-0-218">218</a></span>
+<span class="normal"><a href="#__codelineno-0-219">219</a></span>
+<span class="normal"><a href="#__codelineno-0-220">220</a></span>
+<span class="normal"><a href="#__codelineno-0-221">221</a></span>
+<span class="normal"><a href="#__codelineno-0-222">222</a></span>
+<span class="normal"><a href="#__codelineno-0-223">223</a></span>
+<span class="normal"><a href="#__codelineno-0-224">224</a></span>
+<span class="normal"><a href="#__codelineno-0-225">225</a></span>
+<span class="normal"><a href="#__codelineno-0-226">226</a></span>
+<span class="normal"><a href="#__codelineno-0-227">227</a></span>
+<span class="normal"><a href="#__codelineno-0-228">228</a></span>
+<span class="normal"><a href="#__codelineno-0-229">229</a></span>
+<span class="normal"><a href="#__codelineno-0-230">230</a></span>
+<span class="normal"><a href="#__codelineno-0-231">231</a></span>
+<span class="normal"><a href="#__codelineno-0-232">232</a></span>
+<span class="normal"><a href="#__codelineno-0-233">233</a></span>
+<span class="normal"><a href="#__codelineno-0-234">234</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-208" name="__codelineno-0-208"></a><span class="nd">@cache</span>
+<a id="__codelineno-0-209" name="__codelineno-0-209"></a><span class="k">def</span><span class="w"> </span><span class="nf">get_resource_class</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">type</span><span class="p">[</span><span class="n">BaseModel</span><span class="p">]:</span>
+<a id="__codelineno-0-210" name="__codelineno-0-210"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Import and return the Pydantic model class for a resource type.</span>
+<a id="__codelineno-0-211" name="__codelineno-0-211"></a>
+<a id="__codelineno-0-212" name="__codelineno-0-212"></a><span class="sd">    Results are cached so each module is only imported once.</span>
+<a id="__codelineno-0-213" name="__codelineno-0-213"></a>
+<a id="__codelineno-0-214" name="__codelineno-0-214"></a><span class="sd">    Raises:</span>
+<a id="__codelineno-0-215" name="__codelineno-0-215"></a><span class="sd">        ValueError: If *name* is not a known resource type.</span>
+<a id="__codelineno-0-216" name="__codelineno-0-216"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-217" name="__codelineno-0-217"></a>    <span class="n">modname</span> <span class="o">=</span> <span class="n">_MODULE_MAP</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+<a id="__codelineno-0-218" name="__codelineno-0-218"></a>    <span class="k">if</span> <span class="n">modname</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+<a id="__codelineno-0-219" name="__codelineno-0-219"></a>        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+<a id="__codelineno-0-220" name="__codelineno-0-220"></a>            <span class="sa">f</span><span class="s2">&quot;Unknown FHIR resource type: </span><span class="si">{</span><span class="n">name</span><span class="si">!r}</span><span class="s2">. Known: </span><span class="si">{</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">_MODULE_MAP</span><span class="p">)[:</span><span class="mi">20</span><span class="p">])</span><span class="si">}</span><span class="s2"> …&quot;</span>
+<a id="__codelineno-0-221" name="__codelineno-0-221"></a>        <span class="p">)</span>
+<a id="__codelineno-0-222" name="__codelineno-0-222"></a>    <span class="n">mod</span> <span class="o">=</span> <span class="n">importlib</span><span class="o">.</span><span class="n">import_module</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;fhir.resources.</span><span class="si">{</span><span class="n">_FHIR_VERSION</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">modname</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-223" name="__codelineno-0-223"></a>    <span class="bp">cls</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">mod</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+<a id="__codelineno-0-224" name="__codelineno-0-224"></a>    <span class="k">if</span> <span class="bp">cls</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+<a id="__codelineno-0-225" name="__codelineno-0-225"></a>        <span class="c1"># Try case-insensitive lookup</span>
+<a id="__codelineno-0-226" name="__codelineno-0-226"></a>        <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="nb">dir</span><span class="p">(</span><span class="n">mod</span><span class="p">):</span>
+<a id="__codelineno-0-227" name="__codelineno-0-227"></a>            <span class="k">if</span> <span class="n">attr</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="n">name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">mod</span><span class="p">,</span> <span class="n">attr</span><span class="p">),</span> <span class="s2">&quot;model_fields&quot;</span><span class="p">):</span>
+<a id="__codelineno-0-228" name="__codelineno-0-228"></a>                <span class="bp">cls</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">mod</span><span class="p">,</span> <span class="n">attr</span><span class="p">)</span>
+<a id="__codelineno-0-229" name="__codelineno-0-229"></a>                <span class="k">break</span>
+<a id="__codelineno-0-230" name="__codelineno-0-230"></a>    <span class="k">if</span> <span class="bp">cls</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+<a id="__codelineno-0-231" name="__codelineno-0-231"></a>        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+<a id="__codelineno-0-232" name="__codelineno-0-232"></a>            <span class="sa">f</span><span class="s2">&quot;Could not find class </span><span class="si">{</span><span class="n">name</span><span class="si">!r}</span><span class="s2"> in fhir.resources.</span><span class="si">{</span><span class="n">_FHIR_VERSION</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">modname</span><span class="si">}</span><span class="s2">&quot;</span>
+<a id="__codelineno-0-233" name="__codelineno-0-233"></a>        <span class="p">)</span>
+<a id="__codelineno-0-234" name="__codelineno-0-234"></a>    <span class="k">return</span> <span class="bp">cls</span>  <span class="c1"># type: ignore[no-any-return]</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -1575,11 +1700,11 @@ Classification uses the class hierarchy (<code>Resource</code> / <code>DomainRes
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/fhir_synth/fhir_spec.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-222">222</a></span>
-<span class="normal"><a href="#__codelineno-0-223">223</a></span>
-<span class="normal"><a href="#__codelineno-0-224">224</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-222" name="__codelineno-0-222"></a><span class="k">def</span><span class="w"> </span><span class="nf">resource_names</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
-<a id="__codelineno-0-223" name="__codelineno-0-223"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Sorted list of all known FHIR R4B resource type names.&quot;&quot;&quot;</span>
-<a id="__codelineno-0-224" name="__codelineno-0-224"></a>    <span class="k">return</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">_MODULE_MAP</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-280">280</a></span>
+<span class="normal"><a href="#__codelineno-0-281">281</a></span>
+<span class="normal"><a href="#__codelineno-0-282">282</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-280" name="__codelineno-0-280"></a><span class="k">def</span><span class="w"> </span><span class="nf">resource_names</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<a id="__codelineno-0-281" name="__codelineno-0-281"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Sorted list of all known FHIR R4B resource type names.&quot;&quot;&quot;</span>
+<a id="__codelineno-0-282" name="__codelineno-0-282"></a>    <span class="k">return</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">_MODULE_MAP</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -1602,58 +1727,11 @@ Classification uses the class hierarchy (<code>Resource</code> / <code>DomainRes
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/fhir_synth/fhir_spec.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-227">227</a></span>
-<span class="normal"><a href="#__codelineno-0-228">228</a></span>
-<span class="normal"><a href="#__codelineno-0-229">229</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-227" name="__codelineno-0-227"></a><span class="k">def</span><span class="w"> </span><span class="nf">required_fields</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
-<a id="__codelineno-0-228" name="__codelineno-0-228"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Required field names for a resource type.&quot;&quot;&quot;</span>
-<a id="__codelineno-0-229" name="__codelineno-0-229"></a>    <span class="k">return</span> <span class="n">_introspect</span><span class="p">(</span><span class="n">name</span><span class="p">)</span><span class="o">.</span><span class="n">required_fields</span>
-</code></pre></div></td></tr></table></div>
-            </details>
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-<h3 id="fhir_synth.fhir_spec.field_schema" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class="highlight language-python"><span class="n">field_schema</span><span class="p">(</span><span class="n">name</span><span class="p">)</span></code>
-
-<a href="#fhir_synth.fhir_spec.field_schema" class="headerlink" title="Permanent link">&para;</a></h3>
-
-
-    <div class="doc doc-contents ">
-
-        <p>Field metadata as plain dicts (JSON-safe).</p>
-
-
-            <details class="mkdocstrings-source">
-              <summary>Source code in <code>src/fhir_synth/fhir_spec.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-232">232</a></span>
-<span class="normal"><a href="#__codelineno-0-233">233</a></span>
-<span class="normal"><a href="#__codelineno-0-234">234</a></span>
-<span class="normal"><a href="#__codelineno-0-235">235</a></span>
-<span class="normal"><a href="#__codelineno-0-236">236</a></span>
-<span class="normal"><a href="#__codelineno-0-237">237</a></span>
-<span class="normal"><a href="#__codelineno-0-238">238</a></span>
-<span class="normal"><a href="#__codelineno-0-239">239</a></span>
-<span class="normal"><a href="#__codelineno-0-240">240</a></span>
-<span class="normal"><a href="#__codelineno-0-241">241</a></span>
-<span class="normal"><a href="#__codelineno-0-242">242</a></span>
-<span class="normal"><a href="#__codelineno-0-243">243</a></span>
-<span class="normal"><a href="#__codelineno-0-244">244</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-232" name="__codelineno-0-232"></a><span class="k">def</span><span class="w"> </span><span class="nf">field_schema</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
-<a id="__codelineno-0-233" name="__codelineno-0-233"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Field metadata as plain dicts (JSON-safe).&quot;&quot;&quot;</span>
-<a id="__codelineno-0-234" name="__codelineno-0-234"></a>    <span class="n">meta</span> <span class="o">=</span> <span class="n">_introspect</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
-<a id="__codelineno-0-235" name="__codelineno-0-235"></a>    <span class="k">return</span> <span class="p">[</span>
-<a id="__codelineno-0-236" name="__codelineno-0-236"></a>        <span class="p">{</span>
-<a id="__codelineno-0-237" name="__codelineno-0-237"></a>            <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">f</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
-<a id="__codelineno-0-238" name="__codelineno-0-238"></a>            <span class="s2">&quot;required&quot;</span><span class="p">:</span> <span class="n">f</span><span class="o">.</span><span class="n">required</span><span class="p">,</span>
-<a id="__codelineno-0-239" name="__codelineno-0-239"></a>            <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="n">f</span><span class="o">.</span><span class="n">type_annotation</span><span class="p">,</span>
-<a id="__codelineno-0-240" name="__codelineno-0-240"></a>            <span class="s2">&quot;is_reference&quot;</span><span class="p">:</span> <span class="n">f</span><span class="o">.</span><span class="n">is_reference</span><span class="p">,</span>
-<a id="__codelineno-0-241" name="__codelineno-0-241"></a>            <span class="s2">&quot;is_list&quot;</span><span class="p">:</span> <span class="n">f</span><span class="o">.</span><span class="n">is_list</span><span class="p">,</span>
-<a id="__codelineno-0-242" name="__codelineno-0-242"></a>        <span class="p">}</span>
-<a id="__codelineno-0-243" name="__codelineno-0-243"></a>        <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">meta</span><span class="o">.</span><span class="n">all_fields</span>
-<a id="__codelineno-0-244" name="__codelineno-0-244"></a>    <span class="p">]</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-285">285</a></span>
+<span class="normal"><a href="#__codelineno-0-286">286</a></span>
+<span class="normal"><a href="#__codelineno-0-287">287</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-285" name="__codelineno-0-285"></a><span class="k">def</span><span class="w"> </span><span class="nf">required_fields</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
+<a id="__codelineno-0-286" name="__codelineno-0-286"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Required field names for a resource type.&quot;&quot;&quot;</span>
+<a id="__codelineno-0-287" name="__codelineno-0-287"></a>    <span class="k">return</span> <span class="n">_introspect</span><span class="p">(</span><span class="n">name</span><span class="p">)</span><span class="o">.</span><span class="n">required_fields</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -1676,13 +1754,13 @@ Classification uses the class hierarchy (<code>Resource</code> / <code>DomainRes
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/fhir_synth/fhir_spec.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-247">247</a></span>
-<span class="normal"><a href="#__codelineno-0-248">248</a></span>
-<span class="normal"><a href="#__codelineno-0-249">249</a></span>
-<span class="normal"><a href="#__codelineno-0-250">250</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-247" name="__codelineno-0-247"></a><span class="k">def</span><span class="w"> </span><span class="nf">reference_targets</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
-<a id="__codelineno-0-248" name="__codelineno-0-248"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Mapping of reference field names → type annotations.&quot;&quot;&quot;</span>
-<a id="__codelineno-0-249" name="__codelineno-0-249"></a>    <span class="n">meta</span> <span class="o">=</span> <span class="n">_introspect</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
-<a id="__codelineno-0-250" name="__codelineno-0-250"></a>    <span class="k">return</span> <span class="p">{</span><span class="n">f</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="n">f</span><span class="o">.</span><span class="n">type_annotation</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">meta</span><span class="o">.</span><span class="n">all_fields</span> <span class="k">if</span> <span class="n">f</span><span class="o">.</span><span class="n">is_reference</span><span class="p">}</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-290">290</a></span>
+<span class="normal"><a href="#__codelineno-0-291">291</a></span>
+<span class="normal"><a href="#__codelineno-0-292">292</a></span>
+<span class="normal"><a href="#__codelineno-0-293">293</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-290" name="__codelineno-0-290"></a><span class="k">def</span><span class="w"> </span><span class="nf">reference_targets</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+<a id="__codelineno-0-291" name="__codelineno-0-291"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Mapping of reference field names → type annotations.&quot;&quot;&quot;</span>
+<a id="__codelineno-0-292" name="__codelineno-0-292"></a>    <span class="n">meta</span> <span class="o">=</span> <span class="n">_introspect</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+<a id="__codelineno-0-293" name="__codelineno-0-293"></a>    <span class="k">return</span> <span class="p">{</span><span class="n">f</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="n">f</span><span class="o">.</span><span class="n">type_annotation</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">meta</span><span class="o">.</span><span class="n">all_fields</span> <span class="k">if</span> <span class="n">f</span><span class="o">.</span><span class="n">is_reference</span><span class="p">}</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -1702,62 +1780,147 @@ Classification uses the class hierarchy (<code>Resource</code> / <code>DomainRes
 
         <p>Compact text summary of the FHIR spec for the given resources.</p>
 <p>Designed to be injected into LLM system prompts so the model knows
-exactly which fields are required / optional / references.</p>
+exactly which fields are required / optional / references, along with
+their types (DateTime, Period, CodeableConcept, etc.).</p>
 
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/fhir_synth/fhir_spec.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-285">285</a></span>
-<span class="normal"><a href="#__codelineno-0-286">286</a></span>
-<span class="normal"><a href="#__codelineno-0-287">287</a></span>
-<span class="normal"><a href="#__codelineno-0-288">288</a></span>
-<span class="normal"><a href="#__codelineno-0-289">289</a></span>
-<span class="normal"><a href="#__codelineno-0-290">290</a></span>
-<span class="normal"><a href="#__codelineno-0-291">291</a></span>
-<span class="normal"><a href="#__codelineno-0-292">292</a></span>
-<span class="normal"><a href="#__codelineno-0-293">293</a></span>
-<span class="normal"><a href="#__codelineno-0-294">294</a></span>
-<span class="normal"><a href="#__codelineno-0-295">295</a></span>
-<span class="normal"><a href="#__codelineno-0-296">296</a></span>
-<span class="normal"><a href="#__codelineno-0-297">297</a></span>
-<span class="normal"><a href="#__codelineno-0-298">298</a></span>
-<span class="normal"><a href="#__codelineno-0-299">299</a></span>
-<span class="normal"><a href="#__codelineno-0-300">300</a></span>
-<span class="normal"><a href="#__codelineno-0-301">301</a></span>
-<span class="normal"><a href="#__codelineno-0-302">302</a></span>
-<span class="normal"><a href="#__codelineno-0-303">303</a></span>
-<span class="normal"><a href="#__codelineno-0-304">304</a></span>
-<span class="normal"><a href="#__codelineno-0-305">305</a></span>
-<span class="normal"><a href="#__codelineno-0-306">306</a></span>
-<span class="normal"><a href="#__codelineno-0-307">307</a></span>
-<span class="normal"><a href="#__codelineno-0-308">308</a></span>
-<span class="normal"><a href="#__codelineno-0-309">309</a></span>
-<span class="normal"><a href="#__codelineno-0-310">310</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-285" name="__codelineno-0-285"></a><span class="k">def</span><span class="w"> </span><span class="nf">spec_summary</span><span class="p">(</span><span class="n">resource_types</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<a id="__codelineno-0-286" name="__codelineno-0-286"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Compact text summary of the FHIR spec for the given resources.</span>
-<a id="__codelineno-0-287" name="__codelineno-0-287"></a>
-<a id="__codelineno-0-288" name="__codelineno-0-288"></a><span class="sd">    Designed to be injected into LLM system prompts so the model knows</span>
-<a id="__codelineno-0-289" name="__codelineno-0-289"></a><span class="sd">    exactly which fields are required / optional / references.</span>
-<a id="__codelineno-0-290" name="__codelineno-0-290"></a><span class="sd">    &quot;&quot;&quot;</span>
-<a id="__codelineno-0-291" name="__codelineno-0-291"></a>    <span class="n">types</span> <span class="o">=</span> <span class="n">resource_types</span> <span class="ow">or</span> <span class="n">CLINICAL_RESOURCES</span>
-<a id="__codelineno-0-292" name="__codelineno-0-292"></a>    <span class="n">lines</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;FHIR R4B Spec — </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">types</span><span class="p">)</span><span class="si">}</span><span class="s2"> resource types</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">]</span>
-<a id="__codelineno-0-293" name="__codelineno-0-293"></a>
-<a id="__codelineno-0-294" name="__codelineno-0-294"></a>    <span class="k">for</span> <span class="n">rt</span> <span class="ow">in</span> <span class="n">types</span><span class="p">:</span>
-<a id="__codelineno-0-295" name="__codelineno-0-295"></a>        <span class="k">try</span><span class="p">:</span>
-<a id="__codelineno-0-296" name="__codelineno-0-296"></a>            <span class="n">meta</span> <span class="o">=</span> <span class="n">_introspect</span><span class="p">(</span><span class="n">rt</span><span class="p">)</span>
-<a id="__codelineno-0-297" name="__codelineno-0-297"></a>        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
-<a id="__codelineno-0-298" name="__codelineno-0-298"></a>            <span class="k">continue</span>
-<a id="__codelineno-0-299" name="__codelineno-0-299"></a>        <span class="n">req</span> <span class="o">=</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">meta</span><span class="o">.</span><span class="n">required_fields</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;(none)&quot;</span>
-<a id="__codelineno-0-300" name="__codelineno-0-300"></a>        <span class="n">refs</span> <span class="o">=</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">meta</span><span class="o">.</span><span class="n">reference_fields</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;(none)&quot;</span>
-<a id="__codelineno-0-301" name="__codelineno-0-301"></a>        <span class="n">opt_sample</span> <span class="o">=</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">meta</span><span class="o">.</span><span class="n">optional_fields</span><span class="p">[:</span><span class="mi">8</span><span class="p">])</span>
-<a id="__codelineno-0-302" name="__codelineno-0-302"></a>        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">meta</span><span class="o">.</span><span class="n">optional_fields</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">8</span><span class="p">:</span>
-<a id="__codelineno-0-303" name="__codelineno-0-303"></a>            <span class="n">opt_sample</span> <span class="o">+=</span> <span class="s2">&quot; …&quot;</span>
-<a id="__codelineno-0-304" name="__codelineno-0-304"></a>        <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">rt</span><span class="si">}</span><span class="s2">:&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-305" name="__codelineno-0-305"></a>        <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  required: </span><span class="si">{</span><span class="n">req</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-306" name="__codelineno-0-306"></a>        <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  references: </span><span class="si">{</span><span class="n">refs</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-307" name="__codelineno-0-307"></a>        <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  optional: </span><span class="si">{</span><span class="n">opt_sample</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-308" name="__codelineno-0-308"></a>        <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-309" name="__codelineno-0-309"></a>
-<a id="__codelineno-0-310" name="__codelineno-0-310"></a>    <span class="k">return</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-362">362</a></span>
+<span class="normal"><a href="#__codelineno-0-363">363</a></span>
+<span class="normal"><a href="#__codelineno-0-364">364</a></span>
+<span class="normal"><a href="#__codelineno-0-365">365</a></span>
+<span class="normal"><a href="#__codelineno-0-366">366</a></span>
+<span class="normal"><a href="#__codelineno-0-367">367</a></span>
+<span class="normal"><a href="#__codelineno-0-368">368</a></span>
+<span class="normal"><a href="#__codelineno-0-369">369</a></span>
+<span class="normal"><a href="#__codelineno-0-370">370</a></span>
+<span class="normal"><a href="#__codelineno-0-371">371</a></span>
+<span class="normal"><a href="#__codelineno-0-372">372</a></span>
+<span class="normal"><a href="#__codelineno-0-373">373</a></span>
+<span class="normal"><a href="#__codelineno-0-374">374</a></span>
+<span class="normal"><a href="#__codelineno-0-375">375</a></span>
+<span class="normal"><a href="#__codelineno-0-376">376</a></span>
+<span class="normal"><a href="#__codelineno-0-377">377</a></span>
+<span class="normal"><a href="#__codelineno-0-378">378</a></span>
+<span class="normal"><a href="#__codelineno-0-379">379</a></span>
+<span class="normal"><a href="#__codelineno-0-380">380</a></span>
+<span class="normal"><a href="#__codelineno-0-381">381</a></span>
+<span class="normal"><a href="#__codelineno-0-382">382</a></span>
+<span class="normal"><a href="#__codelineno-0-383">383</a></span>
+<span class="normal"><a href="#__codelineno-0-384">384</a></span>
+<span class="normal"><a href="#__codelineno-0-385">385</a></span>
+<span class="normal"><a href="#__codelineno-0-386">386</a></span>
+<span class="normal"><a href="#__codelineno-0-387">387</a></span>
+<span class="normal"><a href="#__codelineno-0-388">388</a></span>
+<span class="normal"><a href="#__codelineno-0-389">389</a></span>
+<span class="normal"><a href="#__codelineno-0-390">390</a></span>
+<span class="normal"><a href="#__codelineno-0-391">391</a></span>
+<span class="normal"><a href="#__codelineno-0-392">392</a></span>
+<span class="normal"><a href="#__codelineno-0-393">393</a></span>
+<span class="normal"><a href="#__codelineno-0-394">394</a></span>
+<span class="normal"><a href="#__codelineno-0-395">395</a></span>
+<span class="normal"><a href="#__codelineno-0-396">396</a></span>
+<span class="normal"><a href="#__codelineno-0-397">397</a></span>
+<span class="normal"><a href="#__codelineno-0-398">398</a></span>
+<span class="normal"><a href="#__codelineno-0-399">399</a></span>
+<span class="normal"><a href="#__codelineno-0-400">400</a></span>
+<span class="normal"><a href="#__codelineno-0-401">401</a></span>
+<span class="normal"><a href="#__codelineno-0-402">402</a></span>
+<span class="normal"><a href="#__codelineno-0-403">403</a></span>
+<span class="normal"><a href="#__codelineno-0-404">404</a></span>
+<span class="normal"><a href="#__codelineno-0-405">405</a></span>
+<span class="normal"><a href="#__codelineno-0-406">406</a></span>
+<span class="normal"><a href="#__codelineno-0-407">407</a></span>
+<span class="normal"><a href="#__codelineno-0-408">408</a></span>
+<span class="normal"><a href="#__codelineno-0-409">409</a></span>
+<span class="normal"><a href="#__codelineno-0-410">410</a></span>
+<span class="normal"><a href="#__codelineno-0-411">411</a></span>
+<span class="normal"><a href="#__codelineno-0-412">412</a></span>
+<span class="normal"><a href="#__codelineno-0-413">413</a></span>
+<span class="normal"><a href="#__codelineno-0-414">414</a></span>
+<span class="normal"><a href="#__codelineno-0-415">415</a></span>
+<span class="normal"><a href="#__codelineno-0-416">416</a></span>
+<span class="normal"><a href="#__codelineno-0-417">417</a></span>
+<span class="normal"><a href="#__codelineno-0-418">418</a></span>
+<span class="normal"><a href="#__codelineno-0-419">419</a></span>
+<span class="normal"><a href="#__codelineno-0-420">420</a></span>
+<span class="normal"><a href="#__codelineno-0-421">421</a></span>
+<span class="normal"><a href="#__codelineno-0-422">422</a></span>
+<span class="normal"><a href="#__codelineno-0-423">423</a></span>
+<span class="normal"><a href="#__codelineno-0-424">424</a></span>
+<span class="normal"><a href="#__codelineno-0-425">425</a></span>
+<span class="normal"><a href="#__codelineno-0-426">426</a></span>
+<span class="normal"><a href="#__codelineno-0-427">427</a></span>
+<span class="normal"><a href="#__codelineno-0-428">428</a></span>
+<span class="normal"><a href="#__codelineno-0-429">429</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-362" name="__codelineno-0-362"></a><span class="k">def</span><span class="w"> </span><span class="nf">spec_summary</span><span class="p">(</span><span class="n">resource_types</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<a id="__codelineno-0-363" name="__codelineno-0-363"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Compact text summary of the FHIR spec for the given resources.</span>
+<a id="__codelineno-0-364" name="__codelineno-0-364"></a>
+<a id="__codelineno-0-365" name="__codelineno-0-365"></a><span class="sd">    Designed to be injected into LLM system prompts so the model knows</span>
+<a id="__codelineno-0-366" name="__codelineno-0-366"></a><span class="sd">    exactly which fields are required / optional / references, along with</span>
+<a id="__codelineno-0-367" name="__codelineno-0-367"></a><span class="sd">    their types (DateTime, Period, CodeableConcept, etc.).</span>
+<a id="__codelineno-0-368" name="__codelineno-0-368"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-369" name="__codelineno-0-369"></a>    <span class="n">types</span> <span class="o">=</span> <span class="n">resource_types</span> <span class="ow">or</span> <span class="n">CLINICAL_RESOURCES</span>
+<a id="__codelineno-0-370" name="__codelineno-0-370"></a>    <span class="n">lines</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
+<a id="__codelineno-0-371" name="__codelineno-0-371"></a>        <span class="sa">f</span><span class="s2">&quot;FHIR </span><span class="si">{</span><span class="n">_FHIR_VERSION</span><span class="si">}</span><span class="s2"> Spec — </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">types</span><span class="p">)</span><span class="si">}</span><span class="s2"> resource types</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-372" name="__codelineno-0-372"></a>        <span class="s2">&quot;DATA TYPE FORMAT RULES (from the FHIR spec):&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-373" name="__codelineno-0-373"></a>        <span class="s2">&quot;  DateTime: date-only OR full datetime with timezone.&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-374" name="__codelineno-0-374"></a>        <span class="s1">&#39;    ✓ &quot;2025-03-08&quot;  ✓ &quot;2025-03&quot;  ✓ &quot;2025&quot;  ✓ &quot;2025-03-08T10:30:00+00:00&quot;&#39;</span><span class="p">,</span>
+<a id="__codelineno-0-375" name="__codelineno-0-375"></a>        <span class="s1">&#39;    ✗ &quot;2025-03-08T10:30:00&quot;  (has time but no timezone — INVALID)&#39;</span><span class="p">,</span>
+<a id="__codelineno-0-376" name="__codelineno-0-376"></a>        <span class="s2">&quot;  Instant: MUST be full datetime with timezone. No date-only.&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-377" name="__codelineno-0-377"></a>        <span class="s1">&#39;    ✓ &quot;2025-03-08T10:30:00+00:00&quot;  ✓ &quot;2025-03-08T10:30:00Z&quot;&#39;</span><span class="p">,</span>
+<a id="__codelineno-0-378" name="__codelineno-0-378"></a>        <span class="s1">&#39;    ✗ &quot;2025-03-08&quot;  ✗ &quot;2025-03-08T10:30:00&quot;&#39;</span><span class="p">,</span>
+<a id="__codelineno-0-379" name="__codelineno-0-379"></a>        <span class="s2">&quot;  In code: always construct with timezone when time is needed:&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-380" name="__codelineno-0-380"></a>        <span class="s2">&quot;    datetime(2025, 3, 8, 10, 30, tzinfo=timezone.utc).isoformat()&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-381" name="__codelineno-0-381"></a>        <span class="s2">&quot;    For date-only DateTime fields: date(2025, 3, 8).isoformat()&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-382" name="__codelineno-0-382"></a>        <span class="s2">&quot;  Decimal: use Decimal (from decimal import Decimal), not float.&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-383" name="__codelineno-0-383"></a>        <span class="s2">&quot;&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-384" name="__codelineno-0-384"></a>    <span class="p">]</span>
+<a id="__codelineno-0-385" name="__codelineno-0-385"></a>
+<a id="__codelineno-0-386" name="__codelineno-0-386"></a>    <span class="c1"># Skip these internal/noise fields to keep the spec compact</span>
+<a id="__codelineno-0-387" name="__codelineno-0-387"></a>    <span class="n">_skip</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">(</span>
+<a id="__codelineno-0-388" name="__codelineno-0-388"></a>        <span class="p">{</span>
+<a id="__codelineno-0-389" name="__codelineno-0-389"></a>            <span class="s2">&quot;fhir_comments&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-390" name="__codelineno-0-390"></a>            <span class="s2">&quot;implicitRules&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-391" name="__codelineno-0-391"></a>            <span class="s2">&quot;language&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-392" name="__codelineno-0-392"></a>            <span class="s2">&quot;contained&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-393" name="__codelineno-0-393"></a>            <span class="s2">&quot;extension&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-394" name="__codelineno-0-394"></a>            <span class="s2">&quot;modifierExtension&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-395" name="__codelineno-0-395"></a>            <span class="s2">&quot;text&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-396" name="__codelineno-0-396"></a>        <span class="p">}</span>
+<a id="__codelineno-0-397" name="__codelineno-0-397"></a>    <span class="p">)</span>
+<a id="__codelineno-0-398" name="__codelineno-0-398"></a>
+<a id="__codelineno-0-399" name="__codelineno-0-399"></a>    <span class="k">for</span> <span class="n">rt</span> <span class="ow">in</span> <span class="n">types</span><span class="p">:</span>
+<a id="__codelineno-0-400" name="__codelineno-0-400"></a>        <span class="k">try</span><span class="p">:</span>
+<a id="__codelineno-0-401" name="__codelineno-0-401"></a>            <span class="n">meta</span> <span class="o">=</span> <span class="n">_introspect</span><span class="p">(</span><span class="n">rt</span><span class="p">)</span>
+<a id="__codelineno-0-402" name="__codelineno-0-402"></a>        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+<a id="__codelineno-0-403" name="__codelineno-0-403"></a>            <span class="k">continue</span>
+<a id="__codelineno-0-404" name="__codelineno-0-404"></a>
+<a id="__codelineno-0-405" name="__codelineno-0-405"></a>        <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">rt</span><span class="si">}</span><span class="s2">:&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-406" name="__codelineno-0-406"></a>
+<a id="__codelineno-0-407" name="__codelineno-0-407"></a>        <span class="c1"># Required fields with types</span>
+<a id="__codelineno-0-408" name="__codelineno-0-408"></a>        <span class="n">req_parts</span> <span class="o">=</span> <span class="p">[]</span>
+<a id="__codelineno-0-409" name="__codelineno-0-409"></a>        <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">meta</span><span class="o">.</span><span class="n">all_fields</span><span class="p">:</span>
+<a id="__codelineno-0-410" name="__codelineno-0-410"></a>            <span class="k">if</span> <span class="n">f</span><span class="o">.</span><span class="n">required</span><span class="p">:</span>
+<a id="__codelineno-0-411" name="__codelineno-0-411"></a>                <span class="n">req_parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    </span><span class="si">{</span><span class="n">f</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">_short_type</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">type_annotation</span><span class="p">)</span><span class="si">}</span><span class="s2">  [REQUIRED]&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-412" name="__codelineno-0-412"></a>        <span class="k">if</span> <span class="n">req_parts</span><span class="p">:</span>
+<a id="__codelineno-0-413" name="__codelineno-0-413"></a>            <span class="n">lines</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">req_parts</span><span class="p">)</span>
+<a id="__codelineno-0-414" name="__codelineno-0-414"></a>
+<a id="__codelineno-0-415" name="__codelineno-0-415"></a>        <span class="c1"># Key optional fields with types (skip noise fields, cap at 12)</span>
+<a id="__codelineno-0-416" name="__codelineno-0-416"></a>        <span class="n">opt_parts</span> <span class="o">=</span> <span class="p">[]</span>
+<a id="__codelineno-0-417" name="__codelineno-0-417"></a>        <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">meta</span><span class="o">.</span><span class="n">all_fields</span><span class="p">:</span>
+<a id="__codelineno-0-418" name="__codelineno-0-418"></a>            <span class="k">if</span> <span class="ow">not</span> <span class="n">f</span><span class="o">.</span><span class="n">required</span> <span class="ow">and</span> <span class="n">f</span><span class="o">.</span><span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_skip</span><span class="p">:</span>
+<a id="__codelineno-0-419" name="__codelineno-0-419"></a>                <span class="n">t</span> <span class="o">=</span> <span class="n">_short_type</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">type_annotation</span><span class="p">)</span>
+<a id="__codelineno-0-420" name="__codelineno-0-420"></a>                <span class="n">tag</span> <span class="o">=</span> <span class="s2">&quot; [ref]&quot;</span> <span class="k">if</span> <span class="n">f</span><span class="o">.</span><span class="n">is_reference</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+<a id="__codelineno-0-421" name="__codelineno-0-421"></a>                <span class="n">opt_parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    </span><span class="si">{</span><span class="n">f</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">t</span><span class="si">}{</span><span class="n">tag</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-422" name="__codelineno-0-422"></a>        <span class="k">if</span> <span class="n">opt_parts</span><span class="p">:</span>
+<a id="__codelineno-0-423" name="__codelineno-0-423"></a>            <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">opt_parts</span><span class="p">[:</span><span class="mi">12</span><span class="p">]:</span>
+<a id="__codelineno-0-424" name="__codelineno-0-424"></a>                <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+<a id="__codelineno-0-425" name="__codelineno-0-425"></a>            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">opt_parts</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">12</span><span class="p">:</span>
+<a id="__codelineno-0-426" name="__codelineno-0-426"></a>                <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    … and </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">opt_parts</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">12</span><span class="si">}</span><span class="s2"> more fields&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-427" name="__codelineno-0-427"></a>        <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-428" name="__codelineno-0-428"></a>
+<a id="__codelineno-0-429" name="__codelineno-0-429"></a>    <span class="k">return</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -1775,7 +1938,7 @@ exactly which fields are required / optional / references.</p>
 
     <div class="doc doc-contents ">
 
-        <p>Compact import guide showing exact <code>from fhir.resources.R4B.{mod} import {Cls}</code> lines.</p>
+        <p>Compact import guide showing exact <code>from fhir.resources.{VERSION}.{mod} import {Cls}</code> lines.</p>
 <p>Designed to be injected into LLM prompts so the model uses correct import
 paths and never guesses wrong module names.</p>
 
@@ -1837,83 +2000,73 @@ Their modules are always included.  If <em>None</em>, <code>CLINICAL_RESOURCES</
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/fhir_synth/fhir_spec.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-316">316</a></span>
-<span class="normal"><a href="#__codelineno-0-317">317</a></span>
-<span class="normal"><a href="#__codelineno-0-318">318</a></span>
-<span class="normal"><a href="#__codelineno-0-319">319</a></span>
-<span class="normal"><a href="#__codelineno-0-320">320</a></span>
-<span class="normal"><a href="#__codelineno-0-321">321</a></span>
-<span class="normal"><a href="#__codelineno-0-322">322</a></span>
-<span class="normal"><a href="#__codelineno-0-323">323</a></span>
-<span class="normal"><a href="#__codelineno-0-324">324</a></span>
-<span class="normal"><a href="#__codelineno-0-325">325</a></span>
-<span class="normal"><a href="#__codelineno-0-326">326</a></span>
-<span class="normal"><a href="#__codelineno-0-327">327</a></span>
-<span class="normal"><a href="#__codelineno-0-328">328</a></span>
-<span class="normal"><a href="#__codelineno-0-329">329</a></span>
-<span class="normal"><a href="#__codelineno-0-330">330</a></span>
-<span class="normal"><a href="#__codelineno-0-331">331</a></span>
-<span class="normal"><a href="#__codelineno-0-332">332</a></span>
-<span class="normal"><a href="#__codelineno-0-333">333</a></span>
-<span class="normal"><a href="#__codelineno-0-334">334</a></span>
-<span class="normal"><a href="#__codelineno-0-335">335</a></span>
-<span class="normal"><a href="#__codelineno-0-336">336</a></span>
-<span class="normal"><a href="#__codelineno-0-337">337</a></span>
-<span class="normal"><a href="#__codelineno-0-338">338</a></span>
-<span class="normal"><a href="#__codelineno-0-339">339</a></span>
-<span class="normal"><a href="#__codelineno-0-340">340</a></span>
-<span class="normal"><a href="#__codelineno-0-341">341</a></span>
-<span class="normal"><a href="#__codelineno-0-342">342</a></span>
-<span class="normal"><a href="#__codelineno-0-343">343</a></span>
-<span class="normal"><a href="#__codelineno-0-344">344</a></span>
-<span class="normal"><a href="#__codelineno-0-345">345</a></span>
-<span class="normal"><a href="#__codelineno-0-346">346</a></span>
-<span class="normal"><a href="#__codelineno-0-347">347</a></span>
-<span class="normal"><a href="#__codelineno-0-348">348</a></span>
-<span class="normal"><a href="#__codelineno-0-349">349</a></span>
-<span class="normal"><a href="#__codelineno-0-350">350</a></span>
-<span class="normal"><a href="#__codelineno-0-351">351</a></span>
-<span class="normal"><a href="#__codelineno-0-352">352</a></span>
-<span class="normal"><a href="#__codelineno-0-353">353</a></span>
-<span class="normal"><a href="#__codelineno-0-354">354</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-316" name="__codelineno-0-316"></a><span class="k">def</span><span class="w"> </span><span class="nf">import_guide</span><span class="p">(</span><span class="n">resource_types</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<a id="__codelineno-0-317" name="__codelineno-0-317"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Compact import guide showing exact ``from fhir.resources.R4B.{mod} import {Cls}`` lines.</span>
-<a id="__codelineno-0-318" name="__codelineno-0-318"></a>
-<a id="__codelineno-0-319" name="__codelineno-0-319"></a><span class="sd">    Designed to be injected into LLM prompts so the model uses correct import</span>
-<a id="__codelineno-0-320" name="__codelineno-0-320"></a><span class="sd">    paths and never guesses wrong module names.</span>
-<a id="__codelineno-0-321" name="__codelineno-0-321"></a>
-<a id="__codelineno-0-322" name="__codelineno-0-322"></a><span class="sd">    Args:</span>
-<a id="__codelineno-0-323" name="__codelineno-0-323"></a><span class="sd">        resource_types: Resource types being generated (e.g. ``[&quot;Patient&quot;, &quot;Condition&quot;]``).</span>
-<a id="__codelineno-0-324" name="__codelineno-0-324"></a><span class="sd">            Their modules are always included.  If *None*, ``CLINICAL_RESOURCES`` is used.</span>
-<a id="__codelineno-0-325" name="__codelineno-0-325"></a>
-<a id="__codelineno-0-326" name="__codelineno-0-326"></a><span class="sd">    Returns:</span>
-<a id="__codelineno-0-327" name="__codelineno-0-327"></a><span class="sd">        Multi-line string suitable for embedding in a prompt.</span>
-<a id="__codelineno-0-328" name="__codelineno-0-328"></a><span class="sd">    &quot;&quot;&quot;</span>
-<a id="__codelineno-0-329" name="__codelineno-0-329"></a>    <span class="n">types</span> <span class="o">=</span> <span class="n">resource_types</span> <span class="ow">or</span> <span class="n">CLINICAL_RESOURCES</span>
-<a id="__codelineno-0-330" name="__codelineno-0-330"></a>
-<a id="__codelineno-0-331" name="__codelineno-0-331"></a>    <span class="n">lines</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;VALID IMPORT PATHS (use these exactly):</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">]</span>
-<a id="__codelineno-0-332" name="__codelineno-0-332"></a>
-<a id="__codelineno-0-333" name="__codelineno-0-333"></a>    <span class="c1"># 1. Resource modules</span>
-<a id="__codelineno-0-334" name="__codelineno-0-334"></a>    <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;# Resource types&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-335" name="__codelineno-0-335"></a>    <span class="k">for</span> <span class="n">rt</span> <span class="ow">in</span> <span class="n">types</span><span class="p">:</span>
-<a id="__codelineno-0-336" name="__codelineno-0-336"></a>        <span class="n">modname</span> <span class="o">=</span> <span class="n">_MODULE_MAP</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">rt</span><span class="p">)</span>
-<a id="__codelineno-0-337" name="__codelineno-0-337"></a>        <span class="k">if</span> <span class="n">modname</span><span class="p">:</span>
-<a id="__codelineno-0-338" name="__codelineno-0-338"></a>            <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;from fhir.resources.R4B.</span><span class="si">{</span><span class="n">modname</span><span class="si">}</span><span class="s2"> import </span><span class="si">{</span><span class="n">rt</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-339" name="__codelineno-0-339"></a>
-<a id="__codelineno-0-340" name="__codelineno-0-340"></a>    <span class="c1"># 2. All discovered data-type modules</span>
-<a id="__codelineno-0-341" name="__codelineno-0-341"></a>    <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2"># Data types (complex types used in resource fields)&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-342" name="__codelineno-0-342"></a>    <span class="k">for</span> <span class="n">modname</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">_DATA_TYPE_MAP</span><span class="o">.</span><span class="n">values</span><span class="p">()):</span>
-<a id="__codelineno-0-343" name="__codelineno-0-343"></a>        <span class="n">classes</span> <span class="o">=</span> <span class="n">_MODULE_CLASSES</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">modname</span><span class="p">)</span>
-<a id="__codelineno-0-344" name="__codelineno-0-344"></a>        <span class="k">if</span> <span class="n">classes</span><span class="p">:</span>
-<a id="__codelineno-0-345" name="__codelineno-0-345"></a>            <span class="n">cls_str</span> <span class="o">=</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">classes</span><span class="p">))</span>
-<a id="__codelineno-0-346" name="__codelineno-0-346"></a>            <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;from fhir.resources.R4B.</span><span class="si">{</span><span class="n">modname</span><span class="si">}</span><span class="s2"> import </span><span class="si">{</span><span class="n">cls_str</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-347" name="__codelineno-0-347"></a>
-<a id="__codelineno-0-348" name="__codelineno-0-348"></a>    <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-<a id="__codelineno-0-349" name="__codelineno-0-349"></a>        <span class="s2">&quot;</span><span class="se">\n</span><span class="s2"># WARNING: Classes are in the modules listed above.&quot;</span>
-<a id="__codelineno-0-350" name="__codelineno-0-350"></a>        <span class="s2">&quot;</span><span class="se">\n</span><span class="s2"># Do NOT invent module names like &#39;timingrepeat&#39; or &#39;contactdetail&#39;.&quot;</span>
-<a id="__codelineno-0-351" name="__codelineno-0-351"></a>        <span class="s2">&quot;</span><span class="se">\n</span><span class="s2"># e.g., TimingRepeat is in &#39;timing&#39;, not &#39;timingrepeat&#39;.&quot;</span>
-<a id="__codelineno-0-352" name="__codelineno-0-352"></a>    <span class="p">)</span>
-<a id="__codelineno-0-353" name="__codelineno-0-353"></a>
-<a id="__codelineno-0-354" name="__codelineno-0-354"></a>    <span class="k">return</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-435">435</a></span>
+<span class="normal"><a href="#__codelineno-0-436">436</a></span>
+<span class="normal"><a href="#__codelineno-0-437">437</a></span>
+<span class="normal"><a href="#__codelineno-0-438">438</a></span>
+<span class="normal"><a href="#__codelineno-0-439">439</a></span>
+<span class="normal"><a href="#__codelineno-0-440">440</a></span>
+<span class="normal"><a href="#__codelineno-0-441">441</a></span>
+<span class="normal"><a href="#__codelineno-0-442">442</a></span>
+<span class="normal"><a href="#__codelineno-0-443">443</a></span>
+<span class="normal"><a href="#__codelineno-0-444">444</a></span>
+<span class="normal"><a href="#__codelineno-0-445">445</a></span>
+<span class="normal"><a href="#__codelineno-0-446">446</a></span>
+<span class="normal"><a href="#__codelineno-0-447">447</a></span>
+<span class="normal"><a href="#__codelineno-0-448">448</a></span>
+<span class="normal"><a href="#__codelineno-0-449">449</a></span>
+<span class="normal"><a href="#__codelineno-0-450">450</a></span>
+<span class="normal"><a href="#__codelineno-0-451">451</a></span>
+<span class="normal"><a href="#__codelineno-0-452">452</a></span>
+<span class="normal"><a href="#__codelineno-0-453">453</a></span>
+<span class="normal"><a href="#__codelineno-0-454">454</a></span>
+<span class="normal"><a href="#__codelineno-0-455">455</a></span>
+<span class="normal"><a href="#__codelineno-0-456">456</a></span>
+<span class="normal"><a href="#__codelineno-0-457">457</a></span>
+<span class="normal"><a href="#__codelineno-0-458">458</a></span>
+<span class="normal"><a href="#__codelineno-0-459">459</a></span>
+<span class="normal"><a href="#__codelineno-0-460">460</a></span>
+<span class="normal"><a href="#__codelineno-0-461">461</a></span>
+<span class="normal"><a href="#__codelineno-0-462">462</a></span>
+<span class="normal"><a href="#__codelineno-0-463">463</a></span>
+<span class="normal"><a href="#__codelineno-0-464">464</a></span>
+<span class="normal"><a href="#__codelineno-0-465">465</a></span>
+<span class="normal"><a href="#__codelineno-0-466">466</a></span>
+<span class="normal"><a href="#__codelineno-0-467">467</a></span>
+<span class="normal"><a href="#__codelineno-0-468">468</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-435" name="__codelineno-0-435"></a><span class="k">def</span><span class="w"> </span><span class="nf">import_guide</span><span class="p">(</span><span class="n">resource_types</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<a id="__codelineno-0-436" name="__codelineno-0-436"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Compact import guide showing exact ``from fhir.resources.{VERSION}.{mod} import {Cls}`` lines.</span>
+<a id="__codelineno-0-437" name="__codelineno-0-437"></a>
+<a id="__codelineno-0-438" name="__codelineno-0-438"></a><span class="sd">    Designed to be injected into LLM prompts so the model uses correct import</span>
+<a id="__codelineno-0-439" name="__codelineno-0-439"></a><span class="sd">    paths and never guesses wrong module names.</span>
+<a id="__codelineno-0-440" name="__codelineno-0-440"></a>
+<a id="__codelineno-0-441" name="__codelineno-0-441"></a><span class="sd">    Args:</span>
+<a id="__codelineno-0-442" name="__codelineno-0-442"></a><span class="sd">        resource_types: Resource types being generated (e.g. ``[&quot;Patient&quot;, &quot;Condition&quot;]``).</span>
+<a id="__codelineno-0-443" name="__codelineno-0-443"></a><span class="sd">            Their modules are always included.  If *None*, ``CLINICAL_RESOURCES`` is used.</span>
+<a id="__codelineno-0-444" name="__codelineno-0-444"></a>
+<a id="__codelineno-0-445" name="__codelineno-0-445"></a><span class="sd">    Returns:</span>
+<a id="__codelineno-0-446" name="__codelineno-0-446"></a><span class="sd">        Multi-line string suitable for embedding in a prompt.</span>
+<a id="__codelineno-0-447" name="__codelineno-0-447"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-448" name="__codelineno-0-448"></a>    <span class="n">types</span> <span class="o">=</span> <span class="n">resource_types</span> <span class="ow">or</span> <span class="n">CLINICAL_RESOURCES</span>
+<a id="__codelineno-0-449" name="__codelineno-0-449"></a>
+<a id="__codelineno-0-450" name="__codelineno-0-450"></a>    <span class="n">lines</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;VALID IMPORT PATHS (use these exactly):</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;# Resource types&quot;</span><span class="p">]</span>
+<a id="__codelineno-0-451" name="__codelineno-0-451"></a>
+<a id="__codelineno-0-452" name="__codelineno-0-452"></a>    <span class="c1"># 1. Resource modules</span>
+<a id="__codelineno-0-453" name="__codelineno-0-453"></a>    <span class="k">for</span> <span class="n">rt</span> <span class="ow">in</span> <span class="n">types</span><span class="p">:</span>
+<a id="__codelineno-0-454" name="__codelineno-0-454"></a>        <span class="n">modname</span> <span class="o">=</span> <span class="n">_MODULE_MAP</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">rt</span><span class="p">)</span>
+<a id="__codelineno-0-455" name="__codelineno-0-455"></a>        <span class="k">if</span> <span class="n">modname</span><span class="p">:</span>
+<a id="__codelineno-0-456" name="__codelineno-0-456"></a>            <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;from fhir.resources.</span><span class="si">{</span><span class="n">_FHIR_VERSION</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">modname</span><span class="si">}</span><span class="s2"> import </span><span class="si">{</span><span class="n">rt</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-457" name="__codelineno-0-457"></a>
+<a id="__codelineno-0-458" name="__codelineno-0-458"></a>    <span class="c1"># 2. All discovered data-type modules</span>
+<a id="__codelineno-0-459" name="__codelineno-0-459"></a>    <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2"># Data types (complex types used in resource fields)&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-460" name="__codelineno-0-460"></a>    <span class="k">for</span> <span class="n">modname</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">_DATA_TYPE_MAP</span><span class="o">.</span><span class="n">values</span><span class="p">()):</span>
+<a id="__codelineno-0-461" name="__codelineno-0-461"></a>        <span class="n">classes</span> <span class="o">=</span> <span class="n">_MODULE_CLASSES</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">modname</span><span class="p">)</span>
+<a id="__codelineno-0-462" name="__codelineno-0-462"></a>        <span class="k">if</span> <span class="n">classes</span><span class="p">:</span>
+<a id="__codelineno-0-463" name="__codelineno-0-463"></a>            <span class="n">cls_str</span> <span class="o">=</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">classes</span><span class="p">))</span>
+<a id="__codelineno-0-464" name="__codelineno-0-464"></a>            <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;from fhir.resources.</span><span class="si">{</span><span class="n">_FHIR_VERSION</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">modname</span><span class="si">}</span><span class="s2"> import </span><span class="si">{</span><span class="n">cls_str</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-465" name="__codelineno-0-465"></a>
+<a id="__codelineno-0-466" name="__codelineno-0-466"></a>    <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2"># Use ONLY the module paths listed above. Do NOT invent module names.&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-467" name="__codelineno-0-467"></a>
+<a id="__codelineno-0-468" name="__codelineno-0-468"></a>    <span class="k">return</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>

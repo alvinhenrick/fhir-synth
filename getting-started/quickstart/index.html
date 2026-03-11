@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Dynamic FHIR R4B synthetic data generator using LLM-powered code generation and declarative rules">
+        <meta name="description" content="Dynamic FHIR R4B synthetic data generator using LLM-powered code generation">
       
       
       
@@ -846,27 +846,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../../api/rule_engine/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Rule Engine
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../../api/bundle/" class="md-nav__link">
         
   
@@ -1089,6 +1068,9 @@
 <a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>
 <a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="c1"># 5 patients with hypertension, encounters, and meds</span>
 <a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;5 patients with hypertension, office encounters, and antihypertensive medications&quot;</span><span class="w"> </span>-o<span class="w"> </span>hypertension.ndjson
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="c1"># Generate STU3 resources instead of R4B (case-insensitive)</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;10 patients with diabetes&quot;</span><span class="w"> </span>--fhir-version<span class="w"> </span>stu3<span class="w"> </span>-o<span class="w"> </span>output.ndjson
 </code></pre></div>
 <h2 id="what-happens-under-the-hood">What Happens Under the Hood<a class="headerlink" href="#what-happens-under-the-hood" title="Permanent link">&para;</a></h2>
 <ol>

@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Dynamic FHIR R4B synthetic data generator using LLM-powered code generation and declarative rules">
+        <meta name="description" content="Dynamic FHIR R4B synthetic data generator using LLM-powered code generation">
       
       
       
@@ -889,27 +889,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../api/rule_engine/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Rule Engine
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../api/bundle/" class="md-nav__link">
         
   
@@ -1171,58 +1150,66 @@
 
 <h1 id="architecture">Architecture<a class="headerlink" href="#architecture" title="Permanent link">&para;</a></h1>
 <h2 id="system-overview">System Overview<a class="headerlink" href="#system-overview" title="Permanent link">&para;</a></h2>
-<pre class="mermaid"><code>graph TB
+<pre class="mermaid"><code>%%{init: {'theme':'base', 'themeVariables': { 'primaryColor':'#ffffff','primaryTextColor':'#1a1a1a','primaryBorderColor':'#94a3b8','lineColor':'#64748b','secondaryColor':'#ffffff','tertiaryColor':'#ffffff','clusterBkg':'#ffffff','clusterBorder':'#cbd5e1'}}}%%
+graph TB
     subgraph UI["🖥️ User Interface"]
-        CLI["CLI (Typer)\ngenerate · rules · codegen · bundle"]
-        API["Python API\nCodeGenerator · RuleEngine\nBundleBuilder · FHIRResourceFactory"]
+        CLI["CLI (Typer)&lt;br/&gt;generate · codegen · bundle"]
+        API["Python API&lt;br/&gt;CodeGenerator · BundleBuilder&lt;br/&gt;FHIRResourceFactory"]
     end
 
     subgraph CORE["⚙️ Core Modules"]
-        CG["code_generator/\nCodeGenerator · PromptToRulesConverter\nprompts · constants · utils"]
-        RE["rule_engine/\nRuleEngine · Rule · RuleSet\nGenerationRules · EMPI"]
-        BB["bundle/\nBundleBuilder · BundleManager\nBundleFactory"]
-        FU["fhir_utils/\nFHIRResourceFactory\nLazyResourceMap"]
-        FS["fhir_spec.py\nAuto-discovery of all\n141 R4B resource types"]
+        CG["code_generator/&lt;br/&gt;CodeGenerator&lt;br/&gt;prompts · constants · utils"]
+        BB["bundle/&lt;br/&gt;BundleBuilder · BundleManager&lt;br/&gt;BundleFactory"]
+        FU["fhir_utils/&lt;br/&gt;FHIRResourceFactory&lt;br/&gt;LazyResourceMap"]
+        FS["fhir_spec.py&lt;br/&gt;Auto-discovery of all&lt;br/&gt;141 R4B resource types"]
     end
 
     subgraph EXEC["🔒 Executor Backends"]
-        EX_IF["Executor Protocol\nexecute(code) → ExecutionResult"]
-        LOCAL["LocalSubprocessExecutor\n(default — subprocess isolation)"]
-        DIFY["DifySandboxExecutor\n(dify-sandbox HTTP API)"]
-        E2B["E2BExecutor\n(E2B cloud sandbox)"]
+        EX_IF["Executor Protocol&lt;br/&gt;execute(code) → ExecutionResult"]
+        LOCAL["LocalSubprocessExecutor&lt;br/&gt;(default — subprocess isolation)"]
+        DIFY["DifySandboxExecutor&lt;br/&gt;(dify-sandbox HTTP API)"]
+        E2B["E2BExecutor&lt;br/&gt;(E2B cloud sandbox)"]
     end
 
     subgraph LLM_LAYER["🤖 LLM Layer"]
-        LLM["llm.py\nLLMProvider · MockLLMProvider\nget_provider()"]
-        LITELLM["LiteLLM\nOpenAI · Anthropic · Bedrock\nAzure · 100+ providers"]
+        LLM["llm.py&lt;br/&gt;LLMProvider · MockLLMProvider&lt;br/&gt;get_provider()"]
+        LITELLM["LiteLLM&lt;br/&gt;OpenAI · Anthropic · Bedrock&lt;br/&gt;Azure · 100+ providers"]
     end
 
     subgraph FHIR["🏥 FHIR Foundation"]
-        FR["fhir.resources (R4B)\nPydantic models for all\nFHIR resource types"]
+        FR["fhir.resources (R4B)&lt;br/&gt;Pydantic models for all&lt;br/&gt;FHIR resource types"]
     end
 
-    CLI --&gt; CG
-    CLI --&gt; RE
-    CLI --&gt; BB
-    API --&gt; CG
-    API --&gt; RE
-    API --&gt; BB
-    API --&gt; FU
+    CLI --&gt;|uses| CG
+    CLI --&gt;|uses| BB
+    API --&gt;|uses| CG
+    API --&gt;|uses| BB
+    API --&gt;|uses| FU
 
-    CG --&gt; EX_IF
-    EX_IF --&gt; LOCAL
-    EX_IF --&gt; DIFY
-    EX_IF --&gt; E2B
+    CG --&gt;|executes via| EX_IF
+    EX_IF -.-&gt;|implements| LOCAL
+    EX_IF -.-&gt;|implements| DIFY
+    EX_IF -.-&gt;|implements| E2B
 
-    CG --&gt; LLM
-    CG --&gt; FS
-    RE --&gt; FS
-    BB --&gt; RE
-    BB --&gt; FS
-    FU --&gt; FS
-    LLM --&gt; LITELLM
-    FS --&gt; FR
-    FU --&gt; FR</code></pre>
+    CG --&gt;|calls| LLM
+    CG --&gt;|introspects| FS
+    BB --&gt;|introspects| FS
+    FU --&gt;|introspects| FS
+    LLM --&gt;|powered by| LITELLM
+    FS --&gt;|discovers| FR
+    FU --&gt;|creates| FR
+
+    classDef uiStyle fill:#E0F2FE,stroke:#0284c7,stroke-width:3px,color:#1a1a1a
+    classDef coreStyle fill:#FEF3C7,stroke:#f59e0b,stroke-width:2px,color:#1a1a1a
+    classDef execStyle fill:#DBEAFE,stroke:#3b82f6,stroke-width:2px,color:#1a1a1a
+    classDef llmStyle fill:#FCE7F3,stroke:#ec4899,stroke-width:2px,color:#1a1a1a
+    classDef fhirStyle fill:#D1FAE5,stroke:#10b981,stroke-width:2px,color:#1a1a1a
+
+    class CLI,API uiStyle
+    class CG,BB,FU,FS coreStyle
+    class EX_IF,LOCAL,DIFY,E2B execStyle
+    class LLM,LITELLM llmStyle
+    class FR fhirStyle</code></pre>
 <hr />
 <h2 id="generate-command-data-flow">Generate Command — Data Flow<a class="headerlink" href="#generate-command-data-flow" title="Permanent link">&para;</a></h2>
 <p>The primary workflow: prompt → LLM → code → safety checks → sandbox exec → smoke test → FHIR Bundle.</p>

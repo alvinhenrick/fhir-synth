@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Dynamic FHIR R4B synthetic data generator using LLM-powered code generation and declarative rules">
+        <meta name="description" content="Dynamic FHIR R4B synthetic data generator using LLM-powered code generation">
       
       
       
@@ -821,27 +821,6 @@
   
   
     <li class="md-nav__item">
-      <a href="api/rule_engine/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Rule Engine
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="api/bundle/" class="md-nav__link">
         
   
@@ -1036,7 +1015,7 @@
 
 
 <h1 id="fhir-synth">FHIR Synth<a class="headerlink" href="#fhir-synth" title="Permanent link">&para;</a></h1>
-<p>Dynamic FHIR R4B synthetic data generator using LLM-powered code generation and declarative rules.</p>
+<p>Dynamic FHIR synthetic data generator using LLM-powered code generation (supports R4B, STU3).</p>
 <p>Generate realistic synthetic healthcare data from natural language prompts. Tell it what you want, and it generates the code to create it.</p>
 <blockquote>
 <p><em>Inspired by <a href="https://github.com/synthetichealth/synthea">Synthea</a>. Created and designed by human. Code guided by AI, for AI.</em></p>
@@ -1044,22 +1023,22 @@
 <h2 id="how-it-works">How It Works<a class="headerlink" href="#how-it-works" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>Your Prompt
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    ↓
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>Rules / Code Generation (LLM)
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>Code Generation (LLM via LiteLLM)
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    ↓
 <a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>FHIR Resources (Patient, Condition, Observation, etc.)
 <a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    ↓
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>FHIR R4B Bundles
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>FHIR Bundles (JSON + NDJSON) — R4B or STU3
 </code></pre></div>
 <h2 id="features">Features<a class="headerlink" href="#features" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>Natural Language → FHIR</strong>: Describe what you need in plain English, get valid FHIR R4B Bundles</li>
+<li><strong>Natural Language → FHIR</strong>: Describe what you need in plain English, get valid FHIR Bundles (R4B or STU3)</li>
 <li><strong>LLM-Powered Code Generation</strong>: Uses GPT-4, Claude, Bedrock, or 100+ providers via <a href="https://docs.litellm.ai/">LiteLLM</a></li>
-<li><strong>Self-Healing Execution</strong>: If generated code fails, errors are sent back to the LLM for automatic retry</li>
-<li><strong>Declarative Rule Engine</strong>: Define generation rules as structured data</li>
+<li><strong>Self-Healing Execution</strong>: If generated code fails, errors are sent back to the LLM for automatic retry (up to 2 retries)</li>
+<li><strong>Pluggable Executor Backends</strong>: Local subprocess (default), Dify Sandbox, or E2B cloud sandboxes</li>
 <li><strong>Faker Integration</strong>: Uses <a href="https://faker.readthedocs.io/">Faker</a> for realistic demographic and clinical data</li>
 <li><strong>EMPI Support</strong>: Generate Person → Patient linkages across EMR systems</li>
 <li><strong>Custom Metadata</strong>: Add security labels, tags, profiles, and source via YAML config</li>
-<li><strong>Full FHIR R4B</strong>: Supports all 141 R4B resource types via <code>fhir.resources</code> Pydantic models</li>
+<li><strong>Multi-Version Support</strong>: R4B (default) and STU3 via <code>--fhir-version</code> flag (case-insensitive)</li>
 </ul>
 <h2 id="install">Install<a class="headerlink" href="#install" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1"># Install from GitHub (latest release)</span>
@@ -1069,11 +1048,14 @@
 <a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>pip<span class="w"> </span>install<span class="w"> </span><span class="s2">&quot;fhir-synth[bedrock] @ git+https://github.com/alvinhenrick/fhir-synth.git@main&quot;</span>
 </code></pre></div>
 <h2 id="quick-example">Quick Example<a class="headerlink" href="#quick-example" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># Generate 10 diabetic patients with labs</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># Generate 10 diabetic patients with labs (R4B by default)</span>
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;10 diabetic patients with HbA1c observations&quot;</span><span class="w"> </span>-o<span class="w"> </span>diabetes.ndjson
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="c1"># Try without an API key (mock LLM for testing)</span>
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;5 patients&quot;</span><span class="w"> </span>--provider<span class="w"> </span>mock<span class="w"> </span>-o<span class="w"> </span>test.ndjson
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="c1"># Generate STU3 resources instead</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;10 patients with diabetes&quot;</span><span class="w"> </span>--fhir-version<span class="w"> </span>stu3<span class="w"> </span>-o<span class="w"> </span>output.ndjson
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="c1"># Try without an API key (mock LLM for testing)</span>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;5 patients&quot;</span><span class="w"> </span>--provider<span class="w"> </span>mock<span class="w"> </span>-o<span class="w"> </span>test.ndjson
 </code></pre></div>
 <h2 id="next-steps">Next Steps<a class="headerlink" href="#next-steps" title="Permanent link">&para;</a></h2>
 <ul>

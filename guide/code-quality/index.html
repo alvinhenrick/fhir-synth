@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Dynamic FHIR R4B synthetic data generator using LLM-powered code generation and declarative rules">
+        <meta name="description" content="Dynamic FHIR R4B synthetic data generator using LLM-powered code generation">
       
       
       
@@ -1056,27 +1056,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../../api/rule_engine/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Rule Engine
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../../api/bundle/" class="md-nav__link">
         
   
@@ -1502,11 +1481,11 @@
 <p>FHIR-Synth includes automated code quality scoring and robust error handling for LLM-generated code.</p>
 <h2 id="quality-scoring">Quality Scoring<a class="headerlink" href="#quality-scoring" title="Permanent link">&para;</a></h2>
 <p>Every generated code is evaluated against best practices:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fhir_synth.code_generator</span><span class="w"> </span><span class="kn">import</span> <span class="n">calculate_code_quality_score</span><span class="p">,</span> <span class="n">print_quality_report</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fhir_synth.code_generator</span><span class="w"> </span><span class="kn">import</span> <span class="n">calculate_code_quality_score</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="c1"># Score generated code</span>
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">metrics</span> <span class="o">=</span> <span class="n">calculate_code_quality_score</span><span class="p">(</span><span class="n">code</span><span class="p">,</span> <span class="n">resources</span><span class="p">)</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="n">print_quality_report</span><span class="p">(</span><span class="n">metrics</span><span class="p">)</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Score: </span><span class="si">{</span><span class="n">metrics</span><span class="p">[</span><span class="s1">&#39;score&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">metrics</span><span class="p">[</span><span class="s1">&#39;grade&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
 </code></pre></div>
 <h3 id="quality-checks">Quality Checks<a class="headerlink" href="#quality-checks" title="Permanent link">&para;</a></h3>
 <table>
@@ -1539,9 +1518,9 @@
 <td>Imports from <code>fhir.resources.R4B</code></td>
 </tr>
 <tr>
-<td><strong>No Bad Imports</strong></td>
-<td>20%</td>
-<td>Avoids common import errors</td>
+<td><strong>FHIR Validation</strong></td>
+<td>up to 30%</td>
+<td>Resources pass Pydantic <code>model_validate()</code></td>
 </tr>
 <tr>
 <td><strong>Has Patients</strong></td>
