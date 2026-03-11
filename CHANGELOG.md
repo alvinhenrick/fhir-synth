@@ -2,6 +2,64 @@
 
 <!-- version list -->
 
+## v1.5.0 (2026-03-11)
+
+### Features
+
+- Add comprehensive guidelines for patient variation, comorbidity patterns, and realism in FHIR
+  resource generation
+  ([`2653c2d`](https://github.com/alvinhenrick/fhir-synth/commit/2653c2ddef3de3991bb4ac7697821d55ecc9211a))
+
+- Add fix_naive_date_times function to handle naive datetime patterns
+  ([`db31ab1`](https://github.com/alvinhenrick/fhir-synth/commit/db31ab148ab7c4b43713010ef4b52b04545c4553))
+
+- Enforce timezone-aware DateTime handling and update related documentation
+  ([`b3fb3c1`](https://github.com/alvinhenrick/fhir-synth/commit/b3fb3c1a1df27f32ddb2dc92e70487232e2eb14d))
+
+- Enhance architecture diagram with improved formatting and connections
+  ([`3350977`](https://github.com/alvinhenrick/fhir-synth/commit/3350977280782028b9167ec4aefb6f25a891e2c8))
+
+- Enhance patient resource generation with realistic demographics and encounter details
+  ([`3ff5f2c`](https://github.com/alvinhenrick/fhir-synth/commit/3ff5f2c0c98435b0065fa2a337278e9dacb418a1))
+
+- Implement EMPI prompt generation and FHIR resource validation
+  ([`c690d1d`](https://github.com/alvinhenrick/fhir-synth/commit/c690d1d1a2a106f84b72813cad12b778cc6ead80))
+
+- Improve code formatting and readability in cli.py and fhir_spec.py
+  ([`bf7a352`](https://github.com/alvinhenrick/fhir-synth/commit/bf7a352274f74cd09afc7d43a0cb93a74b8e6e22))
+
+- Refine FHIR spec documentation and error handling guidelines
+  ([`bf484dc`](https://github.com/alvinhenrick/fhir-synth/commit/bf484dc4c6ed0d3f471c11e6a9a60e8fe23002a6))
+
+- Remove build_bundle_code_prompt function and update related references
+  ([`cb3a905`](https://github.com/alvinhenrick/fhir-synth/commit/cb3a905f4f292d8248c7fbb3c56626b7a2e793d3))
+
+- Remove build_rules_prompt function and related references
+  ([`584a95d`](https://github.com/alvinhenrick/fhir-synth/commit/584a95d3ca603693a7b903360e8314121f057ddb))
+
+- Remove fix_naive_date_times function and update related references
+  ([`3b0baf0`](https://github.com/alvinhenrick/fhir-synth/commit/3b0baf020f56a4341ea68cf421891292b0153aec))
+
+- Remove print_quality_report function and simplify grade calculation logic
+  ([`f3a2bd8`](https://github.com/alvinhenrick/fhir-synth/commit/f3a2bd8b597eba2d2e4ecf3719866fbf2379d5d4))
+
+- Remove unused imports for improved code cleanliness in constants.py, fhir_spec.py, manager.py, and
+  test_prompts.py
+  ([`e87a7ac`](https://github.com/alvinhenrick/fhir-synth/commit/e87a7ac23f5ce914b49fc9f9ac866764c5981ba8))
+
+- Support multiple FHIR versions (R4B, STU3) in prompts and documentation
+  ([`fa0005e`](https://github.com/alvinhenrick/fhir-synth/commit/fa0005e6645d9461d1825feb0108fc74d700d7ce))
+
+- Update architecture diagram with enhanced theme variables for improved clarity
+  ([`5022f7d`](https://github.com/alvinhenrick/fhir-synth/commit/5022f7d1d56d076070451f932073a65162e1de33))
+
+- Update hard rules and EMPI linkage requirements for clarity and precision
+  ([`da0a556`](https://github.com/alvinhenrick/fhir-synth/commit/da0a5568f76e691a0287eb8ecca426984712f62f))
+
+- Update validation step to use model_dump with exclude_none and json mode
+  ([`4a0326e`](https://github.com/alvinhenrick/fhir-synth/commit/4a0326e3e64aeae2ba9fb681292f36b6dfed65ef))
+
+
 ## v1.4.0 (2026-03-03)
 
 ### Code Style
