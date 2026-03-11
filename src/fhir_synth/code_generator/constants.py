@@ -2,7 +2,6 @@
 
 import re
 
-
 # ── Sandbox security constants ────────────────────────────────────────────
 
 # Modules that LLM-generated code is allowed to import

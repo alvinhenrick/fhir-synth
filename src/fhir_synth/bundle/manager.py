@@ -2,8 +2,6 @@
 
 from typing import Any
 
-from fhir_synth.bundle.builder import BundleBuilder
-
 
 class BundleManager:
     """Manage creation and validation of FHIR Bundles."""

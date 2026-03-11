@@ -8,7 +8,6 @@ from fhir_synth.code_generator.prompts import (
 )
 from fhir_synth.code_generator.prompts.loader import load_prompt, load_section, render
 
-
 # ── Loader ────────────────────────────────────────────────────────────────
 
 
