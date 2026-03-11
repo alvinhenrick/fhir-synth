@@ -10,7 +10,9 @@ from dotenv import load_dotenv
 # Load environment variables from .env
 load_dotenv()
 
-app = typer.Typer(help="Dynamic FHIR synthetic data generator — prompt → code → data (supports R4B, STU3)")
+app = typer.Typer(
+    help="Dynamic FHIR synthetic data generator — prompt → code → data (supports R4B, STU3)"
+)
 
 
 @app.command()
@@ -18,7 +20,9 @@ def generate(
     prompt: str = typer.Argument(..., help="Natural language description of data to generate"),
     out: str = typer.Option("output.ndjson", "--out", "-o", help="Output file path"),
     provider: str = typer.Option("gpt-4", "--provider", "-p", help="LLM model/provider"),
-    fhir_version: str = typer.Option("R4B", "--fhir-version", help="FHIR version: R4B, STU3 (case-insensitive)"),
+    fhir_version: str = typer.Option(
+        "R4B", "--fhir-version", help="FHIR version: R4B, STU3 (case-insensitive)"
+    ),
     save_code: str | None = typer.Option(
         None, "--save-code", help="Also save generated code to this file"
     ),
@@ -271,7 +275,9 @@ def codegen(
     prompt: str = typer.Argument(..., help="Natural language description of data"),
     out: str = typer.Option(..., "--out", "-o", help="Output file for code"),
     provider: str = typer.Option("mock", "--provider", help="LLM provider"),
-    fhir_version: str = typer.Option("R4B", "--fhir-version", help="FHIR version: R4B, STU3 (case-insensitive)"),
+    fhir_version: str = typer.Option(
+        "R4B", "--fhir-version", help="FHIR version: R4B, STU3 (case-insensitive)"
+    ),
     execute: bool = typer.Option(False, "--execute", "-x", help="Execute the code"),
     empi: bool = typer.Option(False, "--empi", help="Include EMPI Person/Patient linkage"),
     persons: int = typer.Option(1, "--persons", help="Number of Persons for EMPI"),

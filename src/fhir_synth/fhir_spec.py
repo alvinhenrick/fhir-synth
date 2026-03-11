@@ -45,7 +45,13 @@ def set_fhir_version(version: str) -> None:
     Args:
         version: FHIR version string (case-insensitive). Supported: R4B, STU3
     """
-    global _FHIR_VERSION, _MODULE_MAP, _DATA_TYPE_MAP, _CLASS_MODULE_MAP, _MODULE_CLASSES, CLINICAL_RESOURCES
+    global \
+        _FHIR_VERSION, \
+        _MODULE_MAP, \
+        _DATA_TYPE_MAP, \
+        _CLASS_MODULE_MAP, \
+        _MODULE_CLASSES, \
+        CLINICAL_RESOURCES
 
     # Normalize version to uppercase
     version_upper = version.upper()
@@ -197,7 +203,6 @@ def class_to_module(class_name: str) -> str | None:
     return _CLASS_MODULE_MAP.get(class_name)
 
 
-
 # ── Lazy loaders (import + introspect on first access, then cached) ───────
 
 
@@ -281,7 +286,6 @@ def resource_names() -> list[str]:
 def required_fields(name: str) -> tuple[str, ...]:
     """Required field names for a resource type."""
     return _introspect(name).required_fields
-
 
 
 def reference_targets(name: str) -> dict[str, str]:
