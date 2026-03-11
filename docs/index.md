@@ -1,6 +1,6 @@
 # FHIR Synth
 
-Dynamic FHIR R4B synthetic data generator using LLM-powered code generation and declarative rules.
+Dynamic FHIR synthetic data generator using LLM-powered code generation (supports R4B, STU3).
 
 Generate realistic synthetic healthcare data from natural language prompts. Tell it what you want, and it generates the code to create it.
 
@@ -11,23 +11,23 @@ Generate realistic synthetic healthcare data from natural language prompts. Tell
 ```
 Your Prompt
     ↓
-Rules / Code Generation (LLM)
+Code Generation (LLM via LiteLLM)
     ↓
 FHIR Resources (Patient, Condition, Observation, etc.)
     ↓
-FHIR R4B Bundles
+FHIR Bundles (JSON + NDJSON) — R4B or STU3
 ```
 
 ## Features
 
-- **Natural Language → FHIR**: Describe what you need in plain English, get valid FHIR R4B Bundles
+- **Natural Language → FHIR**: Describe what you need in plain English, get valid FHIR Bundles (R4B or STU3)
 - **LLM-Powered Code Generation**: Uses GPT-4, Claude, Bedrock, or 100+ providers via [LiteLLM](https://docs.litellm.ai/)
-- **Self-Healing Execution**: If generated code fails, errors are sent back to the LLM for automatic retry
-- **Declarative Rule Engine**: Define generation rules as structured data
+- **Self-Healing Execution**: If generated code fails, errors are sent back to the LLM for automatic retry (up to 2 retries)
+- **Pluggable Executor Backends**: Local subprocess (default), Dify Sandbox, or E2B cloud sandboxes
 - **Faker Integration**: Uses [Faker](https://faker.readthedocs.io/) for realistic demographic and clinical data
 - **EMPI Support**: Generate Person → Patient linkages across EMR systems
 - **Custom Metadata**: Add security labels, tags, profiles, and source via YAML config
-- **Full FHIR R4B**: Supports all 141 R4B resource types via `fhir.resources` Pydantic models
+- **Multi-Version Support**: R4B (default) and STU3 via `--fhir-version` flag (case-insensitive)
 
 ## Install
 
@@ -42,8 +42,11 @@ pip install "fhir-synth[bedrock] @ git+https://github.com/alvinhenrick/fhir-synt
 ## Quick Example
 
 ```bash
-# Generate 10 diabetic patients with labs
+# Generate 10 diabetic patients with labs (R4B by default)
 fhir-synth generate "10 diabetic patients with HbA1c observations" -o diabetes.ndjson
+
+# Generate STU3 resources instead
+fhir-synth generate "10 patients with diabetes" --fhir-version stu3 -o output.ndjson
 
 # Try without an API key (mock LLM for testing)
 fhir-synth generate "5 patients" --provider mock -o test.ndjson

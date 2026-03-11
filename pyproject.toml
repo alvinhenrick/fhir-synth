@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "fhir-synth"
 version = "1.4.0"
-description = "Dynamic FHIR R4B synthetic data generator using LLM-powered code generation and declarative rules"
+description = "Dynamic FHIR synthetic data generator using LLM-powered code generation and declarative rules (supports R4B, STU3)"
 readme = "README.md"
 requires-python = ">=3.12"
 license = "MIT"

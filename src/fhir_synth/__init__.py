@@ -1,10 +1,9 @@
-"""FHIR Synth - Dynamic FHIR R4B synthetic data generator."""
+"""FHIR Synth - Dynamic FHIR synthetic data generator (supports R4B, STU3)."""
 
 from dotenv import load_dotenv
 
 from fhir_synth.fhir_spec import (
     class_to_module,
-    data_type_modules,
     get_resource_class,
     import_guide,
     required_fields,
@@ -22,7 +21,6 @@ load_dotenv()
 __all__ = [
     "__version__",
     "class_to_module",
-    "data_type_modules",
     "get_resource_class",
     "import_guide",
     "resource_names",

@@ -1,6 +1,6 @@
 # FHIR Synth
 
-Dynamic FHIR R4B synthetic data generator using LLM-powered code generation and declarative rules.
+Dynamic FHIR synthetic data generator using LLM-powered code generation and declarative rules (supports R4B, STU3).
 
 Generate realistic synthetic healthcare data from natural language prompts. Tell it what you want, and it generates the code to create it.
 
@@ -15,7 +15,7 @@ Rules / Code Generation (LLM via LiteLLM)
     ↓
 FHIR Resources (Patient, Condition, Observation, etc.)
     ↓
-FHIR R4B Bundles (JSON + NDJSON)
+FHIR Bundles (JSON + NDJSON) — R4B or STU3
 ```
 
 ## Install
@@ -62,6 +62,9 @@ fhir-synth generate "5 patients" \
 
 # Try without an API key (mock LLM for testing)
 fhir-synth generate "5 patients" --provider mock -o test.json
+
+# Generate STU3 resources instead of R4B (case-insensitive)
+fhir-synth generate "10 patients with diabetes" --fhir-version stu3 -o output.ndjson
 ```
 
 **What happens under the hood:**
@@ -71,7 +74,7 @@ fhir-synth generate "5 patients" --provider mock -o test.json
 4. Code executes via a pluggable executor backend (local subprocess, dify-sandbox, or E2B cloud)
 5. Output is smoke-tested (non-empty, every resource has `resourceType`)
 6. If anything fails, the error is sent back to the LLM for self-healing (up to 2 retries)
-7. Resources are split by patient and saved as FHIR R4B Bundle (JSON) or NDJSON
+7. Resources are split by patient and saved as FHIR Bundle (JSON) or NDJSON (R4B or STU3 depending on `--fhir-version`)
 
 ### Output Modes
 
@@ -102,13 +105,6 @@ End-to-end: prompt → LLM → code → execute → FHIR Bundle.
 | `-e / --executor` | `local` | Execution backend: `local`, `dify`, or `e2b` |
 | `--dify-url` | — | Base URL for dify-sandbox (or set `DIFY_SANDBOX_URL` env var) |
 
-### `fhir-synth rules`
-Generate structured rule definitions from natural language.
-
-```bash
-fhir-synth rules "100 diabetic patients with insulin therapy" --out rules.json --provider gpt-4
-```
-
 ### `fhir-synth codegen`
 Generate executable Python code from prompts (without bundling).
 
@@ -130,7 +126,6 @@ fhir-synth bundle --empi --persons 5 --systems emr1,emr2,emr3 --no-orgs --out em
 ```python
 from fhir_synth.llm import get_provider
 from fhir_synth.code_generator import CodeGenerator, get_executor
-from fhir_synth.rule_engine import RuleEngine, Rule, RuleSet, MetaConfig
 from fhir_synth.bundle import (
     BundleBuilder, BundleManager, BundleFactory,
     split_resources_by_patient, write_ndjson, write_split_bundles,
@@ -156,36 +151,6 @@ bundle = builder.build()
 # --- Split by patient and write NDJSON ---
 per_patient = split_resources_by_patient(resources)
 write_ndjson(per_patient, "all_patients.ndjson")
-
-# --- Rule-based generation with custom metadata ---
-engine = RuleEngine()
-engine.register_ruleset(
-    RuleSet(
-        resource_type="Patient",
-        description="Diabetic patients",
-        global_meta=MetaConfig(
-            tag=[{"system": "http://example.org/tags", "code": "synthetic"}],
-            source="http://example.org/fhir-synth",
-        ),
-        rules=[
-            Rule(
-                name="type_2",
-                description="Type 2 diabetes",
-                conditions={"type": 2},
-                actions={"resourceType": "Patient", "id": "p1"},
-                weight=1.0,
-                meta=MetaConfig(
-                    security=[{
-                        "system": "http://terminology.hl7.org/CodeSystem/v3-Confidentiality",
-                        "code": "N",
-                        "display": "Normal",
-                    }],
-                    profile=["http://hl7.org/fhir/us/core/StructureDefinition/us-core-patient"],
-                ),
-            )
-        ],
-    )
-)
 
 # --- Create FHIR resources directly ---
 patient = FHIRResourceFactory.create_patient("p1", "Jane", "Doe", "1990-01-01")
@@ -266,9 +231,8 @@ Use `--provider mock` for testing without an API key.
 FHIR Synth is organized into focused packages:
 
 - **`bundle/`** — Bundle creation and management (`BundleBuilder`, `BundleManager`, `BundleFactory`, `split_resources_by_patient`, `write_ndjson`, `write_split_bundles`)
-- **`code_generator/`** — LLM-powered code generation with self-healing execution (`CodeGenerator`, `PromptToRulesConverter`)
+- **`code_generator/`** — LLM-powered code generation with self-healing execution (`CodeGenerator`)
     - **`code_generator/executor/`** — Pluggable executor backends (`LocalSubprocessExecutor`, `DifySandboxExecutor`, `E2BExecutor`)
-- **`rule_engine/`** — Declarative rule engine, EMPI logic, and metadata models (`RuleEngine`, `RuleSet`, `Rule`, `MetaConfig`)
 - **`fhir_utils/`** — FHIR resource factory and lazy resource class map (`FHIRResourceFactory`)
 - **`llm.py`** — Unified LLM provider interface via LiteLLM (`LLMProvider`, `get_provider`)
 - **`cli.py`** — Typer-based CLI

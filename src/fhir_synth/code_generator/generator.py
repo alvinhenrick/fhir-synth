@@ -14,11 +14,9 @@ from fhir_synth.code_generator.executor import (
 )
 from fhir_synth.code_generator.metrics import calculate_code_quality_score
 from fhir_synth.code_generator.prompts import (
-    SYSTEM_PROMPT,
-    build_bundle_code_prompt,
     build_code_prompt,
     build_fix_prompt,
-    build_rules_prompt,
+    get_system_prompt,
 )
 from fhir_synth.code_generator.utils import extract_code
 from fhir_synth.llm import LLMProvider
@@ -35,6 +33,7 @@ class CodeGenerator:
         max_retries: int = 2,
         enable_scoring: bool = False,
         executor: Executor | None = None,
+        fhir_version: str = "R4B",
     ) -> None:
         """Initialize code generator with LLM.
 
@@ -44,11 +43,18 @@ class CodeGenerator:
             enable_scoring: Enable code quality scoring and logging
             executor: Executor backend for running generated code.
                 Defaults to :class:`LocalSubprocessExecutor`.
+            fhir_version: FHIR version to use (R4B, STU3). Defaults to R4B.
         """
         self.llm = llm
         self.max_retries = max_retries
         self.enable_scoring = enable_scoring
         self.executor: Executor = executor or LocalSubprocessExecutor()
+        self.fhir_version = fhir_version
+
+        # Set the FHIR version for the spec module
+        from fhir_synth import fhir_spec
+
+        fhir_spec.set_fhir_version(fhir_version)
 
     def generate_code_from_prompt(self, prompt: str) -> str:
         """Generate Python code from natural language prompt.
@@ -60,46 +66,9 @@ class CodeGenerator:
             Generated Python code as string
         """
         user_prompt = build_code_prompt(prompt)
-        code = self.llm.generate_text(SYSTEM_PROMPT, user_prompt)
+        system_prompt = get_system_prompt()
+        code = self.llm.generate_text(system_prompt, user_prompt)
         return extract_code(code)
-
-    def generate_rules_from_prompt(self, prompt: str) -> dict[str, Any]:
-        """Generate rule definitions from prompt.
-
-        Args:
-            prompt: Natural language description of generation rules
-
-        Returns:
-            Dictionary of rule definitions
-        """
-        user_prompt = build_rules_prompt(prompt)
-        result = self.llm.generate_json(SYSTEM_PROMPT, user_prompt)
-        return result
-
-    def generate_bundle_code(self, resource_types: list[str], count_per_resource: int = 10) -> str:
-        """Generate code for creating a FHIR bundle with multiple resource types.
-
-        Args:
-            resource_types: List of FHIR resource types to include (e.g., ["Patient", "Condition"])
-            count_per_resource: Number of each resource type to generate
-
-        Returns:
-            Generated Python code
-        """
-        user_prompt = build_bundle_code_prompt(resource_types, count_per_resource)
-        code = self.llm.generate_text(SYSTEM_PROMPT, user_prompt)
-        return extract_code(code)
-
-    def validate_code(self, code: str) -> bool:
-        """Validate that generated code is safe and syntactically correct.
-
-        Args:
-            code: Python code to validate
-
-        Returns:
-            True if valid, False otherwise
-        """
-        return validate_code(code)
 
     def execute_generated_code(self, code: str, timeout: int = 30) -> list[dict[str, Any]]:
         """Execute generated code safely, with self-healing retry on failure.
@@ -141,9 +110,10 @@ class CodeGenerator:
                 result = self.executor.execute(code, timeout=timeout)
                 resources = result.artifacts
 
-                # Score code quality
+                # Always score code quality (includes FHIR Pydantic validation)
+                metrics = calculate_code_quality_score(code, resources)
+
                 if self.enable_scoring:
-                    metrics = calculate_code_quality_score(code, resources)
                     logger.info(
                         f"Code quality: {metrics['score']:.2f} ({metrics['grade']}) - "
                         f"{len(metrics.get('warnings', []))} warnings"
@@ -151,6 +121,39 @@ class CodeGenerator:
                     if metrics.get("warnings"):
                         for warning in metrics["warnings"]:
                             logger.debug(f"  • {warning}")
+
+                # If FHIR validation failed, retry with error details
+                fhir_vr = metrics.get("fhir_validation")
+                if fhir_vr and fhir_vr["invalid"] > 0:
+                    error_lines = [
+                        f"  {e['resourceType']}/{e['id']}: {'; '.join(e['errors'])}"
+                        for e in fhir_vr["errors"][:10]
+                    ]
+                    error_detail = "\n".join(error_lines)
+
+                    if attempt < self.max_retries:
+                        logger.info(
+                            "FHIR validation: %d/%d invalid (attempt %d/%d), retrying…",
+                            fhir_vr["invalid"],
+                            fhir_vr["total"],
+                            attempt + 1,
+                            self.max_retries + 1,
+                        )
+                        last_error = ValueError(
+                            f"FHIR validation failed for {fhir_vr['invalid']}/{fhir_vr['total']} "
+                            f"resources. Fix these errors:\n{error_detail}"
+                        )
+                        code = self._retry_with_error(code, str(last_error))
+                        continue
+                    else:
+                        # Last attempt — log the failures but return what we have
+                        logger.warning(
+                            "FHIR validation: %d/%d resources invalid after %d attempts:\n%s",
+                            fhir_vr["invalid"],
+                            fhir_vr["total"],
+                            self.max_retries + 1,
+                            error_detail,
+                        )
 
                 return resources
             except ImportError as exc:
@@ -191,7 +194,8 @@ class CodeGenerator:
             Corrected Python code
         """
         fix_prompt = build_fix_prompt(code, error)
-        fixed = self.llm.generate_text(SYSTEM_PROMPT, fix_prompt)
+        system_prompt = get_system_prompt()
+        fixed = self.llm.generate_text(system_prompt, fix_prompt)
         return extract_code(fixed)
 
     @staticmethod

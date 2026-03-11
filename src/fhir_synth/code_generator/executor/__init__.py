@@ -23,12 +23,11 @@ from fhir_synth.code_generator.executor.dify import DifySandboxExecutor
 from fhir_synth.code_generator.executor.e2b import E2BExecutor
 from fhir_synth.code_generator.executor.local import LocalSubprocessExecutor
 
-# ── Shared validation (importable from here for backward compatibility) ────
+# ── Shared validation (importable from here for convenience) ────
 from fhir_synth.code_generator.executor.validation import (
     build_runner_script,
     check_dangerous_code,
     fix_common_imports,
-    fix_naive_date_times,
     validate_code,
     validate_imports,
     validate_imports_whitelist,
@@ -49,7 +48,6 @@ __all__ = [
     "build_runner_script",
     "check_dangerous_code",
     "fix_common_imports",
-    "fix_naive_date_times",
     "validate_code",
     "validate_imports",
     "validate_imports_whitelist",

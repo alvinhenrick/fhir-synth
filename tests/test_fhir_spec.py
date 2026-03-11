@@ -79,11 +79,12 @@ def test_clinical_resources_includes_key_types():
 
 
 def test_spec_summary_returns_text():
-    """spec_summary should return a non-empty string."""
+    """spec_summary should return a non-empty string with resource info and types."""
     summary = spec_summary(["Patient", "Condition"])
     assert "Patient" in summary
     assert "Condition" in summary
-    assert "required:" in summary
+    assert "[REQUIRED]" in summary
+    assert "DateTime" in summary or "Date" in summary
 
 
 def test_no_concatenation_bugs_in_resource_names():
@@ -149,4 +150,3 @@ def test_import_guide_includes_warning():
     """Import guide should contain the warning about not inventing module names."""
     guide = import_guide(["Patient"])
     assert "Do NOT invent module names" in guide
-    assert "timingrepeat" in guide

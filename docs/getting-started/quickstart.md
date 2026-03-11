@@ -13,6 +13,9 @@ fhir-synth generate "10 diabetic patients with HbA1c observations" --split -o pa
 
 # 5 patients with hypertension, encounters, and meds
 fhir-synth generate "5 patients with hypertension, office encounters, and antihypertensive medications" -o hypertension.ndjson
+
+# Generate STU3 resources instead of R4B (case-insensitive)
+fhir-synth generate "10 patients with diabetes" --fhir-version stu3 -o output.ndjson
 ```
 
 ## What Happens Under the Hood

@@ -1,16 +1,17 @@
-"""Auto-discover the full FHIR R4B specification from fhir.resources.
+"""Auto-discover the full FHIR specification from fhir.resources.
 
-This module introspects the ``fhir.resources.R4B`` package at import time to
-build a complete catalogue of resource types, data types, and their fields.
+This module introspects the ``fhir.resources`` package to build a complete
+catalogue of resource types, data types, and their fields. Supports multiple
+FHIR versions (R4B, STU3) through dynamic imports.
 Classification uses the class hierarchy (``Resource`` / ``DomainResource`` vs
 ``Element``) — **nothing is hardcoded**.
 
 Public API
 ----------
+- ``set_fhir_version()`` – set the FHIR version (call before other functions)
 - ``resource_names()`` – sorted list of all resource type names
 - ``get_resource_class`` – import and return the Pydantic class for a name
 - ``required_fields`` – required field names for a resource type
-- ``field_schema`` – full field metadata for a resource type
 - ``reference_targets`` – which resource types a reference field can point to
 - ``spec_summary`` – compact text summary suitable for LLM prompts
 - ``class_to_module`` – look up the correct module for any Pydantic class
@@ -21,17 +22,66 @@ import importlib
 import os
 from dataclasses import dataclass, field
 from functools import cache
-from typing import Any
 
-import fhir.resources.R4B as _r4b
-from fhir.resources.R4B.domainresource import DomainResource
-from fhir.resources.R4B.resource import Resource
 from pydantic import BaseModel
+
+# Global state for FHIR version
+_FHIR_VERSION = "R4B"  # Default version
 
 # ── Truly internal modules that are not usable FHIR types ─────────────────
 _INTERNAL_MODULES: frozenset[str] = frozenset(
     {"fhirtypes", "fhirprimitiveextension", "fhirresourcemodel"}
 )
+
+
+def set_fhir_version(version: str) -> None:
+    """Set the FHIR version to use (R4B, STU3, etc.).
+
+    Must be called before any other functions in this module if you want
+    to use a non-default version. This clears all cached data and re-discovers
+    resources for the new version.
+
+    Args:
+        version: FHIR version string (case-insensitive). Supported: R4B, STU3
+    """
+    global \
+        _FHIR_VERSION, \
+        _MODULE_MAP, \
+        _DATA_TYPE_MAP, \
+        _CLASS_MODULE_MAP, \
+        _MODULE_CLASSES, \
+        CLINICAL_RESOURCES
+
+    # Normalize version to uppercase
+    version_upper = version.upper()
+
+    # Map common variations to canonical names
+    version_map = {
+        "R4B": "R4B",
+        "STU3": "STU3",
+        "R4": "R4B",  # Allow R4 as alias for R4B
+    }
+
+    canonical_version = version_map.get(version_upper)
+    if canonical_version is None:
+        supported = ", ".join(sorted(set(version_map.values())))
+        raise ValueError(
+            f"Unsupported FHIR version: {version!r}. Supported: {supported} (case-insensitive)"
+        )
+
+    _FHIR_VERSION = canonical_version
+    # Clear all caches when version changes
+    get_resource_class.cache_clear()
+    _introspect.cache_clear()
+    _get_base_classes.cache_clear()
+    # Re-discover all resources for the new version
+    _MODULE_MAP, _DATA_TYPE_MAP, _CLASS_MODULE_MAP, _MODULE_CLASSES = _discover_all()
+    CLINICAL_RESOURCES = _discover_clinical_resources()
+
+
+def get_fhir_version() -> str:
+    """Return the current FHIR version."""
+    return _FHIR_VERSION
 
 
 # ── Data classes ──────────────────────────────────────────────────────────
@@ -69,8 +119,16 @@ class ResourceMeta:
 # ── Single unified scan ──────────────────────────────────────────────────
 
 
+@cache
+def _get_base_classes() -> tuple[type, type]:
+    """Import and return the base Resource and DomainResource classes for the current version."""
+    resource_mod = importlib.import_module(f"fhir.resources.{_FHIR_VERSION}.resource")
+    domain_mod = importlib.import_module(f"fhir.resources.{_FHIR_VERSION}.domainresource")
+    return resource_mod.Resource, domain_mod.DomainResource
+
+
 def _discover_all() -> tuple[dict[str, str], dict[str, str], dict[str, str], dict[str, list[str]]]:
-    """Scan ``fhir.resources.R4B`` once and classify every module.
+    """Scan the current FHIR version package and classify every module.
 
     Uses the class hierarchy to separate FHIR *resources*
     (``issubclass(cls, Resource)``) from *data types* (everything else).
@@ -82,7 +140,10 @@ def _discover_all() -> tuple[dict[str, str], dict[str, str], dict[str, str], dic
         - class_module_map: ``{ClassName: module_name}`` for ALL classes
         - module_classes: ``{module_name: [ClassName, ...]}`` reverse lookup
     """
-    base_path = _r4b.__path__[0]
+    version_mod = importlib.import_module(f"fhir.resources.{_FHIR_VERSION}")
+    base_path = version_mod.__path__[0]
+    Resource, DomainResource = _get_base_classes()
+
     resource_map: dict[str, str] = {}
     data_type_map: dict[str, str] = {}
     class_module_map: dict[str, str] = {}
@@ -96,7 +157,7 @@ def _discover_all() -> tuple[dict[str, str], dict[str, str], dict[str, str], dic
             continue
 
         try:
-            mod = importlib.import_module(f"fhir.resources.R4B.{modname}")
+            mod = importlib.import_module(f"fhir.resources.{_FHIR_VERSION}.{modname}")
         except Exception:  # noqa: BLE001
             continue
 
@@ -141,11 +202,6 @@ def class_to_module(class_name: str) -> str | None:
     return _CLASS_MODULE_MAP.get(class_name)
 
 
-def data_type_modules() -> list[str]:
-    """Sorted list of all discovered data-type module names."""
-    return sorted(_DATA_TYPE_MAP.values())
-
-
 # ── Lazy loaders (import + introspect on first access, then cached) ───────
 
 
@@ -163,7 +219,7 @@ def get_resource_class(name: str) -> type[BaseModel]:
         raise ValueError(
             f"Unknown FHIR resource type: {name!r}. Known: {', '.join(sorted(_MODULE_MAP)[:20])} …"
         )
-    mod = importlib.import_module(f"fhir.resources.R4B.{modname}")
+    mod = importlib.import_module(f"fhir.resources.{_FHIR_VERSION}.{modname}")
     cls = getattr(mod, name, None)
     if cls is None:
         # Try case-insensitive lookup
@@ -172,7 +228,9 @@ def get_resource_class(name: str) -> type[BaseModel]:
                 cls = getattr(mod, attr)
                 break
     if cls is None:
-        raise ValueError(f"Could not find class {name!r} in fhir.resources.R4B.{modname}")
+        raise ValueError(
+            f"Could not find class {name!r} in fhir.resources.{_FHIR_VERSION}.{modname}"
+        )
     return cls  # type: ignore[no-any-return]
 
 
@@ -229,21 +287,6 @@ def required_fields(name: str) -> tuple[str, ...]:
     return _introspect(name).required_fields
 
 
-def field_schema(name: str) -> list[dict[str, Any]]:
-    """Field metadata as plain dicts (JSON-safe)."""
-    meta = _introspect(name)
-    return [
-        {
-            "name": f.name,
-            "required": f.required,
-            "type": f.type_annotation,
-            "is_reference": f.is_reference,
-            "is_list": f.is_list,
-        }
-        for f in meta.all_fields
-    ]
-
-
 def reference_targets(name: str) -> dict[str, str]:
     """Mapping of reference field names → type annotations."""
     meta = _introspect(name)
@@ -282,29 +325,105 @@ def _discover_clinical_resources() -> list[str]:
 CLINICAL_RESOURCES: list[str] = _discover_clinical_resources()
 
 
+def _short_type(annotation: str) -> str:
+    """Extract a clean short type name from a Pydantic annotation string."""
+    # "typing.Annotated[datetime.datetime, DateTime()]" → "DateTime"
+    # "abc.ReferenceType" → "Reference"
+    # "<class 'abc.CodeableConceptType'>" → "CodeableConcept"
+    # "typing.Annotated[str, Code()]" → "Code"
+    for pattern, label in [
+        ("DateTime()", "DateTime"),
+        ("Instant()", "Instant"),
+        ("Date()", "Date"),
+        ("Code()", "Code"),
+        ("Id()", "Id"),
+        ("Uri()", "Uri"),
+        ("Markdown()", "Markdown"),
+        ("ReferenceType", "Reference"),
+        ("CodeableConceptType", "CodeableConcept"),
+        ("CodingType", "Coding"),
+        ("PeriodType", "Period"),
+        ("QuantityType", "Quantity"),
+        ("IdentifierType", "Identifier"),
+        ("HumanNameType", "HumanName"),
+        ("AddressType", "Address"),
+        ("ContactPointType", "ContactPoint"),
+        ("AttachmentType", "Attachment"),
+        ("NarrativeType", "Narrative"),
+        ("MetaType", "Meta"),
+        ("DurationType", "Duration"),
+        ("bool", "boolean"),
+    ]:
+        if pattern in annotation:
+            return label
+    return "str" if "str" in annotation else "object"
+
+
 def spec_summary(resource_types: list[str] | None = None) -> str:
     """Compact text summary of the FHIR spec for the given resources.
 
     Designed to be injected into LLM system prompts so the model knows
-    exactly which fields are required / optional / references.
+    exactly which fields are required / optional / references, along with
+    their types (DateTime, Period, CodeableConcept, etc.).
     """
     types = resource_types or CLINICAL_RESOURCES
-    lines: list[str] = [f"FHIR R4B Spec — {len(types)} resource types\n"]
+    lines: list[str] = [
+        f"FHIR {_FHIR_VERSION} Spec — {len(types)} resource types\n",
+        "DATA TYPE FORMAT RULES (from the FHIR spec):",
+        "  DateTime: date-only OR full datetime with timezone.",
+        '    ✓ "2025-03-08"  ✓ "2025-03"  ✓ "2025"  ✓ "2025-03-08T10:30:00+00:00"',
+        '    ✗ "2025-03-08T10:30:00"  (has time but no timezone — INVALID)',
+        "  Instant: MUST be full datetime with timezone. No date-only.",
+        '    ✓ "2025-03-08T10:30:00+00:00"  ✓ "2025-03-08T10:30:00Z"',
+        '    ✗ "2025-03-08"  ✗ "2025-03-08T10:30:00"',
+        "  In code: always construct with timezone when time is needed:",
+        "    datetime(2025, 3, 8, 10, 30, tzinfo=timezone.utc).isoformat()",
+        "    For date-only DateTime fields: date(2025, 3, 8).isoformat()",
+        "  Decimal: use Decimal (from decimal import Decimal), not float.",
+        "",
+    ]
+
+    # Skip these internal/noise fields to keep the spec compact
+    _skip = frozenset(
+        {
+            "fhir_comments",
+            "implicitRules",
+            "language",
+            "contained",
+            "extension",
+            "modifierExtension",
+            "text",
+        }
+    )
 
     for rt in types:
         try:
             meta = _introspect(rt)
         except ValueError:
             continue
-        req = ", ".join(meta.required_fields) or "(none)"
-        refs = ", ".join(meta.reference_fields) or "(none)"
-        opt_sample = ", ".join(meta.optional_fields[:8])
-        if len(meta.optional_fields) > 8:
-            opt_sample += " …"
+
         lines.append(f"{rt}:")
-        lines.append(f"  required: {req}")
-        lines.append(f"  references: {refs}")
-        lines.append(f"  optional: {opt_sample}")
+
+        # Required fields with types
+        req_parts = []
+        for f in meta.all_fields:
+            if f.required:
+                req_parts.append(f"    {f.name}: {_short_type(f.type_annotation)}  [REQUIRED]")
+        if req_parts:
+            lines.extend(req_parts)
+
+        # Key optional fields with types (skip noise fields, cap at 12)
+        opt_parts = []
+        for f in meta.all_fields:
+            if not f.required and f.name not in _skip:
+                t = _short_type(f.type_annotation)
+                tag = " [ref]" if f.is_reference else ""
+                opt_parts.append(f"    {f.name}: {t}{tag}")
+        if opt_parts:
+            for line in opt_parts[:12]:
+                lines.append(line)
+            if len(opt_parts) > 12:
+                lines.append(f"    … and {len(opt_parts) - 12} more fields")
         lines.append("")
 
     return "\n".join(lines)
@@ -314,7 +433,7 @@ def spec_summary(resource_types: list[str] | None = None) -> str:
 
 
 def import_guide(resource_types: list[str] | None = None) -> str:
-    """Compact import guide showing exact ``from fhir.resources.R4B.{mod} import {Cls}`` lines.
+    """Compact import guide showing exact ``from fhir.resources.{VERSION}.{mod} import {Cls}`` lines.
 
     Designed to be injected into LLM prompts so the model uses correct import
     paths and never guesses wrong module names.
@@ -328,14 +447,13 @@ def import_guide(resource_types: list[str] | None = None) -> str:
     """
     types = resource_types or CLINICAL_RESOURCES
 
-    lines: list[str] = ["VALID IMPORT PATHS (use these exactly):\n"]
+    lines: list[str] = ["VALID IMPORT PATHS (use these exactly):\n", "# Resource types"]
 
     # 1. Resource modules
-    lines.append("# Resource types")
     for rt in types:
         modname = _MODULE_MAP.get(rt)
         if modname:
-            lines.append(f"from fhir.resources.R4B.{modname} import {rt}")
+            lines.append(f"from fhir.resources.{_FHIR_VERSION}.{modname} import {rt}")
 
     # 2. All discovered data-type modules
     lines.append("\n# Data types (complex types used in resource fields)")
@@ -343,12 +461,8 @@ def import_guide(resource_types: list[str] | None = None) -> str:
         classes = _MODULE_CLASSES.get(modname)
         if classes:
             cls_str = ", ".join(sorted(classes))
-            lines.append(f"from fhir.resources.R4B.{modname} import {cls_str}")
+            lines.append(f"from fhir.resources.{_FHIR_VERSION}.{modname} import {cls_str}")
 
-    lines.append(
-        "\n# WARNING: Classes are in the modules listed above."
-        "\n# Do NOT invent module names like 'timingrepeat' or 'contactdetail'."
-        "\n# e.g., TimingRepeat is in 'timing', not 'timingrepeat'."
-    )
+    lines.append("\n# Use ONLY the module paths listed above. Do NOT invent module names.")
 
     return "\n".join(lines)

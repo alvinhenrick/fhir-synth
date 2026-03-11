@@ -17,7 +17,6 @@ from fhir_synth.code_generator.executor.base import ExecutionResult
 from fhir_synth.code_generator.executor.validation import (
     build_runner_script,
     check_dangerous_code,
-    fix_naive_date_times,
     validate_imports_whitelist,
 )
 
@@ -57,9 +56,6 @@ class LocalSubprocessExecutor:
         import_errors = validate_imports_whitelist(code)
         if import_errors:
             raise ValueError(f"Disallowed imports: {'; '.join(import_errors)}")
-
-        # ── Fix naive datetime.now() calls ────────────────────────────
-        code = fix_naive_date_times(code)
 
         # ── Build the wrapper that runs inside the subprocess ─────────
         wrapper = build_runner_script(code)

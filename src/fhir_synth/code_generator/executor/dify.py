@@ -23,7 +23,6 @@ from fhir_synth.code_generator.executor.base import ExecutionResult, get_executi
 from fhir_synth.code_generator.executor.validation import (
     build_runner_script,
     check_dangerous_code,
-    fix_naive_date_times,
     validate_imports_whitelist,
 )
 
@@ -91,8 +90,6 @@ class DifySandboxExecutor:
         import_errors = validate_imports_whitelist(code)
         if import_errors:
             raise ValueError(f"Disallowed imports: {'; '.join(import_errors)}")
-
-        code = fix_naive_date_times(code)
 
         # ── Build the full script ─────────────────────────────────────
         script = self._build_script(code)

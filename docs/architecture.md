@@ -3,58 +3,66 @@
 ## System Overview
 
 ```mermaid
+%%{init: {'theme':'base', 'themeVariables': { 'primaryColor':'#ffffff','primaryTextColor':'#1a1a1a','primaryBorderColor':'#94a3b8','lineColor':'#64748b','secondaryColor':'#ffffff','tertiaryColor':'#ffffff','clusterBkg':'#ffffff','clusterBorder':'#cbd5e1'}}}%%
 graph TB
     subgraph UI["🖥️ User Interface"]
-        CLI["CLI (Typer)\ngenerate · rules · codegen · bundle"]
-        API["Python API\nCodeGenerator · RuleEngine\nBundleBuilder · FHIRResourceFactory"]
+        CLI["CLI (Typer)<br/>generate · codegen · bundle"]
+        API["Python API<br/>CodeGenerator · BundleBuilder<br/>FHIRResourceFactory"]
     end
 
     subgraph CORE["⚙️ Core Modules"]
-        CG["code_generator/\nCodeGenerator · PromptToRulesConverter\nprompts · constants · utils"]
-        RE["rule_engine/\nRuleEngine · Rule · RuleSet\nGenerationRules · EMPI"]
-        BB["bundle/\nBundleBuilder · BundleManager\nBundleFactory"]
-        FU["fhir_utils/\nFHIRResourceFactory\nLazyResourceMap"]
-        FS["fhir_spec.py\nAuto-discovery of all\n141 R4B resource types"]
+        CG["code_generator/<br/>CodeGenerator<br/>prompts · constants · utils"]
+        BB["bundle/<br/>BundleBuilder · BundleManager<br/>BundleFactory"]
+        FU["fhir_utils/<br/>FHIRResourceFactory<br/>LazyResourceMap"]
+        FS["fhir_spec.py<br/>Auto-discovery of all<br/>141 R4B resource types"]
     end
 
     subgraph EXEC["🔒 Executor Backends"]
-        EX_IF["Executor Protocol\nexecute(code) → ExecutionResult"]
-        LOCAL["LocalSubprocessExecutor\n(default — subprocess isolation)"]
-        DIFY["DifySandboxExecutor\n(dify-sandbox HTTP API)"]
-        E2B["E2BExecutor\n(E2B cloud sandbox)"]
+        EX_IF["Executor Protocol<br/>execute(code) → ExecutionResult"]
+        LOCAL["LocalSubprocessExecutor<br/>(default — subprocess isolation)"]
+        DIFY["DifySandboxExecutor<br/>(dify-sandbox HTTP API)"]
+        E2B["E2BExecutor<br/>(E2B cloud sandbox)"]
     end
 
     subgraph LLM_LAYER["🤖 LLM Layer"]
-        LLM["llm.py\nLLMProvider · MockLLMProvider\nget_provider()"]
-        LITELLM["LiteLLM\nOpenAI · Anthropic · Bedrock\nAzure · 100+ providers"]
+        LLM["llm.py<br/>LLMProvider · MockLLMProvider<br/>get_provider()"]
+        LITELLM["LiteLLM<br/>OpenAI · Anthropic · Bedrock<br/>Azure · 100+ providers"]
     end
 
     subgraph FHIR["🏥 FHIR Foundation"]
-        FR["fhir.resources (R4B)\nPydantic models for all\nFHIR resource types"]
+        FR["fhir.resources (R4B)<br/>Pydantic models for all<br/>FHIR resource types"]
     end
 
-    CLI --> CG
-    CLI --> RE
-    CLI --> BB
-    API --> CG
-    API --> RE
-    API --> BB
-    API --> FU
+    CLI -->|uses| CG
+    CLI -->|uses| BB
+    API -->|uses| CG
+    API -->|uses| BB
+    API -->|uses| FU
 
-    CG --> EX_IF
-    EX_IF --> LOCAL
-    EX_IF --> DIFY
-    EX_IF --> E2B
+    CG -->|executes via| EX_IF
+    EX_IF -.->|implements| LOCAL
+    EX_IF -.->|implements| DIFY
+    EX_IF -.->|implements| E2B
 
-    CG --> LLM
-    CG --> FS
-    RE --> FS
-    BB --> RE
-    BB --> FS
-    FU --> FS
-    LLM --> LITELLM
-    FS --> FR
-    FU --> FR
+    CG -->|calls| LLM
+    CG -->|introspects| FS
+    BB -->|introspects| FS
+    FU -->|introspects| FS
+    LLM -->|powered by| LITELLM
+    FS -->|discovers| FR
+    FU -->|creates| FR
+
+    classDef uiStyle fill:#E0F2FE,stroke:#0284c7,stroke-width:3px,color:#1a1a1a
+    classDef coreStyle fill:#FEF3C7,stroke:#f59e0b,stroke-width:2px,color:#1a1a1a
+    classDef execStyle fill:#DBEAFE,stroke:#3b82f6,stroke-width:2px,color:#1a1a1a
+    classDef llmStyle fill:#FCE7F3,stroke:#ec4899,stroke-width:2px,color:#1a1a1a
+    classDef fhirStyle fill:#D1FAE5,stroke:#10b981,stroke-width:2px,color:#1a1a1a
+
+    class CLI,API uiStyle
+    class CG,BB,FU,FS coreStyle
+    class EX_IF,LOCAL,DIFY,E2B execStyle
+    class LLM,LITELLM llmStyle
+    class FR fhirStyle
 ```
 
 ---
