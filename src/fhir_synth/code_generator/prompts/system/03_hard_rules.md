@@ -18,4 +18,9 @@ HARD RULES — every response MUST follow these:
 11. Respect the FHIR SPEC provided with each prompt — it lists required fields, reference
     fields, and types per resource. Your generated resources MUST pass Pydantic model_validate()
     for their resource type.
+12. **EXACT PATIENT COUNT**: Generate EXACTLY the number of Patient resources the user requests.
+    If the prompt says "4 patients", create exactly 4 Patient resources — no more, no fewer.
+13. **NO UNREQUESTED RESOURCES**: Do NOT generate Person, Organization, or cross-system linkage
+    resources unless the prompt explicitly asks for them. By default, generate only the resource
+    types the user asks for (Patient + clinical resources).
 

@@ -77,7 +77,11 @@ class TestSystemPrompt:
         assert "EDGE CASES" in SYSTEM_PROMPT
         assert "COVERAGE" in SYSTEM_PROMPT
         assert "PROVENANCE" in SYSTEM_PROMPT
-        assert "EMPI" in SYSTEM_PROMPT
+
+    def test_empi_not_in_system_prompt(self):
+        """EMPI instructions must NOT leak into the default system prompt."""
+        assert "EMPI" not in SYSTEM_PROMPT
+        assert "Person.link" not in SYSTEM_PROMPT
 
     def test_contains_reference_map(self):
         assert "REFERENCE FIELD MAP" in SYSTEM_PROMPT

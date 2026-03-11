@@ -19,7 +19,6 @@ REFERENCE FIELD MAP — use these exact field names when linking resources:
   AllergyIntolerance.patient  → Reference("Patient/{id}")
   CarePlan.subject            → Reference("Patient/{id}")
   ServiceRequest.subject      → Reference("Patient/{id}")
-  Person.link[].target        → Reference("Patient/{id}")  (EMPI linkage)
   Coverage.beneficiary        → Reference("Patient/{id}")
   Coverage.payor              → Reference("Organization/{id}")
   Goal.subject                → Reference("Patient/{id}")
