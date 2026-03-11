@@ -14,9 +14,9 @@ from fhir_synth.code_generator.executor import (
 )
 from fhir_synth.code_generator.metrics import calculate_code_quality_score
 from fhir_synth.code_generator.prompts import (
-    SYSTEM_PROMPT,
     build_code_prompt,
     build_fix_prompt,
+    get_system_prompt,
 )
 from fhir_synth.code_generator.utils import extract_code
 from fhir_synth.llm import LLMProvider
@@ -33,6 +33,7 @@ class CodeGenerator:
         max_retries: int = 2,
         enable_scoring: bool = False,
         executor: Executor | None = None,
+        fhir_version: str = "R4B",
     ) -> None:
         """Initialize code generator with LLM.
 
@@ -42,11 +43,18 @@ class CodeGenerator:
             enable_scoring: Enable code quality scoring and logging
             executor: Executor backend for running generated code.
                 Defaults to :class:`LocalSubprocessExecutor`.
+            fhir_version: FHIR version to use (R4B, STU3). Defaults to R4B.
         """
         self.llm = llm
         self.max_retries = max_retries
         self.enable_scoring = enable_scoring
         self.executor: Executor = executor or LocalSubprocessExecutor()
+        self.fhir_version = fhir_version
+
+        # Set the FHIR version for the spec module
+        from fhir_synth import fhir_spec
+
+        fhir_spec.set_fhir_version(fhir_version)
 
     def generate_code_from_prompt(self, prompt: str) -> str:
         """Generate Python code from natural language prompt.
@@ -58,7 +66,8 @@ class CodeGenerator:
             Generated Python code as string
         """
         user_prompt = build_code_prompt(prompt)
-        code = self.llm.generate_text(SYSTEM_PROMPT, user_prompt)
+        system_prompt = get_system_prompt()
+        code = self.llm.generate_text(system_prompt, user_prompt)
         return extract_code(code)
 
     def execute_generated_code(self, code: str, timeout: int = 30) -> list[dict[str, Any]]:
@@ -185,7 +194,8 @@ class CodeGenerator:
             Corrected Python code
         """
         fix_prompt = build_fix_prompt(code, error)
-        fixed = self.llm.generate_text(SYSTEM_PROMPT, fix_prompt)
+        system_prompt = get_system_prompt()
+        fixed = self.llm.generate_text(system_prompt, fix_prompt)
         return extract_code(fixed)
 
     @staticmethod

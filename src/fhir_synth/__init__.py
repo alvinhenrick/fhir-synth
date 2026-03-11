@@ -1,4 +1,4 @@
-"""FHIR Synth - Dynamic FHIR R4B synthetic data generator."""
+"""FHIR Synth - Dynamic FHIR synthetic data generator (supports R4B, STU3)."""
 
 from dotenv import load_dotenv
 

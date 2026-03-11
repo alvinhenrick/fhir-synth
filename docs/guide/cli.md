@@ -14,6 +14,7 @@ fhir-synth generate "10 diabetic patients with HbA1c observations" -o diabetes.n
 |------|---------|-------------|
 | `-o / --out` | `output.ndjson` | Output file (or directory with `--split`) |
 | `-p / --provider` | `gpt-4` | LLM model/provider |
+| `--fhir-version` | `R4B` | FHIR version: `R4B`, `STU3` (case-insensitive) |
 | `--split` | off | Split output: one JSON file per patient in a directory |
 | `--save-code` | — | Save generated Python code |
 | `--empi` | off | Include EMPI Person→Patient linkage |
@@ -63,6 +64,10 @@ fhir-synth generate "5 patients" --executor dify
 
 # E2B cloud sandbox (requires E2B_API_KEY env var)
 fhir-synth generate "5 patients" --executor e2b
+
+# Generate STU3 resources instead of R4B (case-insensitive)
+fhir-synth generate "10 patients with diabetes" --fhir-version stu3 -o output.ndjson
+fhir-synth generate "5 patients" --fhir-version STU3 -o output.ndjson
 ```
 
 ### Environment Variables
@@ -91,7 +96,7 @@ fhir-synth codegen "Create 50 patients" --out code.py --execute --executor dify
 
 ## `fhir-synth bundle`
 
-Create FHIR R4B Bundles from NDJSON data or EMPI defaults.
+Create FHIR Bundles from NDJSON data or EMPI defaults.
 
 ```bash
 fhir-synth bundle --resources data.ndjson --out bundle.json --type transaction

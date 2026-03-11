@@ -1,6 +1,6 @@
 # FHIR Synth
 
-Dynamic FHIR R4B synthetic data generator using LLM-powered code generation and declarative rules.
+Dynamic FHIR synthetic data generator using LLM-powered code generation and declarative rules (supports R4B, STU3).
 
 Generate realistic synthetic healthcare data from natural language prompts. Tell it what you want, and it generates the code to create it.
 
@@ -15,7 +15,7 @@ Rules / Code Generation (LLM via LiteLLM)
     ↓
 FHIR Resources (Patient, Condition, Observation, etc.)
     ↓
-FHIR R4B Bundles (JSON + NDJSON)
+FHIR Bundles (JSON + NDJSON) — R4B or STU3
 ```
 
 ## Install
@@ -62,6 +62,9 @@ fhir-synth generate "5 patients" \
 
 # Try without an API key (mock LLM for testing)
 fhir-synth generate "5 patients" --provider mock -o test.json
+
+# Generate STU3 resources instead of R4B (case-insensitive)
+fhir-synth generate "10 patients with diabetes" --fhir-version stu3 -o output.ndjson
 ```
 
 **What happens under the hood:**
@@ -71,7 +74,7 @@ fhir-synth generate "5 patients" --provider mock -o test.json
 4. Code executes via a pluggable executor backend (local subprocess, dify-sandbox, or E2B cloud)
 5. Output is smoke-tested (non-empty, every resource has `resourceType`)
 6. If anything fails, the error is sent back to the LLM for self-healing (up to 2 retries)
-7. Resources are split by patient and saved as FHIR R4B Bundle (JSON) or NDJSON
+7. Resources are split by patient and saved as FHIR Bundle (JSON) or NDJSON (R4B or STU3 depending on `--fhir-version`)
 
 ### Output Modes
 

@@ -1,4 +1,4 @@
-Generate Python code to create FHIR R4B resources.
+Generate Python code to create FHIR $fhir_version resources.
 
 Requirement: $requirement
 
@@ -12,13 +12,7 @@ $fhir_spec
 
 EXAMPLE (for reference — shows key patterns: timezone-aware datetimes, Period, references):
 ```python
-from fhir.resources.R4B.patient import Patient
-from fhir.resources.R4B.encounter import Encounter
-from fhir.resources.R4B.condition import Condition
-from fhir.resources.R4B.codeableconcept import CodeableConcept
-from fhir.resources.R4B.coding import Coding
-from fhir.resources.R4B.reference import Reference
-from fhir.resources.R4B.period import Period
+$example_imports
 from uuid import uuid4
 from datetime import datetime, timezone, timedelta, date
 from decimal import Decimal

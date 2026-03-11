@@ -1,4 +1,4 @@
-"""FHIR Synth CLI - Generate synthetic FHIR R4B data from natural language prompts."""
+"""FHIR Synth CLI - Generate synthetic FHIR data from natural language prompts (supports R4B, STU3)."""
 
 import json
 import sys
@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 # Load environment variables from .env
 load_dotenv()
 
-app = typer.Typer(help="Dynamic FHIR R4B synthetic data generator — prompt → code → data")
+app = typer.Typer(help="Dynamic FHIR synthetic data generator — prompt → code → data (supports R4B, STU3)")
 
 
 @app.command()
@@ -18,6 +18,7 @@ def generate(
     prompt: str = typer.Argument(..., help="Natural language description of data to generate"),
     out: str = typer.Option("output.ndjson", "--out", "-o", help="Output file path"),
     provider: str = typer.Option("gpt-4", "--provider", "-p", help="LLM model/provider"),
+    fhir_version: str = typer.Option("R4B", "--fhir-version", help="FHIR version: R4B, STU3 (case-insensitive)"),
     save_code: str | None = typer.Option(
         None, "--save-code", help="Also save generated code to this file"
     ),
@@ -109,6 +110,9 @@ def generate(
 
       # E2B cloud sandbox (requires E2B_API_KEY env var)
       fhir-synth generate "5 patients" --executor e2b
+
+      # Generate STU3 resources instead of R4B
+      fhir-synth generate "10 patients with diabetes" --fhir-version STU3
     """
     try:
         from fhir_synth.code_generator import CodeGenerator, get_executor
@@ -119,7 +123,7 @@ def generate(
             executor_backend,
             dify_url=dify_url,
         )
-        code_gen = CodeGenerator(llm, executor=executor)
+        code_gen = CodeGenerator(llm, executor=executor, fhir_version=fhir_version)
 
         # Load metadata configuration from YAML if provided
         prompt_text = prompt
@@ -191,7 +195,7 @@ def generate(
 
         vr = validate_resources(resources)
         if vr.is_valid:
-            typer.echo(f"   ✅ {vr.total} resources — all valid FHIR R4B")
+            typer.echo(f"   ✅ {vr.total} resources — all valid FHIR {fhir_version}")
         else:
             typer.echo(
                 f"   ⚠️  {vr.total} resources — {vr.valid} valid, "
@@ -267,6 +271,7 @@ def codegen(
     prompt: str = typer.Argument(..., help="Natural language description of data"),
     out: str = typer.Option(..., "--out", "-o", help="Output file for code"),
     provider: str = typer.Option("mock", "--provider", help="LLM provider"),
+    fhir_version: str = typer.Option("R4B", "--fhir-version", help="FHIR version: R4B, STU3 (case-insensitive)"),
     execute: bool = typer.Option(False, "--execute", "-x", help="Execute the code"),
     empi: bool = typer.Option(False, "--empi", help="Include EMPI Person/Patient linkage"),
     persons: int = typer.Option(1, "--persons", help="Number of Persons for EMPI"),
@@ -298,7 +303,7 @@ def codegen(
             executor_backend,
             dify_url=dify_url,
         )
-        code_gen = CodeGenerator(llm, max_retries=2, executor=executor)
+        code_gen = CodeGenerator(llm, max_retries=2, executor=executor, fhir_version=fhir_version)
         prompt_text = prompt
         if empi:
             from fhir_synth.code_generator.prompts import build_empi_prompt
