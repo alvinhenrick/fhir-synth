@@ -254,8 +254,8 @@ class FaissSelector:
         if self._faiss is not None and self._np is not None:
             return self._faiss, self._np
         try:
-            import faiss  # type: ignore[import-untyped]
-            import numpy as np
+            import faiss  # type: ignore[import-not-found]
+            import numpy as np  # type: ignore[import-not-found]
         except ImportError as exc:
             msg = (
                 "FaissSelector requires faiss-cpu and numpy. "
@@ -272,7 +272,7 @@ class FaissSelector:
         if self._model is not None:
             return self._model
         try:
-            from sentence_transformers import SentenceTransformer
+            from sentence_transformers import SentenceTransformer  # type: ignore[import-not-found]
         except ImportError as exc:
             msg = (
                 "FaissSelector requires sentence-transformers. "
@@ -439,7 +439,7 @@ class FaissSelector:
 
         # Filter by score threshold - return ALL skills above threshold
         selected: list[Skill] = []
-        for score, idx in zip(scores[0], indices[0]):
+        for score, idx in zip(scores[0], indices[0], strict=False):
             if idx < 0:
                 continue  # FAISS sentinel
             if float(score) >= self.score_threshold:

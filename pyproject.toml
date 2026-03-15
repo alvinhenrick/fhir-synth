@@ -83,10 +83,8 @@ dependencies = [
 [tool.hatch.envs.default.scripts]
 test = "pytest {args}"
 cov = "pytest --cov=fhir_synth --cov-report=term-missing {args}"
-test-fast = "pytest -n auto {args}"
-check = ["ruff check src tests", "mypy src"]
-format = "ruff format src tests"
-lint = "ruff check src tests --fix"
+check = ["ruff check src tests", "ruff format --check src tests", "mypy src"]
+format = ["ruff check src tests --fix", "ruff format src tests", "ruff check src tests", "mypy src"]
 
 [tool.hatch.envs.docs]
 installer = "uv"

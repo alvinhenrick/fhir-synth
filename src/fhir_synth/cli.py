@@ -34,10 +34,10 @@ def _configure_skills(
     if selector == "faiss":
         from fhir_synth.skills import FaissSelector
 
-        kwargs = {}
         if score_threshold is not None:
-            kwargs["score_threshold"] = score_threshold
-        skill_selector = FaissSelector(**kwargs)
+            skill_selector = FaissSelector(score_threshold=score_threshold)
+        else:
+            skill_selector = FaissSelector()
     configure_skills(user_dirs=user_dirs, selector=skill_selector)
 
 

@@ -24,14 +24,8 @@ jobs:
       - name: Install Hatch
         run: pip install hatch
 
-      - name: Ruff check
-        run: hatch run ruff check src tests
-
-      - name: Ruff format check
-        run: hatch run ruff format --check src tests
-
-      - name: Mypy
-        run: hatch run mypy src
+      - name: Run checks (ruff + mypy)
+        run: hatch run check
 
   test:
     name: Test (Python ${{ matrix.python-version }})

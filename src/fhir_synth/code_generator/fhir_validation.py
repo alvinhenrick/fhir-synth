@@ -157,7 +157,7 @@ def validate_references(resources: list[dict[str, Any]]) -> list[dict[str, Any]]
     errors = []
 
     # 2. Find all Reference fields and check if they exist
-    def _find_references(obj: Any, path: str = ""):
+    def _find_references(obj: Any, path: str = "") -> None:
         if isinstance(obj, dict):
             if "reference" in obj and isinstance(obj["reference"], str):
                 ref = obj["reference"]
@@ -177,21 +177,8 @@ def validate_references(resources: list[dict[str, Any]]) -> list[dict[str, Any]]
             for i, item in enumerate(obj):
                 _find_references(item, f"{path}[{i}]")
 
-    for i, resource in enumerate(resources):
-        res_errors: list[dict[str, Any]] = []
-        # Clear global errors list for this resource
-        original_errors_len = len(errors)
+    for resource in resources:
         _find_references(resource)
-
-        if len(errors) > original_errors_len:
-            resource_type = resource.get("resourceType", "Unknown")
-            resource_id = resource.get("id", f"index-{i}")
-            new_errors = errors[original_errors_len:]
-            # We don't want to pollute the global errors with duplicates,
-            # but we need to format them for ValidationResult.
-            # Actually, let's just return a structured list.
-            # (Simplifying for now to match the existing error structure)
-            pass
 
     # Re-formatting to match ValidationResult.errors structure
     formatted_errors = []
@@ -201,9 +188,11 @@ def validate_references(resources: list[dict[str, Any]]) -> list[dict[str, Any]]
     for i, resource in enumerate(resources):
         res_type = resource.get("resourceType", "Unknown")
         res_id = resource.get("id", f"index-{i}")
-        current_res_errors = []
 
-        def _check_ref(obj: Any, p: str):
+        # Create list to collect errors for this specific resource
+        resource_errors: list[str] = []
+
+        def _check_ref(obj: Any, p: str, errors_list: list[str] = resource_errors) -> None:
             if isinstance(obj, dict):
                 ref = obj.get("reference")
                 if (
@@ -212,21 +201,21 @@ def validate_references(resources: list[dict[str, Any]]) -> list[dict[str, Any]]
                     and not ref.startswith(("http", "https", "urn:"))
                 ):
                     if ref not in existing_ids:
-                        current_res_errors.append(f"Broken reference at {p}: {ref}")
+                        errors_list.append(f"Broken reference at {p}: {ref}")
                 for k, v in obj.items():
-                    _check_ref(v, f"{p}.{k}" if p else k)
+                    _check_ref(v, f"{p}.{k}" if p else k, errors_list)
             elif isinstance(obj, list):
                 for idx, item in enumerate(obj):
-                    _check_ref(item, f"{p}[{idx}]")
+                    _check_ref(item, f"{p}[{idx}]", errors_list)
 
         _check_ref(resource, "")
-        if current_res_errors:
+        if resource_errors:
             formatted_errors.append(
                 {
                     "index": i,
                     "resourceType": res_type,
                     "id": res_id,
-                    "errors": current_res_errors,
+                    "errors": resource_errors,
                 }
             )
 
@@ -267,9 +256,9 @@ def _check_required_elements(resource: dict[str, Any], resource_type: str) -> li
     }
 
     required_fields = required_by_type.get(resource_type, [])
-    for field in required_fields:
-        if field not in resource or resource[field] is None:
-            errors.append(f"Missing required element for {resource_type}: {field}")
+    for field_name in required_fields:
+        if field_name not in resource or resource[field_name] is None:
+            errors.append(f"Missing required element for {resource_type}: {field_name}")
 
     return errors
 
@@ -287,7 +276,7 @@ def _check_cardinality(resource: dict[str, Any], resource_type: str) -> list[str
     Returns:
         List of error messages for cardinality violations.
     """
-    errors = []
+    errors: list[str] = []
 
     # Define known cardinality constraints for common elements
     # Format: {resource_type: {field_path: (min, max)}}
