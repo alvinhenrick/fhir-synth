@@ -47,16 +47,6 @@ semantic = [
     "numpy>=1.24",
     "sentence-transformers>=2.2",
 ]
-dev = [
-    "pytest>=7.0",
-    "pytest-cov>=4.0",
-    "pytest-xdist>=3.0",
-    "freezegun>=1.2",
-    "ruff>=0.1",
-    "mypy>=1.0",
-    "types-pyyaml",
-    "types-python-dateutil",
-]
 docs = [
     "mkdocs>=1.6,<2",
     "mkdocs-material>=9.0,<=9.7.3",
