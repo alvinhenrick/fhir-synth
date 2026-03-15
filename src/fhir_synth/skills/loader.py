@@ -193,7 +193,7 @@ class SkillLoader:
         user_dirs: Optional list of user-provided skill directories.
             Later entries take priority over earlier ones.
 
-    Example::
+    Example:
 
         loader = SkillLoader(user_dirs=[Path("~/.fhir-synth/skills")])
         skills = loader.discover()

@@ -59,7 +59,7 @@ def set_fhir_version(version: str) -> None:
     version_map = {
         "R4B": "R4B",
         "STU3": "STU3",
-        "R4": "R4B",  # Allow R4 as alias for R4B
+        "R4": "R4B",  # Allow R4 as an alias for R4B
     }
 
     canonical_version = version_map.get(version_upper)

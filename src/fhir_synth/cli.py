@@ -168,7 +168,7 @@ def generate(
       # Use FAISS semantic skill selection (requires: pip install fhir-synth[semantic])
       fhir-synth generate "5 patients" --selector faiss
 
-      # FAISS with custom similarity threshold
+      # FAISS with a custom similarity threshold
       fhir-synth generate "5 patients" --selector faiss --score-threshold 0.5
     """
     try:

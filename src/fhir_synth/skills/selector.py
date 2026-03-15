@@ -1,11 +1,11 @@
 """Skill selection strategies.
 Provides a: class:`SkillSelector` protocol and two concrete implementations:
 
-* :class:`KeywordSelector` — zero-dependency keyword + resource-type matching
+*: class:`KeywordSelector` — zero-dependency keyword + resource-type matching
   with fuzzy matching for typo tolerance (default).
-* :class:`FaissSelector` — semantic retrieval using ``faiss-cpu`` with
+*: class:`FaissSelector` — semantic retrieval using ``faiss-cpu`` with
   ``sentence-transformers`` for local embeddings (no API calls).  Embeddings
-  are pre-computed **once** and cached to disk so subsequent loads are
+  are pre-computed **once** and cached to disk, so later loads are
   instant.  Install with ``pip install fhir-synth[semantic]``.
 
 Both return the Markdown bodies of the selected skills, ready for injection
