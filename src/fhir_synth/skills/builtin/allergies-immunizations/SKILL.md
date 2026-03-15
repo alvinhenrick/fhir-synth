@@ -1,4 +1,14 @@
-ALLERGY INTOLERANCE REALISM:
+---
+name: allergies-immunizations
+description: Generate allergy intolerances with SNOMED codes, reactions, severity, and criticality; plus immunization records with CVX codes, pediatric vaccine schedules. Use when user mentions allergies, immunizations, vaccines, allergy intolerance, penicillin allergy, anaphylaxis, or vaccination.
+keywords: [allergy, intolerance, immunization, vaccine, vaccination, penicillin, anaphylaxis, allergic, reaction, CVX, NKDA, influenza, COVID vaccine, Tdap, MMR, hepatitis, pneumococcal, HPV, pediatric vaccine]
+resource_types: [AllergyIntolerance, Immunization]
+always: false
+---
+
+# Allergies and Immunizations
+
+## Allergy Intolerance
 - Types: allergy, intolerance. Categories: food, medication, environment, biologic.
 - Common allergies with proper SNOMED codes:
   * Penicillin (91936005), Sulfonamide (387406002), Aspirin (387458008)
@@ -10,7 +20,7 @@ ALLERGY INTOLERANCE REALISM:
 - Clinical status: active, inactive, resolved. Verification: confirmed, unconfirmed.
 - Include patients with NKDA (No Known Drug Allergies) using code 716186003.
 
-IMMUNIZATION REALISM:
+## Immunizations
 - Common vaccines with proper CVX codes (http://hl7.org/fhir/sid/cvx):
   * Influenza (140, 150, 161), COVID-19 mRNA (207, 208, 211, 213, 228, 229, 230, 300, 301),
   * Tdap (115), Td (138), MMR (03), Varicella (21), Hepatitis B (43, 44, 45),

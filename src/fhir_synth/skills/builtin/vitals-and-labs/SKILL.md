@@ -1,4 +1,16 @@
-VITAL SIGNS — use the FHIR Vital Signs profile (LOINC panel 85353-1):
+---
+name: vitals-and-labs
+description: Generate vital signs using FHIR Vital Signs profile and lab panels (CBC, BMP, CMP, lipid, HbA1c, urinalysis, COVID) with LOINC codes, reference ranges, and interpretation. Use when user mentions vitals, labs, observations, blood pressure, heart rate, HbA1c, glucose, CBC, lab results, or test results.
+keywords: [vital, vitals, lab, labs, observation, blood pressure, heart rate, temperature, oxygen, BMI, weight, height, CBC, BMP, CMP, HbA1c, glucose, cholesterol, lipid, hemoglobin, platelet, creatinine, sodium, potassium, urinalysis, COVID, LOINC, reference range]
+resource_types: [Observation]
+always: false
+---
+
+# Vital Signs and Lab Panels
+
+## Vital Signs
+
+Use the FHIR Vital Signs profile (LOINC panel 85353-1):
 - Blood pressure: LOINC 85354-9 (panel), 8480-6 systolic, 8462-4 diastolic. Use component[].
   Realistic ranges: systolic 90–200 mmHg, diastolic 50–120 mmHg. Vary by age/condition.
 - Heart rate: LOINC 8867-4, range 40–150 /min (vary for athletes, elderly, tachycardia)
@@ -10,7 +22,9 @@ VITAL SIGNS — use the FHIR Vital Signs profile (LOINC panel 85353-1):
 - Use Observation.category = "vital-signs" (http://terminology.hl7.org/CodeSystem/observation-category)
 - Include Observation.interpretation codes: N=Normal, H=High, L=Low, HH=Critical High, LL=Critical Low
 
-LAB PANELS — use realistic lab results with proper reference ranges:
+## Lab Panels
+
+Use realistic lab results with proper reference ranges:
 - CBC: WBC (6690-2), RBC (789-8), Hemoglobin (718-7), Hematocrit (4544-3), Platelets (777-3)
 - BMP: Sodium (2951-2), Potassium (2823-3), Chloride (2075-0), CO2 (2028-9),
   BUN (3094-0), Creatinine (2160-0), Glucose (2345-7), Calcium (17861-6)

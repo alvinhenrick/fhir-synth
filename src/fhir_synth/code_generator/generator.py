@@ -66,7 +66,7 @@ class CodeGenerator:
             Generated Python code as string
         """
         user_prompt = build_code_prompt(prompt)
-        system_prompt = get_system_prompt()
+        system_prompt = get_system_prompt(user_prompt=prompt)
         code = self.llm.generate_text(system_prompt, user_prompt)
         return extract_code(code)
 

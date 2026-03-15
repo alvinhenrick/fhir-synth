@@ -1,4 +1,14 @@
-PATIENT VARIATION — generate data that reflects real-world population diversity:
+---
+name: patient-variation
+description: Generate patient demographics reflecting real-world population diversity including age distribution, gender, race, ethnicity, language, marital status, identifiers, contacts, and deceased status. Use for any request involving Patient resources.
+keywords: [patient, demographic, age, gender, race, ethnicity, language, birth, name, address, identifier, contact, diversity, neonatal, pediatric, geriatric, elderly, deceased, twins]
+resource_types: [Patient]
+always: true
+---
+
+# Patient Variation
+
+Generate data that reflects real-world population diversity:
 - AGE DISTRIBUTION: Include neonates (0–28 days), infants (1m–1y), pediatric (1–17y),
   adults (18–64y), and geriatric (65+). Weight age groups roughly: 5% neonates/infants,
   15% pediatric, 55% adults, 25% geriatric. Adjust per clinical context.

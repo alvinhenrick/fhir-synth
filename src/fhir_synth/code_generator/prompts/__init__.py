@@ -3,7 +3,7 @@
 All prompt content lives in Markdown files organised by concern:
 
 - ``system/`` — engineering rules, sandbox constraints, role definition
-- ``clinical/`` — clinician-authored domain knowledge (editable without touching Python)
+- ``skills/``  — modular SKILL.md files (agentskills.io spec) for clinical knowledge
 - ``templates/``— user-facing prompt templates with ``$variable`` placeholders
 
 This module re-exports the **same public API** that ``generator.py`` consumes:
@@ -12,26 +12,73 @@ This module re-exports the **same public API** that ``generator.py`` consumes:
 -: func:`build_code_prompt`
 -: func:`build_fix_prompt`
 -: func:`build_empi_prompt`
+-: func:`get_system_prompt`
 """
+
+from __future__ import annotations
+
+import logging
+from pathlib import Path
 
 from fhir_synth.code_generator.constants import ALLOWED_MODULE_PREFIXES, ALLOWED_MODULES
 from fhir_synth.code_generator.prompts.loader import load_prompt, load_section, render
 from fhir_synth.fhir_spec import get_fhir_version, import_guide, spec_summary
+from fhir_synth.skills import KeywordSelector, SkillLoader, SkillSelector
+
+logger = logging.getLogger(__name__)
 
 # ── Pre-compute sandbox values (same logic as old prompts.py) ──────────
 _ALLOWED_LIST = ", ".join(sorted(ALLOWED_MODULES))
 _ALLOWED_PREFIXES = ", ".join(f"{p}.*" for p in ALLOWED_MODULE_PREFIXES)
 
+# ── Module-level skill infrastructure ──────────────────────────────────
+_skill_loader: SkillLoader | None = None
+_skill_selector: SkillSelector = KeywordSelector()
 
-def _build_system_prompt(fhir_version: str | None = None) -> str:
+
+def configure_skills(
+    user_dirs: list[Path] | None = None,
+    selector: SkillSelector | None = None,
+) -> None:
+    """Configure the skills' system.
+
+    Call before generating prompts to set up user skill directories and/or
+    swap the selection strategy (e.g. ``FaissSelector``).
+
+    Args:
+        user_dirs: User-provided skill directories (higher priority than built-in).
+        selector: Selection strategy.  Defaults to :class:`KeywordSelector`.
+    """
+    global _skill_loader, _skill_selector  # noqa: PLW0603
+    _skill_loader = SkillLoader(user_dirs=user_dirs)
+    if selector is not None:
+        _skill_selector = selector
+
+
+def _get_skill_loader() -> SkillLoader:
+    """Return the module-level skill loader, creating a default if needed."""
+    global _skill_loader  # noqa: PLW0603
+    if _skill_loader is None:
+        _skill_loader = SkillLoader()
+    return _skill_loader
+
+
+def _build_system_prompt(
+    fhir_version: str | None = None,
+    user_prompt: str | None = None,
+) -> str:
     """Assemble the full system prompt from Markdown fragments.
 
     Sections are loaded in order:
       1. system/ — role, sandbox, hard rules, realism, reference map, creation order, step-by-step
-      2. clinical/ — all domain knowledge files
+      2. skills — selectively loaded clinical knowledge based on the user prompt
+
+    When *user_prompt* is provided, the skills selector chooses only the
+    relevant skills.  Otherwise, **all** skills are included (backward-compatible fallback identical to loading ``clinical/``).
 
     Args:
-        fhir_version: FHIR version to use in prompts. If None, uses current version from fhir_spec.
+        fhir_version: FHIR version to use in prompts. If None, uses current version.
+        user_prompt: User's natural-language request (used for skill selection).
     """
     if fhir_version is None:
         fhir_version = get_fhir_version()
@@ -45,18 +92,37 @@ def _build_system_prompt(fhir_version: str | None = None) -> str:
         fhir_version=fhir_version,
     )
 
-    clinical_text = load_section("clinical")
+    # ── Skills-based clinical knowledge (selective loading) ─────────
+    loader = _get_skill_loader()
+    all_skills = loader.discover()
+
+    if user_prompt is not None and all_skills:
+        selected = _skill_selector.select(user_prompt, all_skills)
+    else:
+        selected = all_skills  # no prompt or empty → load all
+
+    if selected:
+        clinical_text = "\n\n".join(s.body for s in selected)
+        logger.debug("Loaded %d/%d skills into system prompt", len(selected), len(all_skills))
+    else:
+        logger.warning("No skills found — system prompt will have no clinical knowledge")
+        clinical_text = ""
 
     return f"{system_text}\n\n{clinical_text}"
 
 
-def get_system_prompt() -> str:
-    """Get the system prompt with the current FHIR version."""
-    return _build_system_prompt()
+def get_system_prompt(user_prompt: str | None = None) -> str:
+    """Get the system prompt, optionally with skill selection.
+
+    Args:
+        user_prompt: When provided, only relevant skills are loaded.
+            When ``None``, all skills are loaded (backward-compatible).
+    """
+    return _build_system_prompt(user_prompt=user_prompt)
 
 
 # ── Module-level constant (for backward compatibility) ──────────────────
-# This is built once at import time with default version
+# This is built once at import time with a default version
 SYSTEM_PROMPT: str = _build_system_prompt("R4B")
 
 
@@ -75,7 +141,7 @@ def build_code_prompt(requirement: str) -> str:
     template = load_prompt("templates/code_prompt.md")
     fhir_version = get_fhir_version()
 
-    # Build example imports dynamically based on FHIR version
+    # Build example imports dynamically based on the FHIR version
     example_imports = f"""from fhir.resources.{fhir_version}.patient import Patient
 from fhir.resources.{fhir_version}.encounter import Encounter
 from fhir.resources.{fhir_version}.condition import Condition
@@ -154,8 +220,9 @@ def build_empi_prompt(
 
 __all__ = [
     "SYSTEM_PROMPT",
-    "get_system_prompt",
     "build_code_prompt",
     "build_empi_prompt",
     "build_fix_prompt",
+    "configure_skills",
+    "get_system_prompt",
 ]

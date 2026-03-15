@@ -22,10 +22,16 @@ class TestLoader:
         assert "HARD RULES" in text
         assert "SANDBOX CONSTRAINTS" in text
 
-    def test_load_section_clinical(self):
-        text = load_section("clinical")
-        assert "COMORBIDITY" in text
-        assert "PATIENT VARIATION" in text
+    def test_load_section_clinical_replaced_by_skills(self):
+        """Clinical knowledge now comes from skills, not clinical/ directory."""
+        from fhir_synth.skills import SkillLoader
+
+        loader = SkillLoader()
+        skills = loader.discover()
+        assert len(skills) >= 14  # 16 built-in skills
+        bodies = "\n".join(s.body for s in skills)
+        assert "Comorbidity" in bodies
+        assert "Patient Variation" in bodies
 
     def test_render_substitutes_variables(self):
         result = render("Hello $name, you are $role", name="Alice", role="admin")
@@ -63,24 +69,24 @@ class TestSystemPrompt:
         assert "Faker" in SYSTEM_PROMPT
 
     def test_contains_clinical_sections(self):
-        assert "PATIENT VARIATION" in SYSTEM_PROMPT
-        assert "SOCIAL DETERMINANTS" in SYSTEM_PROMPT
-        assert "COMORBIDITY" in SYSTEM_PROMPT
-        assert "MEDICATION REALISM" in SYSTEM_PROMPT
-        assert "VITAL SIGNS" in SYSTEM_PROMPT
-        assert "ENCOUNTER REALISM" in SYSTEM_PROMPT
-        assert "ALLERGY INTOLERANCE" in SYSTEM_PROMPT
-        assert "IMMUNIZATION" in SYSTEM_PROMPT
-        assert "CARE PLAN" in SYSTEM_PROMPT
-        assert "DIAGNOSTIC REPORT" in SYSTEM_PROMPT
-        assert "EDGE CASES" in SYSTEM_PROMPT
-        assert "COVERAGE" in SYSTEM_PROMPT
-        assert "PROVENANCE" in SYSTEM_PROMPT
+        assert "Patient Variation" in SYSTEM_PROMPT
+        assert "Social Determinants" in SYSTEM_PROMPT
+        assert "Comorbidity" in SYSTEM_PROMPT
+        assert "Medication Realism" in SYSTEM_PROMPT
+        assert "Vital Signs" in SYSTEM_PROMPT
+        assert "Encounter Realism" in SYSTEM_PROMPT
+        assert "Allergy" in SYSTEM_PROMPT
+        assert "Immunization" in SYSTEM_PROMPT
+        assert "Care Plan" in SYSTEM_PROMPT
+        assert "Diagnostic Report" in SYSTEM_PROMPT
+        assert "Edge Cases" in SYSTEM_PROMPT
+        assert "Coverage" in SYSTEM_PROMPT
+        assert "Provenance" in SYSTEM_PROMPT
 
     def test_empi_not_in_system_prompt(self):
-        """EMPI instructions must NOT leak into the default system prompt."""
-        assert "EMPI" not in SYSTEM_PROMPT
+        """EMPI Person/Patient linkage instructions must NOT leak into the default system prompt."""
         assert "Person.link" not in SYSTEM_PROMPT
+        assert "EMPI linkage" not in SYSTEM_PROMPT
 
     def test_contains_reference_map(self):
         assert "REFERENCE FIELD MAP" in SYSTEM_PROMPT

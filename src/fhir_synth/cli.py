@@ -15,6 +15,32 @@ app = typer.Typer(
 )
 
 
+def _configure_skills(
+    skills_dir: str | None,
+    selector: str,
+    score_threshold: float | None = None,
+) -> None:
+    """Configure the skills system for prompt assembly.
+
+    Args:
+        skills_dir: Optional path to a user-provided skills directory.
+        selector: Selection strategy name (``"keyword"`` or ``"faiss"``).
+        score_threshold: Minimum similarity score (FAISS only).
+    """
+    from fhir_synth.code_generator.prompts import configure_skills
+
+    user_dirs = [Path(skills_dir)] if skills_dir else None
+    skill_selector = None
+    if selector == "faiss":
+        from fhir_synth.skills import FaissSelector
+
+        kwargs = {}
+        if score_threshold is not None:
+            kwargs["score_threshold"] = score_threshold
+        skill_selector = FaissSelector(**kwargs)
+    configure_skills(user_dirs=user_dirs, selector=skill_selector)
+
+
 @app.command()
 def generate(
     prompt: str = typer.Argument(..., help="Natural language description of data to generate"),
@@ -52,6 +78,19 @@ def generate(
     ),
     dify_url: str | None = typer.Option(
         None, "--dify-url", help="Base URL for dify-sandbox (or set DIFY_SANDBOX_URL env var)"
+    ),
+    skills_dir: str | None = typer.Option(
+        None, "--skills-dir", help="Directory with user-provided SKILL.md skills"
+    ),
+    selector: str = typer.Option(
+        "keyword",
+        "--selector",
+        help="Skill selection strategy: keyword (fuzzy matching with typo tolerance) or faiss (semantic similarity)",
+    ),
+    score_threshold: float | None = typer.Option(
+        None,
+        "--score-threshold",
+        help="Minimum similarity score 0.0-1.0 (FAISS only, default: 0.3)",
     ),
 ) -> None:
     """Generate synthetic FHIR data end-to-end: prompt → LLM → code → execute → NDJSON.
@@ -117,10 +156,22 @@ def generate(
 
       # Generate STU3 resources instead of R4B
       fhir-synth generate "10 patients with diabetes" --fhir-version STU3
+
+      # Use custom skills directory
+      fhir-synth generate "5 patients" --skills-dir ~/.fhir-synth/skills
+
+      # Use FAISS semantic skill selection (requires: pip install fhir-synth[semantic])
+      fhir-synth generate "5 patients" --selector faiss
+
+      # FAISS with custom similarity threshold
+      fhir-synth generate "5 patients" --selector faiss --score-threshold 0.5
     """
     try:
         from fhir_synth.code_generator import CodeGenerator, get_executor
         from fhir_synth.llm import get_provider
+
+        # ── Configure skills system ────────────────────────────────
+        _configure_skills(skills_dir, selector, score_threshold)
 
         llm = get_provider(provider, aws_profile=aws_profile, aws_region=aws_region)
         executor = get_executor(
@@ -298,11 +349,27 @@ def codegen(
     dify_url: str | None = typer.Option(
         None, "--dify-url", help="Base URL for dify-sandbox (or set DIFY_SANDBOX_URL env var)"
     ),
+    skills_dir: str | None = typer.Option(
+        None, "--skills-dir", help="Directory with user-provided SKILL.md skills"
+    ),
+    selector: str = typer.Option(
+        "keyword",
+        "--selector",
+        help="Skill selection strategy: keyword (fuzzy matching with typo tolerance) or faiss (semantic similarity)",
+    ),
+    score_threshold: float | None = typer.Option(
+        None,
+        "--score-threshold",
+        help="Minimum similarity score 0.0-1.0 (FAISS only, default: 0.3)",
+    ),
 ) -> None:
     """Generate Python code for resource creation from a prompt."""
     try:
         from fhir_synth.code_generator import CodeGenerator, get_executor
         from fhir_synth.llm import get_provider
+
+        # ── Configure skills system ────────────────────────────────
+        _configure_skills(skills_dir, selector, score_threshold)
 
         llm = get_provider(provider, aws_profile=aws_profile, aws_region=aws_region)
         executor = get_executor(
