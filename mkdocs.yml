@@ -75,6 +75,7 @@ nav:
       - Quick Start: getting-started/quickstart.md
   - User Guide:
       - CLI Reference: guide/cli.md
+      - Skills System: guide/skills.md
       - Python API: guide/api.md
       - Metadata Configuration: guide/metadata.md
       - Metadata Quick Reference: guide/metadata-reference.md

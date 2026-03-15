@@ -204,7 +204,7 @@ class SkillLoader:
         self._skills: list[Skill] | None = None  # lazy cache
 
     def discover(self) -> list[Skill]:
-        """Scan all sources and return de-duplicated skills.
+        """Scan all sources and return deduplicated skills.
 
         Built-in skills are loaded first, then user directories in order.
         Later sources override earlier ones by name.
@@ -217,7 +217,7 @@ class SkillLoader:
 
         by_name: dict[str, Skill] = {}
 
-        # 1. Built-in skills (lowest priority)
+        # 1. Built-in skills (the lowest priority)
         for skill in _discover_builtin():
             by_name[skill.name] = skill
 
