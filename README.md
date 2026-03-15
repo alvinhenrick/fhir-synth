@@ -55,6 +55,10 @@ fhir-synth generate "10 patients" --meta-config examples/meta-normal.yaml -o out
 # EMPI: Person → Patients across EMR systems
 fhir-synth generate "EMPI dataset" --empi --persons 3 -o empi.ndjson
 
+# Stateful generation: add follow-up encounters to existing patients
+fhir-synth generate "5 diabetic patients" -o initial.ndjson
+fhir-synth generate "follow-up visits with HbA1c labs" --context initial.ndjson -o followup.ndjson
+
 # AWS Bedrock provider with named profile
 fhir-synth generate "5 patients" \
   --provider bedrock/us.anthropic.claude-3-5-sonnet-20241022-v2:0 \
@@ -73,7 +77,11 @@ fhir-synth generate "10 patients with diabetes" --fhir-version stu3 -o output.nd
 3. LLM generates Python code using `fhir.resources` (Pydantic FHIR models)
 4. Code is safety-checked (import whitelist + dangerous builtins scan) and auto-fixed (naive datetimes → UTC)
 5. Code executes via a pluggable executor backend (local subprocess, dify-sandbox, or E2B cloud)
-6. Output is smoke-tested (non-empty, every resource has `resourceType`)
+6. **Enhanced FHIR validation** — offline validation using `fhir.resources`:
+   - Strict Pydantic mode (comprehensive type/format checking)
+   - Required field verification (e.g., `Observation.status`, `Observation.code`)
+   - Cardinality validation (min/max array occurrences)
+   - Reference integrity checks (cross-resource references)
 7. If anything fails, the error is sent back to the LLM for self-healing (up to 2 retries)
 8. Resources are split by patient and saved as FHIR Bundle (JSON) or NDJSON (R4B or STU3 depending on `--fhir-version`)
 
@@ -108,6 +116,7 @@ End-to-end: prompt → LLM → code → execute → FHIR Bundle.
 | `--skills-dir` | — | Directory with user-provided SKILL.md skills |
 | `--selector` | `keyword` | Skill selection: `keyword` (fuzzy) or `faiss` (semantic) |
 | `--score-threshold` | `0.3` | Min similarity score 0.0-1.0 (FAISS only) |
+| `--context` | — | Path to NDJSON/JSON with existing resources for stateful generation |
 
 ### `fhir-synth codegen`
 Generate executable Python code from prompts (without bundling).
@@ -304,6 +313,7 @@ FHIR Synth is organized into focused packages:
 - **`bundle/`** — Bundle creation and management (`BundleBuilder`, `BundleManager`, `BundleFactory`, `split_resources_by_patient`, `write_ndjson`, `write_split_bundles`)
 - **`code_generator/`** — LLM-powered code generation with self-healing execution (`CodeGenerator`)
     - **`code_generator/executor/`** — Pluggable executor backends (`LocalSubprocessExecutor`, `DifySandboxExecutor`, `E2BExecutor`)
+    - **`code_generator/fhir_validation.py`** — Enhanced offline FHIR validation (strict mode, required fields, cardinality, references)
 - **`fhir_utils/`** — FHIR resource factory and lazy resource class map (`FHIRResourceFactory`)
 - **`llm.py`** — Unified LLM provider interface via LiteLLM (`LLMProvider`, `get_provider`)
 - **`cli.py`** — Typer-based CLI
