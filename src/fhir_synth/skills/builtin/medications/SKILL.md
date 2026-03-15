@@ -1,4 +1,14 @@
-MEDICATION REALISM — generate prescriptions reflecting real clinical practice:
+---
+name: medications
+description: Generate realistic medication prescriptions with RxNorm codes, dosage, timing, route, polypharmacy, and PRN medications. Use when user mentions medications, prescriptions, drugs, pharmacy, treatment, MedicationRequest, or polypharmacy.
+keywords: [medication, prescription, drug, pharmacy, dosage, treatment, RxNorm, dose, refill, polypharmacy, insulin, metformin, statin, antibiotic, antihypertensive, opioid, SSRI, inhaler, PRN]
+resource_types: [MedicationRequest, MedicationStatement, MedicationAdministration, Medication]
+always: false
+---
+
+# Medication Realism
+
+Generate prescriptions reflecting real clinical practice:
 - POLYPHARMACY: Geriatric patients commonly take 5–15 medications. Include:
   * Antihypertensives: Lisinopril (RxNorm 29046), Amlodipine (17767), Metoprolol (6918)
   * Diabetes: Metformin (6809), Glipizide (4815), Insulin glargine (261551)

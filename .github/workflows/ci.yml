@@ -14,24 +14,18 @@ jobs:
     name: Lint & Type Check
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.13"
 
       - name: Install Hatch
         run: pip install hatch
 
-      - name: Ruff check
-        run: hatch run ruff check src tests
-
-      - name: Ruff format check
-        run: hatch run ruff format --check src tests
-
-      - name: Mypy
-        run: hatch run mypy src
+      - name: Run checks (ruff + mypy)
+        run: hatch run check
 
   test:
     name: Test (Python ${{ matrix.python-version }})
@@ -43,10 +37,10 @@ jobs:
         python-version: ["3.12", "3.13"]
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
 
@@ -58,10 +52,7 @@ jobs:
 
       - name: Upload coverage artifact
         if: matrix.python-version == '3.13'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: coverage-report
           path: coverage.xml
-
-
-

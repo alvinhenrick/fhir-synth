@@ -21,6 +21,7 @@ FHIR Bundles (JSON + NDJSON) — R4B or STU3
 ## Features
 
 - **Natural Language → FHIR**: Describe what you need in plain English, get valid FHIR Bundles (R4B or STU3)
+- **Skills System**: 13+ built-in domain skills with fuzzy keyword matching (typo-tolerant) for realistic data
 - **LLM-Powered Code Generation**: Uses GPT-4, Claude, Bedrock, or 100+ providers via [LiteLLM](https://docs.litellm.ai/)
 - **Self-Healing Execution**: If generated code fails, errors are sent back to the LLM for automatic retry (up to 2 retries)
 - **Pluggable Executor Backends**: Local subprocess (default), Dify Sandbox, or E2B cloud sandboxes
@@ -56,6 +57,7 @@ fhir-synth generate "5 patients" --provider mock -o test.ndjson
 
 - [Installation](getting-started/installation.md) — Set up FHIR Synth
 - [Quick Start](getting-started/quickstart.md) — Generate your first data
+- [Skills System](guide/skills.md) — Learn about built-in skills and create custom ones
 - [CLI Reference](guide/cli.md) — All commands and flags
 - [Architecture](architecture.md) — System design and data flows
 

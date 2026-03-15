@@ -1,4 +1,14 @@
-ENCOUNTER REALISM — model real clinical workflows:
+---
+name: encounters
+description: Generate realistic clinical encounters with class codes, types, status, hospitalization details, discharge disposition, telehealth, and longitudinal care. Use when user mentions encounters, visits, admission, discharge, ER, emergency, inpatient, outpatient, telehealth, or hospital.
+keywords: [encounter, visit, admission, discharge, emergency, ER, inpatient, outpatient, ambulatory, telehealth, virtual, hospital, office visit, consultation, triage, hospitalization, length of stay]
+resource_types: [Encounter]
+always: false
+---
+
+# Encounter Realism
+
+Model real clinical workflows:
 - CLASS codes (http://terminology.hl7.org/CodeSystem/v3-ActCode):
   AMB (ambulatory), IMP (inpatient), EMER (emergency), HH (home health),
   VR (virtual/telehealth), OBSENC (observation encounter), SS (short stay),

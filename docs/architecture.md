@@ -99,7 +99,7 @@ sequenceDiagram
     Note over EX: Pre-flight: import whitelist + dangerous builtins
     Note over EX: Auto-fix: naive datetime.now() → UTC
     EX->>EX: Subprocess: exec(code) → generate_resources()
-    EX->>EX: Smoke test: validate output
+    EX->>EX: Enhanced validation: strict mode + required fields + cardinality
 
     alt ❌ Execution or smoke test fails
         EX-->>CG: error message
@@ -136,12 +136,16 @@ flowchart TD
     B3 --> C["🔒 Execute via chosen backend<br/>(local / dify / e2b)"]
     C --> D{"✅ Execution OK?"}
     D -->|"Runtime error"| RETRY
-    D -->|Pass| E["🧪 Smoke test output"]
+    D -->|Pass| E["🧪 Enhanced FHIR validation"]
     E --> E1{"Non-empty list?"}
     E1 -->|Empty| RETRY
-    E1 -->|Pass| E2{"Every dict has resourceType?"}
-    E2 -->|Missing| RETRY
-    E2 -->|Pass| F["✓ Return resources"]
+    E1 -->|Pass| E2{"Strict Pydantic validation?"}
+    E2 -->|Type/format errors| RETRY
+    E2 -->|Pass| E3{"Required fields present?"}
+    E3 -->|Missing| RETRY
+    E3 -->|Pass| E4{"Cardinality constraints?"}
+    E4 -->|Violations| RETRY
+    E4 -->|Pass| F["✓ Return resources"]
 
     RETRY{"🔄 Retries left?"}
     RETRY -->|"Yes (max 2)"| FIX2["📤 Send error + code to LLM"]
@@ -158,8 +162,10 @@ flowchart TD
 | Wrong fhir.resources import path | `fix_common_imports()` rewrites the import | Import guide with correct module paths |
 | `datetime.now()` without timezone | Source rewrite to `datetime.now(timezone.utc)` | "Add timezone offset" |
 | Disallowed import (`os`, `socket`, etc.) | — | "Replace with allowed alternative" |
-| Pydantic `ValidationError` | — | "Fix the invalid field value" |
-| Missing required field (`status`, etc.) | — | "Add the missing required field" |
+| Pydantic `ValidationError` (strict mode) | — | "Fix the invalid field value or type" |
+| Missing required field (`status`, `code`, etc.) | — | "Add the missing required field" |
+| Invalid data type (e.g., string instead of list) | — | "Fix type to match FHIR spec" |
+| Cardinality violation (min/max occurrences) | — | "Adjust array length to meet cardinality constraints" |
 | Missing `resourceType` in output | — | "Use `.model_dump(exclude_none=True)`" |
 | Empty result list | — | "Ensure non-empty list" |
 

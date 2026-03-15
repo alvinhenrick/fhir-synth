@@ -55,6 +55,10 @@ fhir-synth generate "10 patients" --meta-config examples/meta-normal.yaml -o out
 # EMPI: Person → Patients across EMR systems
 fhir-synth generate "EMPI dataset" --empi --persons 3 -o empi.ndjson
 
+# Stateful generation: add follow-up encounters to existing patients
+fhir-synth generate "5 diabetic patients" -o initial.ndjson
+fhir-synth generate "follow-up visits with HbA1c labs" --context initial.ndjson -o followup.ndjson
+
 # AWS Bedrock provider with named profile
 fhir-synth generate "5 patients" \
   --provider bedrock/us.anthropic.claude-3-5-sonnet-20241022-v2:0 \
@@ -68,13 +72,18 @@ fhir-synth generate "10 patients with diabetes" --fhir-version stu3 -o output.nd
 ```
 
 **What happens under the hood:**
-1. Your prompt goes to the LLM (via [LiteLLM](https://docs.litellm.ai/) — 100+ providers)
-2. LLM generates Python code using `fhir.resources` (Pydantic FHIR models)
-3. Code is safety-checked (import whitelist + dangerous builtins scan) and auto-fixed (naive datetimes → UTC)
-4. Code executes via a pluggable executor backend (local subprocess, dify-sandbox, or E2B cloud)
-5. Output is smoke-tested (non-empty, every resource has `resourceType`)
-6. If anything fails, the error is sent back to the LLM for self-healing (up to 2 retries)
-7. Resources are split by patient and saved as FHIR Bundle (JSON) or NDJSON (R4B or STU3 depending on `--fhir-version`)
+1. **Skills selection**: Your prompt is matched against 13+ built-in skills (patient demographics, medications, labs, etc.) using fuzzy keyword matching with typo tolerance
+2. Your prompt + selected skills go to the LLM (via [LiteLLM](https://docs.litellm.ai/) — 100+ providers)
+3. LLM generates Python code using `fhir.resources` (Pydantic FHIR models)
+4. Code is safety-checked (import whitelist + dangerous builtins scan) and auto-fixed (naive datetimes → UTC)
+5. Code executes via a pluggable executor backend (local subprocess, dify-sandbox, or E2B cloud)
+6. **Enhanced FHIR validation** — offline validation using `fhir.resources`:
+   - Strict Pydantic mode (comprehensive type/format checking)
+   - Required field verification (e.g., `Observation.status`, `Observation.code`)
+   - Cardinality validation (min/max array occurrences)
+   - Reference integrity checks (cross-resource references)
+7. If anything fails, the error is sent back to the LLM for self-healing (up to 2 retries)
+8. Resources are split by patient and saved as FHIR Bundle (JSON) or NDJSON (R4B or STU3 depending on `--fhir-version`)
 
 ### Output Modes
 
@@ -104,6 +113,10 @@ End-to-end: prompt → LLM → code → execute → FHIR Bundle.
 | `--aws-region` | — | AWS region for Bedrock (e.g. `us-east-1`) |
 | `-e / --executor` | `local` | Execution backend: `local`, `dify`, or `e2b` |
 | `--dify-url` | — | Base URL for dify-sandbox (or set `DIFY_SANDBOX_URL` env var) |
+| `--skills-dir` | — | Directory with user-provided SKILL.md skills |
+| `--selector` | `keyword` | Skill selection: `keyword` (fuzzy) or `faiss` (semantic) |
+| `--score-threshold` | `0.3` | Min similarity score 0.0-1.0 (FAISS only) |
+| `--context` | — | Path to NDJSON/JSON with existing resources for stateful generation |
 
 ### `fhir-synth codegen`
 Generate executable Python code from prompts (without bundling).
@@ -204,6 +217,72 @@ fhir-synth generate "10 diabetic patients" --meta-config examples/meta-normal.ya
 
 See the [Metadata Quick Reference](docs/guide/metadata-reference.md) for the full schema.
 
+## Skills System
+
+FHIR Synth uses a **skills system** to inject domain-specific knowledge into the LLM context. Skills are modular Markdown files that provide guidance on generating realistic FHIR data.
+
+### Built-in Skills (13+)
+
+The system includes 13+ built-in skills following the [agentskills.io](https://agentskills.io/specification) spec:
+
+- **patient-variation** — Demographics, age distribution, race, ethnicity, language
+- **medications** — RxNorm codes, dosing, timing, adherence patterns
+- **vitals-and-labs** — LOINC codes, normal ranges, temporal patterns
+- **comorbidity** — Disease clustering, chronic conditions
+- **encounters** — Visit types, coding systems, class progression
+- **coverage** — Insurance diversity (Medicare, Medicaid, commercial)
+- **allergies-immunizations** — CVX codes, contraindications
+- **careplan-goals** — Care coordination, goal tracking
+- **diagnostics-documents** — Imaging, reports, procedures
+- **sdoh** — Social determinants of health
+- **edge-cases** — Missing data, ambiguous records
+- **provenance-data-quality** — Audit trails, data quality flags
+- **family-history** — Genetic conditions, family relationships
+
+### Skill Selection
+
+**Keyword selector** (default) — Zero-dependency fuzzy matching with typo tolerance:
+```bash
+# "diabtes" → "diabetes" ✓, "medicaton" → "medication" ✓
+fhir-synth generate "10 diabtes patients with medicaton" -o output.ndjson
+```
+
+**FAISS selector** (optional) — Semantic similarity for advanced users:
+```bash
+# Install semantic dependencies
+pip install fhir-synth[semantic]
+
+# Use semantic matching
+fhir-synth generate "5 patients" --selector faiss
+```
+
+### Custom Skills
+
+Create your own skills in a directory with `SKILL.md` files:
+
+```yaml
+---
+name: my-custom-skill
+description: Generate oncology data with TNM staging
+keywords: [cancer, oncology, staging, tnm, tumor]
+resource_types: [Condition, Observation]
+always: false
+---
+
+# Oncology Staging
+
+Generate cancer conditions with TNM staging observations:
+- Use SNOMED CT for primary cancer codes
+- Include T (tumor), N (node), M (metastasis) observations
+- Use LOINC 21908-9 for TNM staging panel
+...
+```
+
+Use with:
+```bash
+fhir-synth generate "5 lung cancer patients" --skills-dir ~/.fhir-synth/skills
+```
+
 ## LLM Providers
 
 The `generate` command defaults to `gpt-4`. Set your API key in a `.env` file:
@@ -230,9 +309,11 @@ Use `--provider mock` for testing without an API key.
 
 FHIR Synth is organized into focused packages:
 
+- **`skills/`** — Skill discovery and selection following agentskills.io spec (`SkillLoader`, `KeywordSelector`, `FaissSelector`)
 - **`bundle/`** — Bundle creation and management (`BundleBuilder`, `BundleManager`, `BundleFactory`, `split_resources_by_patient`, `write_ndjson`, `write_split_bundles`)
 - **`code_generator/`** — LLM-powered code generation with self-healing execution (`CodeGenerator`)
     - **`code_generator/executor/`** — Pluggable executor backends (`LocalSubprocessExecutor`, `DifySandboxExecutor`, `E2BExecutor`)
+    - **`code_generator/fhir_validation.py`** — Enhanced offline FHIR validation (strict mode, required fields, cardinality, references)
 - **`fhir_utils/`** — FHIR resource factory and lazy resource class map (`FHIRResourceFactory`)
 - **`llm.py`** — Unified LLM provider interface via LiteLLM (`LLMProvider`, `get_provider`)
 - **`cli.py`** — Typer-based CLI
