@@ -72,9 +72,7 @@ def validate_resource(resource: dict[str, Any], *, strict: bool = True) -> list[
     try:
         # Use model_validate with strict mode for comprehensive checking
         validated_resource = cls.model_validate(
-            resource,
-            strict=strict,
-            context={"strict_validation": True}
+            resource, strict=strict, context={"strict_validation": True}
         )
 
         # Step 2: Additional deep validation checks
@@ -208,7 +206,11 @@ def validate_references(resources: list[dict[str, Any]]) -> list[dict[str, Any]]
         def _check_ref(obj: Any, p: str):
             if isinstance(obj, dict):
                 ref = obj.get("reference")
-                if isinstance(ref, str) and "/" in ref and not ref.startswith(("http", "https", "urn:")):
+                if (
+                    isinstance(ref, str)
+                    and "/" in ref
+                    and not ref.startswith(("http", "https", "urn:"))
+                ):
                     if ref not in existing_ids:
                         current_res_errors.append(f"Broken reference at {p}: {ref}")
                 for k, v in obj.items():

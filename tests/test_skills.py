@@ -55,55 +55,59 @@ MINIMAL_SKILL_MD = textwrap.dedent("""\
 # ── _parse_skill_md ────────────────────────────────────────────────────
 
 
-class TestParseSkillMd:
-    """Tests for YAML frontmatter parsing."""
+def test_parse_full_skill() -> None:
+    skill = _parse_skill_md(SAMPLE_SKILL_MD, "/fake/SKILL.md")
+    assert skill is not None
+    assert skill.name == "test-skill"
+    assert "unit testing" in skill.description
+    assert skill.keywords == ["testing", "pytest", "unit test"]
+    assert skill.resource_types == ["Patient", "Observation"]
+    assert skill.always is False
+    assert "Rule 1" in skill.body
 
-    def test_parse_full_skill(self) -> None:
-        skill = _parse_skill_md(SAMPLE_SKILL_MD, "/fake/SKILL.md")
-        assert skill is not None
-        assert skill.name == "test-skill"
-        assert "unit testing" in skill.description
-        assert skill.keywords == ["testing", "pytest", "unit test"]
-        assert skill.resource_types == ["Patient", "Observation"]
-        assert skill.always is False
-        assert "Rule 1" in skill.body
 
-    def test_parse_minimal_skill(self) -> None:
-        skill = _parse_skill_md(MINIMAL_SKILL_MD, "/fake/SKILL.md")
-        assert skill is not None
-        assert skill.name == "minimal"
-        assert skill.keywords == []
-        assert skill.resource_types == []
-        assert skill.always is False
+def test_parse_minimal_skill() -> None:
+    skill = _parse_skill_md(MINIMAL_SKILL_MD, "/fake/SKILL.md")
+    assert skill is not None
+    assert skill.name == "minimal"
+    assert skill.keywords == []
+    assert skill.resource_types == []
+    assert skill.always is False
 
-    def test_parse_always_on_skill(self) -> None:
-        skill = _parse_skill_md(ALWAYS_SKILL_MD, "/fake/SKILL.md")
-        assert skill is not None
-        assert skill.always is True
 
-    def test_parse_no_frontmatter(self) -> None:
-        result = _parse_skill_md("# Just markdown\nNo frontmatter here.", "/fake/SKILL.md")
-        assert result is None
+def test_parse_always_on_skill() -> None:
+    skill = _parse_skill_md(ALWAYS_SKILL_MD, "/fake/SKILL.md")
+    assert skill is not None
+    assert skill.always is True
 
-    def test_parse_missing_name(self) -> None:
-        content = "---\ndescription: No name field\n---\nBody."
-        result = _parse_skill_md(content, "/fake/SKILL.md")
-        assert result is None
 
-    def test_parse_missing_description(self) -> None:
-        content = "---\nname: no-desc\n---\nBody."
-        result = _parse_skill_md(content, "/fake/SKILL.md")
-        assert result is None
+def test_parse_no_frontmatter() -> None:
+    result = _parse_skill_md("# Just markdown\nNo frontmatter here.", "/fake/SKILL.md")
+    assert result is None
 
-    def test_parse_invalid_yaml(self) -> None:
-        content = "---\n: invalid: yaml: [[\n---\nBody."
-        result = _parse_skill_md(content, "/fake/SKILL.md")
-        assert result is None
 
-    def test_parse_source_label(self) -> None:
-        skill = _parse_skill_md(SAMPLE_SKILL_MD, "/fake/SKILL.md", source="user")
-        assert skill is not None
-        assert skill.source == "user"
+def test_parse_missing_name() -> None:
+    content = "---\ndescription: No name field\n---\nBody."
+    result = _parse_skill_md(content, "/fake/SKILL.md")
+    assert result is None
+
+
+def test_parse_missing_description() -> None:
+    content = "---\nname: no-desc\n---\nBody."
+    result = _parse_skill_md(content, "/fake/SKILL.md")
+    assert result is None
+
+
+def test_parse_invalid_yaml() -> None:
+    content = "---\n: invalid: yaml: [[\n---\nBody."
+    result = _parse_skill_md(content, "/fake/SKILL.md")
+    assert result is None
+
+
+def test_parse_source_label() -> None:
+    skill = _parse_skill_md(SAMPLE_SKILL_MD, "/fake/SKILL.md", source="user")
+    assert skill is not None
+    assert skill.source == "user"
 
 
 # ── SkillLoader (filesystem discovery) ──────────────────────────────────
