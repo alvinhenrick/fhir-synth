@@ -34,6 +34,7 @@ class CodeGenerator:
         enable_scoring: bool = False,
         executor: Executor | None = None,
         fhir_version: str = "R4B",
+        context_resources: list[dict[str, Any]] | None = None,
     ) -> None:
         """Initialize code generator with LLM.
 
@@ -44,12 +45,14 @@ class CodeGenerator:
             executor: Executor backend for running generated code.
                 Defaults to :class:`LocalSubprocessExecutor`.
             fhir_version: FHIR version to use (R4B, STU3). Defaults to R4B.
+            context_resources: Existing FHIR resources to use as state context
         """
         self.llm = llm
         self.max_retries = max_retries
         self.enable_scoring = enable_scoring
         self.executor: Executor = executor or LocalSubprocessExecutor()
         self.fhir_version = fhir_version
+        self.context_resources = context_resources or []
 
         # Set the FHIR version for the spec module
         from fhir_synth import fhir_spec
@@ -65,7 +68,7 @@ class CodeGenerator:
         Returns:
             Generated Python code as string
         """
-        user_prompt = build_code_prompt(prompt)
+        user_prompt = build_code_prompt(prompt, context_resources=self.context_resources)
         system_prompt = get_system_prompt(user_prompt=prompt)
         code = self.llm.generate_text(system_prompt, user_prompt)
         return extract_code(code)

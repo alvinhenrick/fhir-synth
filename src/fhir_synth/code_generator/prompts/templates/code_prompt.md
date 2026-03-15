@@ -76,3 +76,4 @@ def generate_resources() -> list[dict]:
 ```
 
 Now generate code for: $requirement
+$context_resources

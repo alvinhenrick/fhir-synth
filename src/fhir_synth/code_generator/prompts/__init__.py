@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
+from typing import Any
 
 from fhir_synth.code_generator.constants import ALLOWED_MODULE_PREFIXES, ALLOWED_MODULES
 from fhir_synth.code_generator.prompts.loader import load_prompt, load_section, render
@@ -129,17 +130,32 @@ SYSTEM_PROMPT: str = _build_system_prompt("R4B")
 # ── User-prompt builders ───────────────────────────────────────────────
 
 
-def build_code_prompt(requirement: str) -> str:
+def build_code_prompt(
+    requirement: str,
+    context_resources: list[dict[str, Any]] | None = None,
+) -> str:
     """Build a prompt for generating Python code.
 
     Args:
         requirement: Natural language description of resources to generate
+        context_resources: Optional list of existing resources to provide as context
 
     Returns:
         Formatted prompt string
     """
     template = load_prompt("templates/code_prompt.md")
     fhir_version = get_fhir_version()
+
+    # Build context string if resources are provided
+    context_text = ""
+    if context_resources:
+        import json
+
+        # Provide a summary or first few resources as context
+        # (limit to avoid token overflow)
+        subset = context_resources[:10]
+        context_json = json.dumps(subset, indent=2)
+        context_text = f"\nEXISTING RESOURCES (STATE CONTEXT):\n{context_json}\n"
 
     # Build example imports dynamically based on the FHIR version
     example_imports = f"""from fhir.resources.{fhir_version}.patient import Patient
@@ -157,6 +173,7 @@ from fhir.resources.{fhir_version}.period import Period"""
         fhir_imports=import_guide(),
         fhir_spec=spec_summary(),
         example_imports=example_imports,
+        context_resources=context_text,
     )
 
 

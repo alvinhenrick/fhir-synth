@@ -92,6 +92,11 @@ def generate(
         "--score-threshold",
         help="Minimum similarity score 0.0-1.0 (FAISS only, default: 0.3)",
     ),
+    context: str | None = typer.Option(
+        None,
+        "--context",
+        help="Path to NDJSON or JSON file with existing FHIR resources for stateful generation",
+    ),
 ) -> None:
     """Generate synthetic FHIR data end-to-end: prompt → LLM → code → execute → NDJSON.
 
@@ -173,12 +178,49 @@ def generate(
         # ── Configure skills system ────────────────────────────────
         _configure_skills(skills_dir, selector, score_threshold)
 
+        # ── Load context resources ──────────────────────────────────
+        context_resources = []
+        if context:
+            context_path = Path(context)
+            if context_path.exists():
+                if context_path.suffix == ".ndjson":
+                    with context_path.open() as f:
+                        for line in f:
+                            if line.strip():
+                                try:
+                                    res = json.loads(line)
+                                    # If it's a bundle, extract entries
+                                    if res.get("resourceType") == "Bundle":
+                                        for entry in res.get("entry", []):
+                                            if "resource" in entry:
+                                                context_resources.append(entry["resource"])
+                                    else:
+                                        context_resources.append(res)
+                                except json.JSONDecodeError:
+                                    continue
+                else:
+                    res = json.loads(context_path.read_text())
+                    if isinstance(res, list):
+                        context_resources.extend(res)
+                    elif res.get("resourceType") == "Bundle":
+                        for entry in res.get("entry", []):
+                            if "resource" in entry:
+                                context_resources.append(entry["resource"])
+                    else:
+                        context_resources.append(res)
+                typer.echo(f"   Loaded {len(context_resources)} resources from context")
+
         llm = get_provider(provider, aws_profile=aws_profile, aws_region=aws_region)
         executor = get_executor(
             executor_backend,
             dify_url=dify_url,
         )
-        code_gen = CodeGenerator(llm, executor=executor, fhir_version=fhir_version)
+        code_gen = CodeGenerator(
+            llm,
+            executor=executor,
+            fhir_version=fhir_version,
+            context_resources=context_resources,
+        )
 
         # Load metadata configuration from YAML if provided
         prompt_text = prompt
