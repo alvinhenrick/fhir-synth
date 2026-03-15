@@ -545,6 +545,27 @@
   
   
     <li class="md-nav__item">
+      <a href="../guide/skills/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Skills System
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../guide/api/" class="md-nav__link">
         
   
@@ -1240,7 +1261,7 @@ graph TB
     Note over EX: Pre-flight: import whitelist + dangerous builtins
     Note over EX: Auto-fix: naive datetime.now() → UTC
     EX-&gt;&gt;EX: Subprocess: exec(code) → generate_resources()
-    EX-&gt;&gt;EX: Smoke test: validate output
+    EX-&gt;&gt;EX: Enhanced validation: strict mode + required fields + cardinality
 
     alt ❌ Execution or smoke test fails
         EX--&gt;&gt;CG: error message
@@ -1271,12 +1292,16 @@ graph TB
     B3 --&gt; C["🔒 Execute via chosen backend&lt;br/&gt;(local / dify / e2b)"]
     C --&gt; D{"✅ Execution OK?"}
     D --&gt;|"Runtime error"| RETRY
-    D --&gt;|Pass| E["🧪 Smoke test output"]
+    D --&gt;|Pass| E["🧪 Enhanced FHIR validation"]
     E --&gt; E1{"Non-empty list?"}
     E1 --&gt;|Empty| RETRY
-    E1 --&gt;|Pass| E2{"Every dict has resourceType?"}
-    E2 --&gt;|Missing| RETRY
-    E2 --&gt;|Pass| F["✓ Return resources"]
+    E1 --&gt;|Pass| E2{"Strict Pydantic validation?"}
+    E2 --&gt;|Type/format errors| RETRY
+    E2 --&gt;|Pass| E3{"Required fields present?"}
+    E3 --&gt;|Missing| RETRY
+    E3 --&gt;|Pass| E4{"Cardinality constraints?"}
+    E4 --&gt;|Violations| RETRY
+    E4 --&gt;|Pass| F["✓ Return resources"]
 
     RETRY{"🔄 Retries left?"}
     RETRY --&gt;|"Yes (max 2)"| FIX2["📤 Send error + code to LLM"]
@@ -1310,14 +1335,24 @@ graph TB
 <td>"Replace with allowed alternative"</td>
 </tr>
 <tr>
-<td>Pydantic <code>ValidationError</code></td>
+<td>Pydantic <code>ValidationError</code> (strict mode)</td>
 <td>—</td>
-<td>"Fix the invalid field value"</td>
+<td>"Fix the invalid field value or type"</td>
 </tr>
 <tr>
-<td>Missing required field (<code>status</code>, etc.)</td>
+<td>Missing required field (<code>status</code>, <code>code</code>, etc.)</td>
 <td>—</td>
 <td>"Add the missing required field"</td>
+</tr>
+<tr>
+<td>Invalid data type (e.g., string instead of list)</td>
+<td>—</td>
+<td>"Fix type to match FHIR spec"</td>
+</tr>
+<tr>
+<td>Cardinality violation (min/max occurrences)</td>
+<td>—</td>
+<td>"Adjust array length to meet cardinality constraints"</td>
 </tr>
 <tr>
 <td>Missing <code>resourceType</code> in output</td>
