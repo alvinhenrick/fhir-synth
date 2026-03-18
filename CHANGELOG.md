@@ -2,6 +2,48 @@
 
 <!-- version list -->
 
+## v1.6.0 (2026-03-15)
+
+### Bug Fixes
+
+- Improve comments and documentation clarity in cli.py, fhir_spec.py, loader.py, and selector.py
+  ([`cd0314b`](https://github.com/alvinhenrick/fhir-synth/commit/cd0314b1139f50aac4a116a3fe33fa2ed5add539))
+
+### Chores
+
+- Set FORCE_JAVASCRIPT_ACTIONS_TO_NODE24 environment variable in CI workflows
+  ([`33f4eca`](https://github.com/alvinhenrick/fhir-synth/commit/33f4ecabcb0ab513a05480e52c522761e24237fa))
+
+- Update GitHub Actions to use latest versions of checkout, setup-python, and upload-artifact
+  ([`833ab56`](https://github.com/alvinhenrick/fhir-synth/commit/833ab56d8a174ca0827eeb5d34978dc89cfe09fa))
+
+### Features
+
+- Add Skills System documentation and improve skill discovery in index and mkdocs
+  ([`3760246`](https://github.com/alvinhenrick/fhir-synth/commit/376024699e25c4ba5709d8c9f3e636181f3775ea))
+
+- Enhance code generation with context resources and improve FHIR validation
+  ([`dc70670`](https://github.com/alvinhenrick/fhir-synth/commit/dc706702e3c6835309270d07a0dc4d511d70405f))
+
+- Enhance FHIR validation with strict mode, required fields, and cardinality checks
+  ([`e7ddee3`](https://github.com/alvinhenrick/fhir-synth/commit/e7ddee3abed3ccfc8109f4b8309311d42218058f))
+
+- Implement skills system with modular SKILL.md files for clinical knowledge and enhance prompt
+  assembly with skill selection
+  ([`79aadcf`](https://github.com/alvinhenrick/fhir-synth/commit/79aadcf23f1946f001e615c3584e83a748078b24))
+
+### Refactoring
+
+- Remove unused development dependencies from pyproject.toml
+  ([`9ce28e5`](https://github.com/alvinhenrick/fhir-synth/commit/9ce28e5653a390bf99f64aae0def44d1141945bc))
+
+- Rename test methods for consistency and clarity in test files
+  ([`fe86a51`](https://github.com/alvinhenrick/fhir-synth/commit/fe86a513389e54f51de65a4288d1c1b123a62898))
+
+- Streamline CI checks and improve code clarity in cli.py and fhir_validation.py
+  ([`b876dce`](https://github.com/alvinhenrick/fhir-synth/commit/b876dce7840a00c0d4ab8ebbf1a054f563b22ebf))
+
+
 ## v1.5.0 (2026-03-11)
 
 ### Features
