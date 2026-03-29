@@ -8,16 +8,17 @@ All prompt content lives in Markdown files organised by concern:
 
 This module re-exports the **same public API** that ``generator.py`` consumes:
 
--: data:`SYSTEM_PROMPT`
+-: func:`get_system_prompt`
 -: func:`build_code_prompt`
 -: func:`build_fix_prompt`
 -: func:`build_empi_prompt`
--: func:`get_system_prompt`
 """
 
 from __future__ import annotations
 
 import logging
+import warnings
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
@@ -32,9 +33,32 @@ logger = logging.getLogger(__name__)
 _ALLOWED_LIST = ", ".join(sorted(ALLOWED_MODULES))
 _ALLOWED_PREFIXES = ", ".join(f"{p}.*" for p in ALLOWED_MODULE_PREFIXES)
 
-# ── Module-level skill infrastructure ──────────────────────────────────
-_skill_loader: SkillLoader | None = None
-_skill_selector: SkillSelector = KeywordSelector()
+
+# ── Skill state (resettable for server / test isolation) ───────────────
+@dataclass
+class _SkillState:
+    """Mutable state for the skill system.
+
+    Wrapped in a class so it can be atomically reset between requests
+    in long-running server scenarios via :func:`reset_skills`.
+    """
+
+    loader: SkillLoader | None = None
+    selector: SkillSelector = field(default_factory=KeywordSelector)
+
+    def reset(self) -> None:
+        """Restore defaults — useful between server requests or tests."""
+        self.loader = None
+        self.selector = KeywordSelector()
+
+    def get_loader(self) -> SkillLoader:
+        """Return the skill loader, creating a default if needed."""
+        if self.loader is None:
+            self.loader = SkillLoader()
+        return self.loader
+
+
+_state = _SkillState()
 
 
 def configure_skills(
@@ -50,18 +74,18 @@ def configure_skills(
         user_dirs: User-provided skill directories (higher priority than built-in).
         selector: Selection strategy.  Defaults to :class:`KeywordSelector`.
     """
-    global _skill_loader, _skill_selector  # noqa: PLW0603
-    _skill_loader = SkillLoader(user_dirs=user_dirs)
+    _state.loader = SkillLoader(user_dirs=user_dirs)
     if selector is not None:
-        _skill_selector = selector
+        _state.selector = selector
 
 
-def _get_skill_loader() -> SkillLoader:
-    """Return the module-level skill loader, creating a default if needed."""
-    global _skill_loader  # noqa: PLW0603
-    if _skill_loader is None:
-        _skill_loader = SkillLoader()
-    return _skill_loader
+def reset_skills() -> None:
+    """Reset skill state to defaults.
+
+    Call between requests in long-running servers or between tests to
+    ensure a clean slate.
+    """
+    _state.reset()
 
 
 def _build_system_prompt(
@@ -94,11 +118,11 @@ def _build_system_prompt(
     )
 
     # ── Skills-based clinical knowledge (selective loading) ─────────
-    loader = _get_skill_loader()
+    loader = _state.get_loader()
     all_skills = loader.discover()
 
     if user_prompt is not None and all_skills:
-        selected = _skill_selector.select(user_prompt, all_skills)
+        selected = _state.selector.select(user_prompt, all_skills)
     else:
         selected = all_skills  # no prompt or empty → load all
 
@@ -115,6 +139,10 @@ def _build_system_prompt(
 def get_system_prompt(user_prompt: str | None = None) -> str:
     """Get the system prompt, optionally with skill selection.
 
+    This always reads the current FHIR version (via
+    :func:`~fhir_synth.fhir_spec.get_fhir_version`) so it stays correct
+    even after a :func:`~fhir_synth.fhir_spec.set_fhir_version` call.
+
     Args:
         user_prompt: When provided, only relevant skills are loaded.
             When ``None``, all skills are loaded (backward-compatible).
@@ -122,12 +150,22 @@ def get_system_prompt(user_prompt: str | None = None) -> str:
     return _build_system_prompt(user_prompt=user_prompt)
 
 
-# ── Module-level constant (for backward compatibility) ──────────────────
-# This is built once at import time with a default version
-SYSTEM_PROMPT: str = _build_system_prompt("R4B")
+# ── Backward-compatible lazy SYSTEM_PROMPT ─────────────────────────────
+# Production code should use get_system_prompt().  Accessing SYSTEM_PROMPT
+# via the module attribute still works but emits a deprecation warning.
 
 
-# ── User-prompt builders ───────────────────────────────────────────────
+def __getattr__(name: str) -> Any:
+    if name == "SYSTEM_PROMPT":
+        warnings.warn(
+            "SYSTEM_PROMPT is deprecated — use get_system_prompt() instead. "
+            "The constant was built once at import time and could be stale "
+            "after set_fhir_version() or configure_skills() calls.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return _build_system_prompt()
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 def build_code_prompt(
@@ -236,10 +274,10 @@ def build_empi_prompt(
 
 
 __all__ = [
-    "SYSTEM_PROMPT",
     "build_code_prompt",
     "build_empi_prompt",
     "build_fix_prompt",
     "configure_skills",
     "get_system_prompt",
+    "reset_skills",
 ]

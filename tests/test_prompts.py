@@ -3,10 +3,10 @@
 import pytest
 
 from fhir_synth.code_generator.prompts import (
-    SYSTEM_PROMPT,
     build_code_prompt,
     build_empi_prompt,
     build_fix_prompt,
+    get_system_prompt,
 )
 from fhir_synth.code_generator.prompts.loader import load_prompt, load_section, render
 
@@ -22,7 +22,7 @@ def test_load_prompt_returns_string():
 def test_load_section_system():
     text = load_section("system")
     assert "HARD RULES" in text
-    assert "SANDBOX CONSTRAINTS" in text
+    assert "AVAILABLE MODULES" in text
 
 
 def test_load_section_clinical_replaced_by_skills():
@@ -53,34 +53,38 @@ def test_render(template, kwargs, expected):
     assert result == expected
 
 
-# ── SYSTEM_PROMPT ─────────────────────────────────────────────────────────
+# ── get_system_prompt ─────────────────────────────────────────────────────
 
 
 def test_system_prompt_is_nonempty_string():
-    assert isinstance(SYSTEM_PROMPT, str)
-    assert len(SYSTEM_PROMPT) > 1000
+    prompt = get_system_prompt()
+    assert isinstance(prompt, str)
+    assert len(prompt) > 1000
 
 
 def test_system_prompt_contains_role():
-    assert "FHIR R4B" in SYSTEM_PROMPT
+    assert "FHIR R4B" in get_system_prompt()
 
 
 def test_system_prompt_contains_sandbox_rendered():
-    assert "SANDBOX CONSTRAINTS" in SYSTEM_PROMPT
+    prompt = get_system_prompt()
+    assert "AVAILABLE MODULES" in prompt
     # Placeholder should have been rendered
-    assert "$allowed_list" not in SYSTEM_PROMPT
+    assert "$allowed_list" not in prompt
     # Actual module names should be present
-    assert "uuid" in SYSTEM_PROMPT
+    assert "uuid" in prompt
 
 
 def test_system_prompt_contains_hard_rules():
-    assert "HARD RULES" in SYSTEM_PROMPT
-    assert "generate_resources()" in SYSTEM_PROMPT
+    prompt = get_system_prompt()
+    assert "HARD RULES" in prompt
+    assert "generate_resources()" in prompt
 
 
 def test_system_prompt_contains_realism_guidelines():
-    assert "REALISM GUIDELINES" in SYSTEM_PROMPT
-    assert "Faker" in SYSTEM_PROMPT
+    prompt = get_system_prompt()
+    assert "REALISM GUIDELINES" in prompt
+    assert "Faker" in prompt
 
 
 @pytest.mark.parametrize(
@@ -102,25 +106,46 @@ def test_system_prompt_contains_realism_guidelines():
     ],
 )
 def test_system_prompt_contains_clinical_section(section):
-    assert section in SYSTEM_PROMPT
+    assert section in get_system_prompt()
 
 
 def test_system_prompt_empi_not_in_system_prompt():
     """EMPI Person/Patient linkage instructions must NOT leak into the default system prompt."""
-    assert "Person.link" not in SYSTEM_PROMPT
-    assert "EMPI linkage" not in SYSTEM_PROMPT
+    prompt = get_system_prompt()
+    assert "Person.link" not in prompt
+    assert "EMPI linkage" not in prompt
 
 
 def test_system_prompt_contains_reference_map():
-    assert "REFERENCE FIELD MAP" in SYSTEM_PROMPT
+    assert "REFERENCE FIELD MAP" in get_system_prompt()
 
 
 def test_system_prompt_contains_creation_order():
-    assert "CREATION ORDER" in SYSTEM_PROMPT
+    assert "CREATION ORDER" in get_system_prompt()
 
 
 def test_system_prompt_contains_step_by_step():
-    assert "THINK STEP-BY-STEP" in SYSTEM_PROMPT
+    assert "THINK STEP-BY-STEP" in get_system_prompt()
+
+
+def test_system_prompt_respects_fhir_version():
+    """get_system_prompt() reads the current FHIR version, not a stale constant."""
+    from fhir_synth import fhir_spec
+
+    original = fhir_spec.get_fhir_version()
+    try:
+        prompt = get_system_prompt()
+        assert f"FHIR {original}" in prompt
+    finally:
+        fhir_spec.set_fhir_version(original)
+
+
+def test_system_prompt_deprecated_constant():
+    """Importing SYSTEM_PROMPT triggers a deprecation warning."""
+    import fhir_synth.code_generator.prompts as prompts_mod
+
+    with pytest.warns(DeprecationWarning, match="SYSTEM_PROMPT is deprecated"):
+        _ = prompts_mod.SYSTEM_PROMPT
 
 
 # ── build_code_prompt ─────────────────────────────────────────────────────
