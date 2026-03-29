@@ -5,12 +5,13 @@ from fhir_synth.code_generator.constants import (
     ALLOWED_MODULES,
 )
 from fhir_synth.code_generator.executor import (
-    DifySandboxExecutor,
+    BlaxelExecutor,
+    DockerSandboxExecutor,
     E2BExecutor,
     ExecutionResult,
     Executor,
     ExecutorBackend,
-    LocalSubprocessExecutor,
+    LocalSmolagentsExecutor,
     get_executor,
 )
 from fhir_synth.code_generator.fhir_validation import ValidationResult, validate_resources
@@ -21,13 +22,14 @@ from fhir_synth.code_generator.prompts import build_empi_prompt
 __all__ = [
     "ALLOWED_MODULE_PREFIXES",
     "ALLOWED_MODULES",
+    "BlaxelExecutor",
     "CodeGenerator",
-    "DifySandboxExecutor",
+    "DockerSandboxExecutor",
     "E2BExecutor",
     "ExecutionResult",
     "Executor",
     "ExecutorBackend",
-    "LocalSubprocessExecutor",
+    "LocalSmolagentsExecutor",
     "ValidationResult",
     "build_empi_prompt",
     "calculate_code_quality_score",

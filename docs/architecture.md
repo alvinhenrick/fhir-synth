@@ -17,11 +17,12 @@ graph TB
         FS["fhir_spec.py<br/>Auto-discovery of all<br/>141 R4B resource types"]
     end
 
-    subgraph EXEC["🔒 Executor Backends"]
+    subgraph EXEC["🔒 Executor Backends (smolagents)"]
         EX_IF["Executor Protocol<br/>execute(code) → ExecutionResult"]
-        LOCAL["LocalSubprocessExecutor<br/>(default — subprocess isolation)"]
-        DIFY["DifySandboxExecutor<br/>(dify-sandbox HTTP API)"]
-        E2B["E2BExecutor<br/>(E2B cloud sandbox)"]
+        LOCAL["LocalSmolagentsExecutor<br/>(default — AST-level secure interpreter)"]
+        DOCKER["DockerSandboxExecutor<br/>(Docker container via smolagents)"]
+        E2B["E2BExecutor<br/>(E2B cloud sandbox via smolagents)"]
+        BLAXEL["BlaxelExecutor<br/>(Blaxel cloud sandbox via smolagents)"]
     end
 
     subgraph LLM_LAYER["🤖 LLM Layer"]
@@ -41,8 +42,9 @@ graph TB
 
     CG -->|executes via| EX_IF
     EX_IF -.->|implements| LOCAL
-    EX_IF -.->|implements| DIFY
+    EX_IF -.->|implements| DOCKER
     EX_IF -.->|implements| E2B
+    EX_IF -.->|implements| BLAXEL
 
     CG -->|calls| LLM
     CG -->|introspects| FS
@@ -60,7 +62,7 @@ graph TB
 
     class CLI,API uiStyle
     class CG,BB,FU,FS coreStyle
-    class EX_IF,LOCAL,DIFY,E2B execStyle
+    class EX_IF,LOCAL,DOCKER,E2B,BLAXEL execStyle
     class LLM,LITELLM llmStyle
     class FR fhirStyle
 ```
@@ -78,7 +80,7 @@ sequenceDiagram
     participant CLI as 🖥️ CLI
     participant CG as ⚙️ CodeGenerator
     participant LLM as 🤖 LLMProvider
-    participant EX as 🔒 Executor<br/>(local│dify│e2b)
+    participant EX as 🔒 Executor<br/>(local│docker│e2b│blaxel)
     participant BB as 📦 BundleBuilder
     participant F as 💾 File
 
@@ -133,7 +135,7 @@ flowchart TD
     B1 -->|Pass| B2{"Dangerous builtins?"}
     B2 -->|"eval/exec/open"| REJECT["✗ Reject code"]
     B2 -->|Pass| B3["🔧 Auto-fix naive datetime.now()"]
-    B3 --> C["🔒 Execute via chosen backend<br/>(local / dify / e2b)"]
+    B3 --> C["🔒 Execute via chosen backend<br/>(local / docker / e2b / blaxel)"]
     C --> D{"✅ Execution OK?"}
     D -->|"Runtime error"| RETRY
     D -->|Pass| E["🧪 Enhanced FHIR validation"]
@@ -218,17 +220,17 @@ meta:
 
 ### Executor Backends
 
-LLM-generated code runs inside a pluggable executor selected via `--executor`:
+All backends are powered by [smolagents](https://huggingface.co/docs/smolagents/tutorials/secure_code_execution). LLM-generated code runs inside a pluggable executor selected via `--executor`:
 
 | Backend | Flag | How it works | Install |
 |---|---|---|---|
-| **Local subprocess** | `--executor local` (default) | Runs code in a separate Python process with import whitelist + dangerous-pattern scan | *(built-in)* |
-| **Dify Sandbox** | `--executor dify` | Sends code over HTTP to a self-hosted [dify-sandbox](https://github.com/langgenius/dify-sandbox) service (seccomp + namespace isolation) | `pip install "fhir-synth[dify]"` |
-| **E2B** | `--executor e2b` | Runs code in an [E2B](https://e2b.dev) cloud sandbox (fully isolated micro-VM) | `pip install "fhir-synth[e2b]"` |
+| **Local (smolagents)** | `--executor local` (default) | Runs code via smolagents' AST-level secure interpreter with import whitelist + restricted builtins | *(built-in)* |
+| **Docker** | `--executor docker` | Runs code in an isolated Docker container via smolagents' `DockerExecutor` | `pip install "fhir-synth[docker]"` |
+| **E2B** | `--executor e2b` | Runs code in an [E2B](https://e2b.dev) cloud sandbox via smolagents' `E2BExecutor` | `pip install "fhir-synth[e2b]"` |
+| **Blaxel** | `--executor blaxel` | Runs code in a [Blaxel](https://blaxel.ai) managed sandbox via smolagents' `BlaxelExecutor` | `pip install "fhir-synth[blaxel]"` |
 
 All backends implement the `Executor` protocol and return a uniform `ExecutionResult(stdout, stderr, artifacts)`. Shared pre-flight validation (import whitelist, dangerous-pattern scan, naive datetime fix) runs before any backend executes.
 
-The dify-sandbox URL is resolved in order: `--dify-url` flag → `DIFY_SANDBOX_URL` env var → `http://localhost:8194`.
 
 The E2B API key is resolved in order: `E2B_API_KEY` env var (set it once, works automatically).
 

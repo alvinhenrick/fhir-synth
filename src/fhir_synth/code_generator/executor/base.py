@@ -50,8 +50,9 @@ class ExecutorBackend(enum.StrEnum):
     """Supported executor backends."""
 
     LOCAL = "local"
-    DIFY = "dify"
+    DOCKER = "docker"
     E2B = "e2b"
+    BLAXEL = "blaxel"
 
 
 @dataclass
@@ -74,7 +75,7 @@ class Executor(Protocol):
     """Protocol that every executor backend must satisfy."""
 
     def execute(self, code: str, timeout: int = 30) -> ExecutionResult:
-        """Execute *code* and return an: class:`ExecutionResult`.
+        """Execute *code* and return an :class:`ExecutionResult`.
 
         Args:
             code: Python source that defines ``generate_resources() -> list[dict]``.
@@ -94,25 +95,33 @@ class Executor(Protocol):
 def get_executor(
     backend: str | ExecutorBackend = ExecutorBackend.LOCAL,
     *,
-    dify_url: str | None = None,
+    docker_host: str | None = None,
+    docker_port: int | None = None,
     e2b_api_key: str | None = None,
+    blaxel_sandbox: str | None = None,
 ) -> Executor:
     """Factory that returns a concrete executor for the requested backend.
 
+    All backends are powered by `smolagents <https://huggingface.co/docs/smolagents>`_.
+
     Args:
-        backend: One of ``"local"``, ``"dify"``, or ``"e2b"`` (or an
-            :class:`ExecutorBackend` enum member).
-        dify_url: Base URL for the dify-sandbox service (only used when
-            *backend* is ``"dify"``).
+        backend: One of ``"local"``, ``"docker"``, ``"e2b"``, or ``"blaxel"``
+            (or an: class:`ExecutorBackend` enum member).
+        docker_host: Host address for the Docker executor (only used when
+            *backend* is ``"docker"``).
+        docker_port: Port for the Docker executor (only used when
+            *backend* is ``"docker"``).
         e2b_api_key: API key for E2B (only used when *backend* is ``"e2b"``).
             Falls back to ``E2B_API_KEY`` env var.
+        blaxel_sandbox: Sandbox name for Blaxel (only used when
+            *backend* is ``"blaxel"``).
 
     Returns:
-        An object satisfying the: class:`Executor` protocol.
+        An object satisfying the :class:`Executor` protocol.
 
     Raises:
         ValueError: If *backend* is not recognized.
-        ImportError: If the backend requires an optional dependency, that is
+        ImportError: If the backend requires an optional dependency that is
             not installed.
     """
     if isinstance(backend, str):
@@ -123,17 +132,19 @@ def get_executor(
             raise ValueError(f"Unknown executor backend {backend!r}. Choose from: {valid}")
 
     if backend is ExecutorBackend.LOCAL:
-        from fhir_synth.code_generator.executor.local import LocalSubprocessExecutor
+        from fhir_synth.code_generator.executor.local import LocalSmolagentsExecutor
 
-        return LocalSubprocessExecutor()
+        return LocalSmolagentsExecutor()
 
-    if backend is ExecutorBackend.DIFY:
-        from fhir_synth.code_generator.executor.dify import DifySandboxExecutor
+    if backend is ExecutorBackend.DOCKER:
+        from fhir_synth.code_generator.executor.docker import DockerSandboxExecutor
 
         kwargs: dict[str, Any] = {}
-        if dify_url:
-            kwargs["base_url"] = dify_url
-        return DifySandboxExecutor(**kwargs)
+        if docker_host:
+            kwargs["host"] = docker_host
+        if docker_port:
+            kwargs["port"] = docker_port
+        return DockerSandboxExecutor(**kwargs)
 
     if backend is ExecutorBackend.E2B:
         from fhir_synth.code_generator.executor.e2b import E2BExecutor
@@ -142,6 +153,14 @@ def get_executor(
         if e2b_api_key:
             kwargs["api_key"] = e2b_api_key
         return E2BExecutor(**kwargs)
+
+    if backend is ExecutorBackend.BLAXEL:
+        from fhir_synth.code_generator.executor.blaxel import BlaxelExecutor
+
+        kwargs = {}
+        if blaxel_sandbox:
+            kwargs["sandbox_name"] = blaxel_sandbox
+        return BlaxelExecutor(**kwargs)
 
     # Should be unreachable
     raise ValueError(f"Unhandled backend: {backend}")

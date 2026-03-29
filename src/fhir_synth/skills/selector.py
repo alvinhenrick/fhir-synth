@@ -254,8 +254,8 @@ class FaissSelector:
         if self._faiss is not None and self._np is not None:
             return self._faiss, self._np
         try:
-            import faiss  # type: ignore[import-not-found]
-            import numpy as np  # type: ignore[import-not-found]
+            import faiss  # type: ignore[import-untyped]
+            import numpy as np
         except ImportError as exc:
             msg = (
                 "FaissSelector requires faiss-cpu and numpy. "
@@ -272,7 +272,7 @@ class FaissSelector:
         if self._model is not None:
             return self._model
         try:
-            from sentence_transformers import SentenceTransformer  # type: ignore[import-not-found]
+            from sentence_transformers import SentenceTransformer
         except ImportError as exc:
             msg = (
                 "FaissSelector requires sentence-transformers. "

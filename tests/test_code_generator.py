@@ -4,16 +4,14 @@ import pytest
 
 from fhir_synth.code_generator import CodeGenerator
 from fhir_synth.code_generator.executor import (
-    LocalSubprocessExecutor,
-    check_dangerous_code,
+    LocalSmolagentsExecutor,
     fix_common_imports,
     validate_code,
     validate_imports,
-    validate_imports_whitelist,
 )
 from fhir_synth.llm import MockLLMProvider
 
-_executor = LocalSubprocessExecutor()
+_executor = LocalSmolagentsExecutor()
 
 
 # ── CodeGenerator ─────────────────────────────────────────────────────────
@@ -71,7 +69,7 @@ def test_code_generator_executes_generated_code():
 
 
 def test_self_healing_retry_fixes_broken_code():
-    """First code fails, LLM is asked to fix it, retry succeeds."""
+    """The first code fails, LLM is asked to fix it, retry succeeds."""
     bad_code = "def generate_resources():\n    return 1/0"
     good_code = "def generate_resources():\n    return [{'resourceType': 'Patient', 'id': 'fixed'}]"
 
@@ -171,61 +169,7 @@ def test_validate_imports_detects_bad_module():
     assert any("timing" in e for e in errors)
 
 
-# ── Import whitelist ──────────────────────────────────────────────────────
-
-
-@pytest.mark.parametrize(
-    "code",
-    [
-        "from fhir.resources.R4B.patient import Patient\n",
-        "from uuid import uuid4\n",
-        "import collections\n",
-        "from datetime import datetime\n",
-    ],
-)
-def test_import_whitelist_allows(code):
-    assert validate_imports_whitelist(code) == []
-
-
-@pytest.mark.parametrize(
-    "code",
-    [
-        "import os\n",
-        "import subprocess\n",
-        "import socket\n",
-        "import threading\n",
-    ],
-)
-def test_import_whitelist_blocks(code):
-    assert len(validate_imports_whitelist(code)) > 0
-
-
-# ── Dangerous code detection ─────────────────────────────────────────────
-
-
-@pytest.mark.parametrize(
-    "code",
-    [
-        "import os\nos.system('rm -rf /')\ndef generate_resources(): return []",
-        "import subprocess\nsubprocess.run(['ls'])\ndef generate_resources(): return []",
-    ],
-)
-def test_dangerous_import_rejected_by_whitelist(code):
-    assert len(validate_imports_whitelist(code)) > 0
-
-
-@pytest.mark.parametrize(
-    "code",
-    [
-        "eval('1+1')\ndef generate_resources(): return []",
-        "open('/etc/passwd')\ndef generate_resources(): return []",
-    ],
-)
-def test_dangerous_builtin_rejected(code):
-    assert len(check_dangerous_code(code)) > 0
-
-
-# ── validate_code ─────────────────────────────────────────────────────────
+# ── validate_code (syntax only — security is smolagents' job) ─────────────
 
 
 @pytest.mark.parametrize(
@@ -233,53 +177,52 @@ def test_dangerous_builtin_rejected(code):
     [
         "from uuid import uuid4\nfrom fhir.resources.R4B.patient import Patient\ndef generate_resources(): return []\n",
         "def generate_resources():\n    return []\n",
-        (
-            "from uuid import uuid4\n"
-            "from fhir.resources.R4B.patient import Patient\n"
-            "def generate_resources() -> list[dict]:\n"
-            "    resources: list[dict] = []\n"
-            "    return resources\n"
-        ),
+        "import os\nos.system('ls')\n",  # valid syntax, security is smolagents' job
     ],
 )
-def test_validate_code_accepts_safe(code):
+def test_validate_code_accepts_valid_syntax(code):
     assert validate_code(code) is True
+
+
+def test_validate_code_rejects_syntax_error():
+    assert validate_code("def generate_resources(\n") is False
+
+
+# ── Executor: smolagents rejects disallowed code at runtime ──────────────
 
 
 @pytest.mark.parametrize(
     "code",
     [
-        "import os\nos.system('ls')\ndef generate_resources(): return []",
         "import socket\ndef generate_resources(): return []",
-        "def generate_resources(\n",
+        "import os\ndef generate_resources():\n    return []\n",
     ],
 )
-def test_validate_code_rejects_unsafe(code):
-    assert validate_code(code) is False
-
-
-# ── Executor: pre-flight rejection ───────────────────────────────────────
-
-
-@pytest.mark.parametrize(
-    "code, match",
-    [
-        ("import socket\ndef generate_resources(): return []", "Disallowed imports"),
-        ("import threading\ndef generate_resources():\n    return []\n", "Disallowed imports"),
-        ("eval('1+1')\ndef generate_resources(): return []", "Code rejected"),
-        ("import os\ndef generate_resources():\n    return []\n", "Disallowed"),
-        ("def generate_resources(\n", "Syntax error"),
-    ],
-)
-def test_executor_rejects_bad_code(code, match):
-    with pytest.raises(ValueError, match=match):
+def test_executor_rejects_disallowed_imports(code):
+    """smolagents blocks imports not in authorized_imports."""
+    with pytest.raises(RuntimeError, match="not allowed|not among"):
         _executor.execute(code)
 
 
+def test_executor_rejects_syntax_error():
+    with pytest.raises(RuntimeError):
+        _executor.execute("def generate_resources(\n")
+
+
 def test_executor_timeout():
-    code = "import time\ndef generate_resources():\n    time.sleep(60)\n    return []\n"
+    # smolagents uses a thread pool — the timeout fires when the future
+    # doesn't resolve in time.  We use a short busy-wait (5s) with a 1s
+    # timeout, so the test is fast but still validates the mechanism.
+    code = (
+        "import time\n"
+        "def generate_resources():\n"
+        "    end = time.time() + 5\n"
+        "    while time.time() < end:\n"
+        "        pass\n"
+        "    return []\n"
+    )
     with pytest.raises(TimeoutError):
-        _executor.execute(code, timeout=2)
+        _executor.execute(code, timeout=1)
 
 
 # ── Executor: successful execution ───────────────────────────────────────

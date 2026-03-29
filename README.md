@@ -76,7 +76,7 @@ fhir-synth generate "10 patients with diabetes" --fhir-version stu3 -o output.nd
 2. Your prompt + selected skills go to the LLM (via [LiteLLM](https://docs.litellm.ai/) — 100+ providers)
 3. LLM generates Python code using `fhir.resources` (Pydantic FHIR models)
 4. Code is safety-checked (import whitelist + dangerous builtins scan) and auto-fixed (naive datetimes → UTC)
-5. Code executes via a pluggable executor backend (local subprocess, dify-sandbox, or E2B cloud)
+5. Code executes via a pluggable executor backend powered by [smolagents](https://huggingface.co/docs/smolagents) (local AST interpreter, Docker, or E2B cloud)
 6. **Enhanced FHIR validation** — offline validation using `fhir.resources`:
    - Strict Pydantic mode (comprehensive type/format checking)
    - Required field verification (e.g., `Observation.status`, `Observation.code`)
@@ -111,8 +111,10 @@ End-to-end: prompt → LLM → code → execute → FHIR Bundle.
 | `--no-orgs` | off | Skip Organization resources (EMPI) |
 | `--aws-profile` | — | AWS profile for Bedrock (`~/.aws/credentials`) |
 | `--aws-region` | — | AWS region for Bedrock (e.g. `us-east-1`) |
-| `-e / --executor` | `local` | Execution backend: `local`, `dify`, or `e2b` |
-| `--dify-url` | — | Base URL for dify-sandbox (or set `DIFY_SANDBOX_URL` env var) |
+| `-e / --executor` | `local` | Execution backend: `local`, `docker`, `e2b`, or `blaxel` (powered by smolagents) |
+| `--docker-host` | — | Docker host for docker executor (default: `127.0.0.1`) |
+| `--docker-port` | — | Docker port for docker executor (default: `8888`) |
+| `--blaxel-sandbox` | — | Sandbox name for Blaxel executor |
 | `--skills-dir` | — | Directory with user-provided SKILL.md skills |
 | `--selector` | `keyword` | Skill selection: `keyword` (fuzzy) or `faiss` (semantic) |
 | `--score-threshold` | `0.3` | Min similarity score 0.0-1.0 (FAISS only) |
@@ -145,14 +147,14 @@ from fhir_synth.bundle import (
 )
 from fhir_synth.fhir_utils import FHIRResourceFactory
 
-# --- Generate code from prompts (default: local subprocess executor) ---
+# --- Generate code from prompts (default: smolagents local executor) ---
 llm = get_provider("mock")
 code_gen = CodeGenerator(llm)
 code = code_gen.generate_code_from_prompt("Create 20 patients")
 resources = code_gen.execute_generated_code(code)
 
 # --- Use a different executor backend ---
-executor = get_executor("dify", dify_url="http://sandbox.internal:8194")
+executor = get_executor("docker")
 code_gen = CodeGenerator(llm, executor=executor)
 resources = code_gen.execute_generated_code(code)
 
@@ -312,7 +314,7 @@ FHIR Synth is organized into focused packages:
 - **`skills/`** — Skill discovery and selection following agentskills.io spec (`SkillLoader`, `KeywordSelector`, `FaissSelector`)
 - **`bundle/`** — Bundle creation and management (`BundleBuilder`, `BundleManager`, `BundleFactory`, `split_resources_by_patient`, `write_ndjson`, `write_split_bundles`)
 - **`code_generator/`** — LLM-powered code generation with self-healing execution (`CodeGenerator`)
-    - **`code_generator/executor/`** — Pluggable executor backends (`LocalSubprocessExecutor`, `DifySandboxExecutor`, `E2BExecutor`)
+    - **`code_generator/executor/`** — Pluggable executor backends powered by [smolagents](https://huggingface.co/docs/smolagents) (`LocalSmolagentsExecutor`, `DockerSandboxExecutor`, `E2BExecutor`, `BlaxelExecutor`)
     - **`code_generator/fhir_validation.py`** — Enhanced offline FHIR validation (strict mode, required fields, cardinality, references)
 - **`fhir_utils/`** — FHIR resource factory and lazy resource class map (`FHIRResourceFactory`)
 - **`llm.py`** — Unified LLM provider interface via LiteLLM (`LLMProvider`, `get_provider`)
@@ -320,11 +322,14 @@ FHIR Synth is organized into focused packages:
 
 ### Executor Backends
 
+All backends are powered by [smolagents](https://huggingface.co/docs/smolagents/tutorials/secure_code_execution):
+
 | Backend | `--executor` | Install | Isolation |
 |---------|-------------|---------|-----------|
-| Local subprocess | `local` (default) | Built-in | Import whitelist + process isolation |
-| Dify Sandbox | `dify` | `pip install "fhir-synth[dify]"` | seccomp + namespace isolation |
+| Local (smolagents) | `local` (default) | Built-in | AST-level secure interpreter + import whitelist |
+| Docker | `docker` | `pip install "fhir-synth[docker]"` | Full Docker container isolation |
 | E2B Cloud | `e2b` | `pip install "fhir-synth[e2b]"` | Fully isolated micro-VM |
+| Blaxel | `blaxel` | `pip install "fhir-synth[blaxel]"` | Managed serverless sandbox |
 
 See [Architecture](docs/architecture.md) for complete system design and data flows.
 

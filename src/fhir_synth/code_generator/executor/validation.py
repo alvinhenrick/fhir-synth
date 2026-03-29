@@ -1,7 +1,7 @@
 """Shared validation helpers for code execution.
 
-These functions run **before** any backend executes code.  They are
-backend-agnostic and can be reused by local, dify, and e2b executors.
+FHIR-specific validation and auto-fix utilities.  Security enforcement
+(import whitelisting, dangerous builtin blocking) is handled by smolagents.
 """
 
 import ast
@@ -10,86 +10,27 @@ import logging
 import re
 import textwrap
 
-from fhir_synth.code_generator.constants import (
-    ALLOWED_MODULE_PREFIXES,
-    ALLOWED_MODULES,
-    DANGEROUS_PATTERNS,
-)
 from fhir_synth.fhir_spec import class_to_module
 
 logger = logging.getLogger(__name__)
 
 
-# ── Dangerous-pattern scanning ─────────────────────────────────────────────
-
-
-def check_dangerous_code(code: str) -> list[str]:
-    """Scan *code* for dangerous built-in patterns.
-
-    Returns:
-        List of warnings about dangerous patterns found.
-    """
-    warnings: list[str] = []
-    for pattern in DANGEROUS_PATTERNS:
-        if pattern.search(code):
-            warnings.append(f"Dangerous pattern detected: {pattern.pattern}")
-    return warnings
-
-
-# ── Import whitelist ───────────────────────────────────────────────────────
-
-
-def _is_allowed_module(module: str) -> bool:
-    """Check if *module* is in the allowed whitelist."""
-    if module in ALLOWED_MODULES:
-        return True
-    return any(module.startswith(prefix) for prefix in ALLOWED_MODULE_PREFIXES)
-
-
-def validate_imports_whitelist(code: str) -> list[str]:
-    """Ensure all imports are from the allowed whitelist.
-
-    Returns:
-        List of error messages for disallowed imports.
-    """
-    errors: list[str] = []
-    try:
-        tree = ast.parse(code)
-    except SyntaxError:
-        return ["Syntax error in code"]
-
-    for node in ast.walk(tree):
-        if isinstance(node, ast.Import):
-            for alias in node.names:
-                if not _is_allowed_module(alias.name):
-                    errors.append(f"Disallowed import: {alias.name}")
-        elif isinstance(node, ast.ImportFrom):
-            module = node.module or ""
-            if not _is_allowed_module(module):
-                errors.append(f"Disallowed import: {module}")
-    return errors
-
-
-# ── Code validation (syntax + danger + whitelist) ──────────────────────────
+# ── Code validation (syntax only) ─────────────────────────────────────────
 
 
 def validate_code(code: str) -> bool:
-    """Validate that generated code is safe and syntactically correct.
+    """Validate that generated code is syntactically correct.
+
+    Security enforcement (import whitelisting, dangerous builtins) is
+    handled by smolagents at execution time.
 
     Returns:
-        True if valid, False otherwise.
+        True if valid Python syntax, False otherwise.
     """
     try:
         ast.parse(code)
     except SyntaxError:
         return False
-
-    if check_dangerous_code(code):
-        return False
-
-    if validate_imports_whitelist(code):
-        return False
-
     return True
 
 
