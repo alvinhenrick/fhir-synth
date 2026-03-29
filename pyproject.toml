@@ -13,7 +13,7 @@ authors = [
     { name = "Alvin Henrick", email = "share.code@aol.com" },
 ]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
     "Intended Audience :: Healthcare Industry",
     "License :: OSI Approved :: MIT License",
@@ -73,17 +73,7 @@ packages = ["src/fhir_synth"]
 
 [tool.hatch.envs.default]
 installer = "uv"
-dependencies = [
-    "pytest>=7.0",
-    "pytest-cov>=4.0",
-    "pytest-mock>=3.10",
-    "pytest-xdist>=3.0",
-    "freezegun>=1.2",
-    "ruff>=0.1",
-    "mypy>=1.0",
-    "types-pyyaml",
-    "types-python-dateutil",
-]
+dependency-groups = ["dev"]
 
 [tool.hatch.envs.default.scripts]
 test = "pytest {args}"
@@ -93,12 +83,7 @@ format = ["ruff check src tests --fix", "ruff format src tests", "ruff check src
 
 [tool.hatch.envs.docs]
 installer = "uv"
-dependencies = [
-    "mkdocs>=1.6,<2",
-    "mkdocs-material>=9.0,<9.6",
-    "mkdocstrings[python]>=0.24",
-    "pymdown-extensions>=10.0",
-]
+features = ["docs"]
 
 [tool.hatch.envs.docs.scripts]
 build = "mkdocs build --strict"
