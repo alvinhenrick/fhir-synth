@@ -82,9 +82,6 @@ def generate(
     docker_port: int | None = typer.Option(
         None, "--docker-port", help="Docker port for docker executor (default: 8888)"
     ),
-    blaxel_sandbox: str | None = typer.Option(
-        None, "--blaxel-sandbox", help="Sandbox name for Blaxel executor"
-    ),
     skills_dir: str | None = typer.Option(
         None, "--skills-dir", help="Directory with user-provided SKILL.md skills"
     ),
@@ -224,7 +221,6 @@ def generate(
             executor_backend,
             docker_host=docker_host,
             docker_port=docker_port,
-            blaxel_sandbox=blaxel_sandbox,
         )
         code_gen = CodeGenerator(
             llm,
@@ -405,9 +401,6 @@ def codegen(
     docker_port: int | None = typer.Option(
         None, "--docker-port", help="Docker port for docker executor (default: 8888)"
     ),
-    blaxel_sandbox: str | None = typer.Option(
-        None, "--blaxel-sandbox", help="Sandbox name for Blaxel executor"
-    ),
     skills_dir: str | None = typer.Option(
         None, "--skills-dir", help="Directory with user-provided SKILL.md skills"
     ),
@@ -435,7 +428,6 @@ def codegen(
             executor_backend,
             docker_host=docker_host,
             docker_port=docker_port,
-            blaxel_sandbox=blaxel_sandbox,
         )
         code_gen = CodeGenerator(llm, max_retries=2, executor=executor, fhir_version=fhir_version)
         prompt_text = prompt

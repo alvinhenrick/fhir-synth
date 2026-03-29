@@ -114,7 +114,6 @@ End-to-end: prompt → LLM → code → execute → FHIR Bundle.
 | `-e / --executor` | `local` | Execution backend: `local`, `docker`, `e2b`, or `blaxel` (powered by smolagents) |
 | `--docker-host` | — | Docker host for docker executor (default: `127.0.0.1`) |
 | `--docker-port` | — | Docker port for docker executor (default: `8888`) |
-| `--blaxel-sandbox` | — | Sandbox name for Blaxel executor |
 | `--skills-dir` | — | Directory with user-provided SKILL.md skills |
 | `--selector` | `keyword` | Skill selection: `keyword` (fuzzy) or `faiss` (semantic) |
 | `--score-threshold` | `0.3` | Min similarity score 0.0-1.0 (FAISS only) |

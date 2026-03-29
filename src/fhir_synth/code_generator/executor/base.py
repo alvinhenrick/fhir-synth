@@ -98,7 +98,6 @@ def get_executor(
     docker_host: str | None = None,
     docker_port: int | None = None,
     e2b_api_key: str | None = None,
-    blaxel_sandbox: str | None = None,
 ) -> Executor:
     """Factory that returns a concrete executor for the requested backend.
 
@@ -113,8 +112,6 @@ def get_executor(
             *backend* is ``"docker"``).
         e2b_api_key: API key for E2B (only used when *backend* is ``"e2b"``).
             Falls back to ``E2B_API_KEY`` env var.
-        blaxel_sandbox: Sandbox name for Blaxel (only used when
-            *backend* is ``"blaxel"``).
 
     Returns:
         An object satisfying the :class:`Executor` protocol.
@@ -157,10 +154,7 @@ def get_executor(
     if backend is ExecutorBackend.BLAXEL:
         from fhir_synth.code_generator.executor.blaxel import BlaxelExecutor
 
-        kwargs = {}
-        if blaxel_sandbox:
-            kwargs["sandbox_name"] = blaxel_sandbox
-        return BlaxelExecutor(**kwargs)
+        return BlaxelExecutor()
 
     # Should be unreachable
     raise ValueError(f"Unhandled backend: {backend}")

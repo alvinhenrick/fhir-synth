@@ -160,11 +160,6 @@ def test_blaxel_custom_config():
     assert ex.memory == 8192
 
 
-def test_get_executor_blaxel_sandbox_passed():
-    ex = get_executor("blaxel", blaxel_sandbox="my-sandbox")
-    assert isinstance(ex, BlaxelExecutor)
-    assert ex.sandbox_name == "my-sandbox"
-
 
 # ── CodeGenerator integration ─────────────────────────────────────────────
 

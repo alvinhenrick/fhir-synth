@@ -25,7 +25,6 @@ fhir-synth generate "10 diabetic patients with HbA1c observations" -o diabetes.n
 | `-e / --executor` | `local` | Execution backend: `local`, `docker`, `e2b`, or `blaxel` (powered by [smolagents](https://huggingface.co/docs/smolagents)) |
 | `--docker-host` | — | Docker host for docker executor (default: `127.0.0.1`) |
 | `--docker-port` | — | Docker port for docker executor (default: `8888`) |
-| `--blaxel-sandbox` | — | Sandbox name for Blaxel executor |
 | `--aws-profile` | — | AWS profile for Bedrock |
 | `--aws-region` | — | AWS region for Bedrock |
 
