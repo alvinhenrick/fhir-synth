@@ -94,31 +94,23 @@ class Executor(Protocol):
 
 def get_executor(
     backend: str | ExecutorBackend = ExecutorBackend.LOCAL,
-    *,
-    docker_host: str | None = None,
-    docker_port: int | None = None,
-    e2b_api_key: str | None = None,
 ) -> Executor:
     """Factory that returns a concrete executor for the requested backend.
 
     All backends are powered by `smolagents <https://huggingface.co/docs/smolagents>`_.
+    Each backend uses sensible defaults (Docker: ``127.0.0.1:8888``,
+    E2B: ``E2B_API_KEY`` env var, Blaxel: auto-provisioned sandbox).
 
     Args:
         backend: One of ``"local"``, ``"docker"``, ``"e2b"``, or ``"blaxel"``
-            (or an: class:`ExecutorBackend` enum member).
-        docker_host: Host address for the Docker executor (only used when
-            *backend* is ``"docker"``).
-        docker_port: Port for the Docker executor (only used when
-            *backend* is ``"docker"``).
-        e2b_api_key: API key for E2B (only used when *backend* is ``"e2b"``).
-            Falls back to ``E2B_API_KEY`` env var.
+            (or an :class:`ExecutorBackend` enum member).
 
     Returns:
         An object satisfying the :class:`Executor` protocol.
 
     Raises:
         ValueError: If *backend* is not recognized.
-        ImportError: If the backend requires an optional dependency, that is
+        ImportError: If the backend requires an optional dependency that is
             not installed.
     """
     if isinstance(backend, str):
@@ -136,20 +128,12 @@ def get_executor(
     if backend is ExecutorBackend.DOCKER:
         from fhir_synth.code_generator.executor.docker import DockerSandboxExecutor
 
-        kwargs: dict[str, Any] = {}
-        if docker_host:
-            kwargs["host"] = docker_host
-        if docker_port:
-            kwargs["port"] = docker_port
-        return DockerSandboxExecutor(**kwargs)
+        return DockerSandboxExecutor()
 
     if backend is ExecutorBackend.E2B:
         from fhir_synth.code_generator.executor.e2b import E2BExecutor
 
-        kwargs = {}
-        if e2b_api_key:
-            kwargs["api_key"] = e2b_api_key
-        return E2BExecutor(**kwargs)
+        return E2BExecutor()
 
     if backend is ExecutorBackend.BLAXEL:
         from fhir_synth.code_generator.executor.blaxel import BlaxelExecutor

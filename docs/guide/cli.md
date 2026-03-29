@@ -23,8 +23,6 @@ fhir-synth generate "10 diabetic patients with HbA1c observations" -o diabetes.n
 | `--no-orgs` | off | Skip Organization resources (EMPI) |
 | `--meta-config` | — | Path to metadata YAML config file |
 | `-e / --executor` | `local` | Execution backend: `local`, `docker`, `e2b`, or `blaxel` (powered by [smolagents](https://huggingface.co/docs/smolagents)) |
-| `--docker-host` | — | Docker host for docker executor (default: `127.0.0.1`) |
-| `--docker-port` | — | Docker port for docker executor (default: `8888`) |
 | `--aws-profile` | — | AWS profile for Bedrock |
 | `--aws-region` | — | AWS region for Bedrock |
 
@@ -55,8 +53,6 @@ fhir-synth generate "5 patients" --provider mock -o test.ndjson
 # Docker sandbox executor — runs code in an isolated Docker container
 fhir-synth generate "5 patients" --executor docker
 
-# Docker sandbox with explicit host/port
-fhir-synth generate "5 patients" --executor docker --docker-host 192.168.1.1 --docker-port 9999
 
 # E2B cloud sandbox (requires E2B_API_KEY env var)
 fhir-synth generate "5 patients" --executor e2b

@@ -79,18 +79,6 @@ def test_get_executor_unknown_raises():
         get_executor("nonexistent")
 
 
-def test_get_executor_docker_host_passed():
-    ex = get_executor("docker", docker_host="192.168.1.1")
-    assert isinstance(ex, DockerSandboxExecutor)
-    assert ex.host == "192.168.1.1"
-
-
-def test_get_executor_e2b_api_key_passed():
-    ex = get_executor("e2b", e2b_api_key="e2b_test_key")
-    assert isinstance(ex, E2BExecutor)
-    assert ex.api_key == "e2b_test_key"
-
-
 # ── LocalSmolagentsExecutor ──────────────────────────────────────────────
 # NOTE: Execution tests live in test_code_generator.py. Here we only test
 # that smolagents block disallowed code at runtime.

@@ -76,12 +76,6 @@ def generate(
         "-e",
         help="Execution backend: local, docker, e2b, or blaxel (all powered by smolagents)",
     ),
-    docker_host: str | None = typer.Option(
-        None, "--docker-host", help="Docker host for docker executor (default: 127.0.0.1)"
-    ),
-    docker_port: int | None = typer.Option(
-        None, "--docker-port", help="Docker port for docker executor (default: 8888)"
-    ),
     skills_dir: str | None = typer.Option(
         None, "--skills-dir", help="Directory with user-provided SKILL.md skills"
     ),
@@ -156,8 +150,6 @@ def generate(
       # Use Docker sandbox executor for sandboxed execution (requires Docker)
       fhir-synth generate "5 patients" --executor docker
 
-      # Docker sandbox with explicit host/port
-      fhir-synth generate "5 patients" --executor docker --docker-host 127.0.0.1 --docker-port 8888
 
       # E2B cloud sandbox (requires E2B_API_KEY env var)
       fhir-synth generate "5 patients" --executor e2b
@@ -217,11 +209,7 @@ def generate(
                 typer.echo(f"   Loaded {len(context_resources)} resources from context")
 
         llm = get_provider(provider, aws_profile=aws_profile, aws_region=aws_region)
-        executor = get_executor(
-            executor_backend,
-            docker_host=docker_host,
-            docker_port=docker_port,
-        )
+        executor = get_executor(executor_backend)
         code_gen = CodeGenerator(
             llm,
             executor=executor,
@@ -395,12 +383,6 @@ def codegen(
         "-e",
         help="Execution backend: local, docker, e2b, or blaxel (all powered by smolagents)",
     ),
-    docker_host: str | None = typer.Option(
-        None, "--docker-host", help="Docker host for docker executor (default: 127.0.0.1)"
-    ),
-    docker_port: int | None = typer.Option(
-        None, "--docker-port", help="Docker port for docker executor (default: 8888)"
-    ),
     skills_dir: str | None = typer.Option(
         None, "--skills-dir", help="Directory with user-provided SKILL.md skills"
     ),
@@ -424,11 +406,7 @@ def codegen(
         _configure_skills(skills_dir, selector, score_threshold)
 
         llm = get_provider(provider, aws_profile=aws_profile, aws_region=aws_region)
-        executor = get_executor(
-            executor_backend,
-            docker_host=docker_host,
-            docker_port=docker_port,
-        )
+        executor = get_executor(executor_backend)
         code_gen = CodeGenerator(llm, max_retries=2, executor=executor, fhir_version=fhir_version)
         prompt_text = prompt
         if empi:
