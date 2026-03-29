@@ -2,6 +2,28 @@
 
 <!-- version list -->
 
+## v1.7.0 (2026-03-29)
+
+### Chores
+
+- Remove unnecessary blank line in test_executor.py
+  ([`0c8a0da`](https://github.com/alvinhenrick/fhir-synth/commit/0c8a0da67b5b7941784bdc98a5ad99b986d145f6))
+
+### Features
+
+- Remove blaxel_sandbox option from executor and CLI; update documentation accordingly
+  ([`1207adb`](https://github.com/alvinhenrick/fhir-synth/commit/1207adbef091910f4fad717c0677c88bbd4e6564))
+
+- Remove docker_host and docker_port options from executor and CLI; update documentation accordingly
+  ([`d21d37a`](https://github.com/alvinhenrick/fhir-synth/commit/d21d37a168f4bac6a582e78106c97c4fb56b49bf))
+
+- Update .env.example to clarify executor backends and usage instructions
+  ([`bf60722`](https://github.com/alvinhenrick/fhir-synth/commit/bf60722266c54fe9539af10b7bbfe86bfba243a4))
+
+- Update .env.example to streamline executor backend instructions
+  ([`c81835e`](https://github.com/alvinhenrick/fhir-synth/commit/c81835ed73b9880f62e7a110e199e1b0f015da99))
+
+
 ## v1.6.1 (2026-03-18)
 
 
