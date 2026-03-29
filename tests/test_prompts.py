@@ -157,7 +157,7 @@ def test_build_fix_prompt_includes_code():
 
 def test_build_fix_prompt_includes_sandbox_constraints():
     result = build_fix_prompt("x", "err")
-    assert "SANDBOX CONSTRAINTS" in result
+    assert "AVAILABLE MODULES" in result
 
 
 # ── build_empi_prompt ─────────────────────────────────────────────────────

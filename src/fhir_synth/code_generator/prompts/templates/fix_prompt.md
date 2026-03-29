@@ -11,9 +11,9 @@ $fhir_imports
 FHIR SPEC (fields with types — see DATA TYPE FORMAT RULES):
 $fhir_spec
 
-SANDBOX CONSTRAINTS — only these imports are allowed:
-- Modules: $allowed_list, $allowed_prefixes
-- FORBIDDEN builtins: eval(), exec(), open(), compile(), globals(), __import__()
+AVAILABLE MODULES — only these imports exist in the sandbox:
+- $allowed_list, $allowed_prefixes
+- eval(), exec(), open(), compile(), globals(), __import__() are unavailable.
 
 Read the error carefully and fix the code:
 - If "Import of X is not allowed", replace with an allowed alternative.

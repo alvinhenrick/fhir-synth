@@ -65,6 +65,8 @@ class DockerSandboxExecutor:
             RuntimeError: Execution or container error.
         """
 
+        timeout = timeout or self.timeout
+
         # ── Build the runner script ───────────────────────────────────
         packages = get_execution_packages()
         script = build_runner_script(code, pip_install_packages=packages)

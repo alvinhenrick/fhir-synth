@@ -48,7 +48,8 @@ class BlaxelExecutor:
 
         Args:
             code: Python source defining ``generate_resources() -> list[dict]``.
-            timeout: Wall-clock seconds (unused — Blaxel manages its own TTL).
+            timeout: Accepted for interface compatibility but not enforced —
+                Blaxel manages its own sandbox TTL.
 
         Returns:
             :class:`ExecutionResult` with parsed FHIR resource dicts.

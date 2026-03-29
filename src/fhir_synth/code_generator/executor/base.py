@@ -121,7 +121,7 @@ def get_executor(
 
     Raises:
         ValueError: If *backend* is not recognized.
-        ImportError: If the backend requires an optional dependency that is
+        ImportError: If the backend requires an optional dependency, that is
             not installed.
     """
     if isinstance(backend, str):
