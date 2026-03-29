@@ -160,7 +160,6 @@ def test_blaxel_custom_config():
     assert ex.memory == 8192
 
 
-
 # ── CodeGenerator integration ─────────────────────────────────────────────
 
 
