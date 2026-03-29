@@ -39,13 +39,13 @@ from fhir_synth.code_generator import CodeGenerator, get_executor
 # Set up LLM provider
 llm = get_provider("gpt-4")  # or "mock" for testing
 
-# Generate and execute code (default: local subprocess executor)
+# Generate and execute code (default: smolagents local executor)
 code_gen = CodeGenerator(llm)
 code = code_gen.generate_code_from_prompt("Create 20 diabetic patients with HbA1c observations")
 resources = code_gen.execute_generated_code(code)
 
 # Use a different executor backend
-executor = get_executor("dify", dify_url="http://sandbox.internal:8194")
+executor = get_executor("docker")
 code_gen = CodeGenerator(llm, executor=executor)
 resources = code_gen.execute_generated_code(code)
 
@@ -108,16 +108,19 @@ patient = FHIRResourceFactory.create_patient("p1", "Jane", "Doe", "1990-01-01")
 ## Executor Backends
 
 ```python
-from fhir_synth.code_generator import get_executor, LocalSubprocessExecutor, DifySandboxExecutor, E2BExecutor
+from fhir_synth.code_generator import get_executor, LocalSmolagentsExecutor, DockerSandboxExecutor, E2BExecutor, BlaxelExecutor
 
-# Local subprocess (default)
+# Local smolagents executor (default — AST-level secure interpreter)
 executor = get_executor("local")
 
-# Dify sandbox
-executor = get_executor("dify", dify_url="http://localhost:8194")
+# Docker sandbox (requires Docker daemon)
+executor = get_executor("docker")
 
 # E2B cloud sandbox
 executor = get_executor("e2b")  # requires E2B_API_KEY env var
+
+# Blaxel cloud sandbox
+executor = get_executor("blaxel")
 
 # Use with CodeGenerator
 code_gen = CodeGenerator(llm, executor=executor)

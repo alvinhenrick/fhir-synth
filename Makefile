@@ -1,9 +1,18 @@
 .DEFAULT_GOAL := help
 
-.PHONY: help format test cov docs clean
+.PHONY: help install reinstall format test cov docs clean
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
+
+install: ## Create hatch envs and install all dependencies
+	hatch env create
+	hatch env create docs
+
+reinstall: ## Prune and recreate all hatch envs (run after editing deps in pyproject.toml)
+	hatch env prune
+	hatch env create
+	hatch env create docs
 
 format: ## Auto-fix, format, lint, and type check
 	hatch run format

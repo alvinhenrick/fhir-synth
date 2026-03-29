@@ -1,143 +1,160 @@
-"""Local subprocess executor.
+"""Local secure executor — powered by smolagents.
 
-Runs LLM-generated code in an isolated **subprocess** on the host machine.
-Pre-flight checks (import whitelist, dangerous-pattern scan) are applied
-before the subprocess is launched.
+Runs LLM-generated code via smolagents'
+`evaluate_python_code <https://huggingface.co/docs/smolagents/tutorials/secure_code_execution>`_
+which interprets code at the AST level with fine-grained import control
+and a restricted set of built-in functions.
 """
+
+from __future__ import annotations
 
 import json
 import logging
-import subprocess
-import sys
-import tempfile
-from pathlib import Path
 from typing import Any
 
-from fhir_synth.code_generator.executor.base import ExecutionResult
-from fhir_synth.code_generator.executor.validation import (
-    build_runner_script,
-    check_dangerous_code,
-    validate_imports_whitelist,
+from smolagents.local_python_executor import (
+    BASE_BUILTIN_MODULES,
+    BASE_PYTHON_TOOLS,
+    ExecutionTimeoutError,
+    InterpreterError,
+    evaluate_python_code,
 )
+
+from fhir_synth.code_generator.executor.base import ExecutionResult
 
 logger = logging.getLogger(__name__)
 
+# Modules that the secure interpreter is allowed to import.
+# Combines smolagents defaults with FHIR / data-generation extras.
+_AUTHORIZED_IMPORTS: list[str] = list(BASE_BUILTIN_MODULES) + [
+    "fhir.resources.*",
+    "pydantic.*",
+    "faker",
+    "dateutil.*",
+    "uuid",
+    "json",
+    "copy",
+    "string",
+    "decimal",
+    "enum",
+    "functools",
+    "typing",
+]
 
-class LocalSubprocessExecutor:
-    """Execute generated code in a local subprocess with safety checks.
+# Append to the generated code so that evaluate_python_code returns the
+# FHIR resource list as its output value.
+_INVOKE_SUFFIX = """
+try:
+    _fn = generate_resources
+except NameError:
+    raise ValueError("Code must define generate_resources()")
 
-    Security layers:
+_result = _fn()
+if not isinstance(_result, list):
+    _result = [_result]
 
-    1. **Import whitelist** (AST-level) – only modules in the allowed set.
-    2. **Dangerous-builtins regex** – blocks ``eval()``, ``exec()``, etc.
-    3. **Subprocess isolation** – hard wall-clock timeout + crash containment.
+if not _result:
+    raise ValueError(
+        "generate_resources() returned empty list "
+        "— it must return at least one resource dict"
+    )
+
+for _i, _r in enumerate(_result[:5]):
+    if not isinstance(_r, dict):
+        raise ValueError(
+            f"Resource {_i} is {type(_r).__name__}, expected dict "
+            "— use .model_dump(exclude_none=True) on Pydantic models"
+        )
+    if "resourceType" not in _r:
+        raise ValueError(
+            f"Resource {_i} is missing 'resourceType' "
+            f"(keys: {list(_r.keys())[:5]}) "
+            "— use .model_dump(exclude_none=True) on Pydantic models"
+        )
+
+_result
+"""
+
+
+class LocalSmolagentsExecutor:
+    """Execute generated code via smolagents' secure Python interpreter.
+
+    All security is handled by smolagents:
+
+    1. **AST-level execution** — every operation is interpreted node-by-node.
+    2. **Import whitelist** — only explicitly authorized modules are importable.
+    3. **Restricted builtins** — no ``open``, ``compile``, ``__import__``, etc.
+    4. **Timeout** — hard wall-clock limit via ``concurrent.futures``.
     """
 
     def execute(self, code: str, timeout: int = 30) -> ExecutionResult:
-        """Run *code* in an isolated subprocess.
+        """Run *code* via smolagents' secure AST interpreter.
 
         Args:
             code: Python source defining ``generate_resources() -> list[dict]``.
             timeout: Maximum wall-clock seconds.
 
         Returns:
-            class:`ExecutionResult` with parsed FHIR resource dicts.
+            :class:`ExecutionResult` with parsed FHIR resource dicts.
 
         Raises:
-            ValueError: Code rejected by safety checks.
             TimeoutError: Execution exceeded *timeout*.
-            RuntimeError: Subprocess exited with non-zero status.
+            RuntimeError: Code produced invalid output or was rejected by smolagents.
         """
-        # ── Pre-flight safety checks ──────────────────────────────────
-        dangerous = check_dangerous_code(code)
-        if dangerous:
-            raise ValueError(f"Code rejected — {'; '.join(dangerous)}")
+        full_code = code + "\n" + _INVOKE_SUFFIX
 
-        import_errors = validate_imports_whitelist(code)
-        if import_errors:
-            raise ValueError(f"Disallowed imports: {'; '.join(import_errors)}")
-
-        # ── Build the wrapper that runs inside the subprocess ─────────
-        wrapper = build_runner_script(code)
-
-        # ── Write to a temp file & run ─────────────────────────────────
-        tmp = tempfile.NamedTemporaryFile(
-            mode="w", suffix=".py", prefix="fhir_synth_", delete=False
-        )
         try:
-            tmp.write(wrapper)
-            tmp.flush()
-            tmp.close()
-
-            result = subprocess.run(  # noqa: S603
-                [sys.executable, tmp.name],
-                capture_output=True,
-                text=True,
-                timeout=timeout,
+            output, _is_final = evaluate_python_code(
+                full_code,
+                static_tools=dict(BASE_PYTHON_TOOLS),
+                custom_tools={},
+                authorized_imports=_AUTHORIZED_IMPORTS,
+                timeout_seconds=timeout,
             )
-
-            stderr_text = result.stderr.strip()
-            stdout_text = result.stdout.strip()
-
-            if result.returncode != 0:
-                artifacts = self._parse_error(stdout_text, stderr_text, timeout)
-                # _parse_error always raises — this is just for type safety
-                return ExecutionResult(
-                    stdout=stdout_text, stderr=stderr_text, artifacts=artifacts
-                )  # pragma: no cover
-
-            if not stdout_text:
-                raise RuntimeError("Generated code produced no output")
-
-            data = json.loads(stdout_text)
-            if isinstance(data, dict) and "__error__" in data:
-                raise ValueError(data["__error__"])
-
-            if not isinstance(data, list):
-                raise RuntimeError(
-                    f"Expected list from generate_resources(), got {type(data).__name__}"
-                )
-
-            return ExecutionResult(
-                stdout=stdout_text,
-                stderr=stderr_text,
-                artifacts=data,
-            )
-
-        except subprocess.TimeoutExpired:
+        except ExecutionTimeoutError as exc:
             raise TimeoutError(
                 f"Code execution timed out after {timeout}s — possible infinite loop"
-            ) from None
-        finally:
-            Path(tmp.name).unlink(missing_ok=True)
+            ) from exc
+        except InterpreterError as exc:
+            msg = str(exc)
+            if "timed out" in msg.lower() or "timeout" in msg.lower():
+                raise TimeoutError(
+                    f"Code execution timed out after {timeout}s — possible infinite loop"
+                ) from exc
+            # Extract the original error message from smolagents wrapping
+            # Pattern: "... due to: ErrorType: actual message"
+            if "due to:" in msg:
+                inner = msg.split("due to:", 1)[1].strip()
+                if ": " in inner:
+                    error_class, inner_msg = inner.split(": ", 1)
+                    if "ValueError" in error_class:
+                        raise ValueError(inner_msg) from exc
+                    raise RuntimeError(inner_msg) from exc
+            raise RuntimeError(msg) from exc
+
+        return self._parse_output(output)
 
     # ── Helpers ────────────────────────────────────────────────────────
 
     @staticmethod
-    def _parse_error(stdout: str, stderr: str, timeout: int) -> list[dict[str, Any]]:
-        """Extract a meaningful error from subprocess output and raise."""
-        # Check stdout for structured __error__ JSON
-        if stdout:
-            try:
-                err_data = json.loads(stdout)
-                if isinstance(err_data, dict) and "__error__" in err_data:
-                    raise ValueError(err_data["__error__"])
-            except json.JSONDecodeError:
-                pass
+    def _parse_output(output: Any) -> ExecutionResult:
+        """Convert smolagents output into an ExecutionResult."""
+        if isinstance(output, list):
+            data = output
+        elif isinstance(output, str):
+            data = json.loads(output)
+        else:
+            raise RuntimeError(
+                f"Expected list from generate_resources(), got {type(output).__name__}"
+            )
 
-        if not stderr:
-            raise RuntimeError("Unknown error")
+        if not isinstance(data, list):
+            raise RuntimeError(
+                f"Expected list from generate_resources(), got {type(data).__name__}"
+            )
 
-        lines = stderr.split("\n")
-        meaningful: list[str] = []
-        for line in reversed(lines):
-            stripped = line.strip()
-            if not stripped:
-                continue
-            if stripped.startswith("For further information"):
-                continue
-            meaningful.append(stripped)
-            if len(meaningful) >= 3:
-                break
-        meaningful.reverse()
-        raise RuntimeError("\n".join(meaningful))
+        return ExecutionResult(
+            stdout=json.dumps(data, default=str),
+            stderr="",
+            artifacts=data,
+        )

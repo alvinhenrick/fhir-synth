@@ -7,7 +7,7 @@ from typing import Any
 
 from fhir_synth.code_generator.executor import (
     Executor,
-    LocalSubprocessExecutor,
+    LocalSmolagentsExecutor,
     fix_common_imports,
     validate_code,
     validate_imports,
@@ -50,7 +50,7 @@ class CodeGenerator:
         self.llm = llm
         self.max_retries = max_retries
         self.enable_scoring = enable_scoring
-        self.executor: Executor = executor or LocalSubprocessExecutor()
+        self.executor: Executor = executor or LocalSmolagentsExecutor()
         self.fhir_version = fhir_version
         self.context_resources = context_resources or []
 

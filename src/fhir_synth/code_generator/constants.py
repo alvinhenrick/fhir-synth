@@ -1,8 +1,8 @@
 """Constants for code generation."""
 
-import re
-
-# ── Sandbox security constants ────────────────────────────────────────────
+# ── Sandbox constants ─────────────────────────────────────────────────────
+# These are used in prompt generation to tell the LLM what modules are
+# available.  Actual security enforcement is handled by smolagents.
 
 # Modules that LLM-generated code is allowed to import
 ALLOWED_MODULES: frozenset[str] = frozenset(
@@ -31,14 +31,3 @@ ALLOWED_MODULE_PREFIXES: tuple[str, ...] = (
     "fhir.resources",
     "pydantic",
 )
-
-# Dangerous builtins that require no import — the import whitelist cannot
-# catch these, so we block them with regex before execution.
-DANGEROUS_PATTERNS: list[re.Pattern[str]] = [
-    re.compile(r"\beval\s*\("),
-    re.compile(r"\bexec\s*\("),
-    re.compile(r"\bopen\s*\("),
-    re.compile(r"\bcompile\s*\("),
-    re.compile(r"\bglobals\s*\("),
-    re.compile(r"\b__import__\s*\("),
-]

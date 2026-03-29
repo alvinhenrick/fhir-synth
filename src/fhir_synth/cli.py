@@ -74,10 +74,7 @@ def generate(
         "local",
         "--executor",
         "-e",
-        help="Execution backend: local or dify",
-    ),
-    dify_url: str | None = typer.Option(
-        None, "--dify-url", help="Base URL for dify-sandbox (or set DIFY_SANDBOX_URL env var)"
+        help="Execution backend: local, docker, e2b, or blaxel (all powered by smolagents)",
     ),
     skills_dir: str | None = typer.Option(
         None, "--skills-dir", help="Directory with user-provided SKILL.md skills"
@@ -150,14 +147,15 @@ def generate(
       # Save generated code for debugging
       fhir-synth generate "10 patients with labs" --save-code generated.py
 
-      # Use dify-sandbox executor for sandboxed execution
-      fhir-synth generate "5 patients" --executor dify
+      # Use Docker sandbox executor for sandboxed execution (requires Docker)
+      fhir-synth generate "5 patients" --executor docker
 
-      # Dify sandbox with explicit URL
-      fhir-synth generate "5 patients" --executor dify --dify-url http://sandbox.internal:8194
 
       # E2B cloud sandbox (requires E2B_API_KEY env var)
       fhir-synth generate "5 patients" --executor e2b
+
+      # Blaxel cloud sandbox
+      fhir-synth generate "5 patients" --executor blaxel
 
       # Generate STU3 resources instead of R4B
       fhir-synth generate "10 patients with diabetes" --fhir-version STU3
@@ -211,10 +209,7 @@ def generate(
                 typer.echo(f"   Loaded {len(context_resources)} resources from context")
 
         llm = get_provider(provider, aws_profile=aws_profile, aws_region=aws_region)
-        executor = get_executor(
-            executor_backend,
-            dify_url=dify_url,
-        )
+        executor = get_executor(executor_backend)
         code_gen = CodeGenerator(
             llm,
             executor=executor,
@@ -386,10 +381,7 @@ def codegen(
         "local",
         "--executor",
         "-e",
-        help="Execution backend: local, dify, or e2b",
-    ),
-    dify_url: str | None = typer.Option(
-        None, "--dify-url", help="Base URL for dify-sandbox (or set DIFY_SANDBOX_URL env var)"
+        help="Execution backend: local, docker, e2b, or blaxel (all powered by smolagents)",
     ),
     skills_dir: str | None = typer.Option(
         None, "--skills-dir", help="Directory with user-provided SKILL.md skills"
@@ -414,10 +406,7 @@ def codegen(
         _configure_skills(skills_dir, selector, score_threshold)
 
         llm = get_provider(provider, aws_profile=aws_profile, aws_region=aws_region)
-        executor = get_executor(
-            executor_backend,
-            dify_url=dify_url,
-        )
+        executor = get_executor(executor_backend)
         code_gen = CodeGenerator(llm, max_retries=2, executor=executor, fhir_version=fhir_version)
         prompt_text = prompt
         if empi:
