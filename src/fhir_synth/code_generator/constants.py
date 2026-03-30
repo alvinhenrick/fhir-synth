@@ -28,6 +28,7 @@ ALLOWED_MODULES: frozenset[str] = frozenset(
 
 # Module prefixes that are allowed (e.g. fhir.resources.R4B.patient)
 ALLOWED_MODULE_PREFIXES: tuple[str, ...] = (
+    "dateutil",
     "fhir.resources",
     "pydantic",
 )
