@@ -2,6 +2,17 @@
 
 <!-- version list -->
 
+## v1.8.0 (2026-03-30)
+
+### Features
+
+- Add 'dateutil' to allowed module prefixes in constants.py
+  ([`d00fe4e`](https://github.com/alvinhenrick/fhir-synth/commit/d00fe4e80244b5f6214f0a2bc90b0c793b1f1e84))
+
+- Enhance Docker executor with dynamic port assignment and cleanup of stale containers
+  ([`960b778`](https://github.com/alvinhenrick/fhir-synth/commit/960b778aeecc328ffc98bece19a413dbff38b8d0))
+
+
 ## v1.7.0 (2026-03-29)
 
 ### Chores
