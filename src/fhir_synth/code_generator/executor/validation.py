@@ -140,32 +140,18 @@ _RUNNER_TEMPLATE = textwrap.dedent("""\
 """)
 
 
-def build_runner_script(code: str, *, pip_install_packages: list[str] | None = None) -> str:
+def build_runner_script(code: str) -> str:
     """Build the Python script that wraps user code for execution.
 
-    This is the single source of truth for the runner used by all executor
-    backends.  It exec's the user code, calls ``generate_resources()``,
-    validates the output, and prints JSON to stdout.
+    This is the single source of truth for the runner used by all remote
+    executor backends (Docker, E2B, Blaxel).  It exec's the user code,
+    calls ``generate_resources()``, validates the output, and prints JSON
+    to stdout.
+
+    Package installation is handled by smolagents during executor init
+    (via ``install_packages()``), so this function only wraps the code.
 
     Args:
         code: The user-generated Python source code.
-        pip_install_packages: Optional list of packages to pip-install
-            before running the user code (used by remote executors).
     """
-    parts: list[str] = []
-
-    if pip_install_packages:
-        pkgs = " ".join(f'"{p}"' for p in pip_install_packages)
-        parts.append(
-            textwrap.dedent(f"""\
-                import subprocess, sys
-                subprocess.check_call(
-                    [sys.executable, "-m", "pip", "install", "--quiet",
-                     "--disable-pip-version-check", {pkgs}],
-                    stdout=subprocess.DEVNULL,
-                )
-            """)
-        )
-
-    parts.append(_RUNNER_TEMPLATE.format(user_code_repr=repr(code)))
-    return "\n".join(parts)
+    return _RUNNER_TEMPLATE.format(user_code_repr=repr(code))

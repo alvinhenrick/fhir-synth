@@ -16,7 +16,6 @@ from fhir_synth.code_generator.executor.base import (
     ExecutionResult,
     Executor,
     ExecutorBackend,
-    get_execution_packages,
     get_executor,
 )
 
@@ -28,7 +27,6 @@ from fhir_synth.code_generator.executor.local import LocalSmolagentsExecutor
 
 # ── Shared validation (importable from here for convenience) ────
 from fhir_synth.code_generator.executor.validation import (
-    build_runner_script,
     fix_common_imports,
     validate_code,
     validate_imports,
@@ -39,7 +37,6 @@ __all__ = [
     "Executor",
     "ExecutionResult",
     "ExecutorBackend",
-    "get_execution_packages",
     "get_executor",
     # Backends
     "LocalSmolagentsExecutor",
@@ -47,7 +44,6 @@ __all__ = [
     "E2BExecutor",
     "BlaxelExecutor",
     # Validation
-    "build_runner_script",
     "fix_common_imports",
     "validate_code",
     "validate_imports",

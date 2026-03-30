@@ -1,9 +1,5 @@
 """Dynamic code generation for FHIR resources from LLM prompts."""
 
-from fhir_synth.code_generator.constants import (
-    ALLOWED_MODULE_PREFIXES,
-    ALLOWED_MODULES,
-)
 from fhir_synth.code_generator.executor import (
     BlaxelExecutor,
     DockerSandboxExecutor,
@@ -20,8 +16,6 @@ from fhir_synth.code_generator.metrics import calculate_code_quality_score
 from fhir_synth.code_generator.prompts import build_empi_prompt
 
 __all__ = [
-    "ALLOWED_MODULE_PREFIXES",
-    "ALLOWED_MODULES",
     "BlaxelExecutor",
     "CodeGenerator",
     "DockerSandboxExecutor",

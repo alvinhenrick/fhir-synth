@@ -15,7 +15,11 @@ import json
 import logging
 from typing import Any
 
-from fhir_synth.code_generator.executor.base import ExecutionResult, get_execution_packages
+from fhir_synth.code_generator.executor.base import (
+    ExecutionResult,
+    get_execution_packages,
+    get_smolagents_logger,
+)
 from fhir_synth.code_generator.executor.validation import build_runner_script
 
 logger = logging.getLogger(__name__)
@@ -55,9 +59,9 @@ class BlaxelExecutor:
             :class:`ExecutionResult` with parsed FHIR resource dicts.
         """
 
-        # ── Build the script ──────────────────────────────────────────
-        packages = get_execution_packages()
-        script = build_runner_script(code, pip_install_packages=packages)
+        # smolagents installs packages during BlaxelExecutor init via
+        # install_packages(), so no pip_install_packages needed here.
+        script = build_runner_script(code)
 
         # ── Run via smolagents BlaxelExecutor ─────────────────────────
         executor = self._get_executor()
@@ -110,7 +114,7 @@ class BlaxelExecutor:
             "additional_imports": [
                 p.split(">")[0].split("<")[0].split("=")[0].strip() for p in packages
             ],
-            "logger": logger,
+            "logger": get_smolagents_logger(),
             "image": self.image,
             "memory": self.memory,
         }

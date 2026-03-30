@@ -96,15 +96,36 @@ def test_local_smolagents_rejects_disallowed_import():
 def test_docker_sandbox_default_config():
     ex = DockerSandboxExecutor()
     assert ex.host == "127.0.0.1"
-    assert ex.port == 8888
+    assert ex.port > 0  # dynamically assigned free port
     assert ex.image_name == "fhir-synth-sandbox"
+    assert ex.build_new_image is False
+    assert ex.timeout == 120
+    assert ex.container_run_kwargs is None
+    assert ex.dockerfile_content is None
 
 
 def test_docker_sandbox_custom_config():
-    ex = DockerSandboxExecutor(host="192.168.1.1", port=9999, image_name="custom-img")
+    ex = DockerSandboxExecutor(
+        host="192.168.1.1",
+        port=9999,
+        image_name="custom-img",
+        build_new_image=True,
+        container_run_kwargs={"network_mode": "host"},
+        dockerfile_content="FROM python:3.12-slim",
+    )
     assert ex.host == "192.168.1.1"
     assert ex.port == 9999
     assert ex.image_name == "custom-img"
+    assert ex.build_new_image is True
+    assert ex.container_run_kwargs == {"network_mode": "host"}
+    assert ex.dockerfile_content == "FROM python:3.12-slim"
+
+
+def test_docker_sandbox_dynamic_port_avoids_conflicts():
+    """Two instances get different ports — no conflicts."""
+    ex1 = DockerSandboxExecutor()
+    ex2 = DockerSandboxExecutor()
+    assert ex1.port != ex2.port
 
 
 # ── E2BExecutor (mocked) ──────────────────────────────────────────────────
