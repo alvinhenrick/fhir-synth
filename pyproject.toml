@@ -74,6 +74,7 @@ packages = ["src/fhir_synth"]
 [tool.hatch.envs.default]
 installer = "uv"
 dependency-groups = ["dev"]
+features = ["docker", "e2b", "blaxel"]
 
 [tool.hatch.envs.default.scripts]
 test = "pytest {args}"

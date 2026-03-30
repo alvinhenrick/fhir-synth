@@ -17,7 +17,11 @@ import logging
 import os
 from typing import Any
 
-from fhir_synth.code_generator.executor.base import ExecutionResult, get_execution_packages
+from fhir_synth.code_generator.executor.base import (
+    ExecutionResult,
+    get_execution_packages,
+    get_smolagents_logger,
+)
 from fhir_synth.code_generator.executor.validation import build_runner_script
 
 logger = logging.getLogger(__name__)
@@ -59,9 +63,9 @@ class E2BExecutor:
         """
         timeout = timeout or self.timeout
 
-        # ── Build the script ──────────────────────────────────────────
-        packages = get_execution_packages()
-        script = build_runner_script(code, pip_install_packages=packages)
+        # smolagents installs packages during E2BExecutor init via
+        # install_packages(), so no pip_install_packages needed here.
+        script = build_runner_script(code)
 
         # ── Run via smolagents E2BExecutor ────────────────────────────
         executor = self._get_executor()
@@ -120,7 +124,7 @@ class E2BExecutor:
             additional_imports=[
                 p.split(">")[0].split("<")[0].split("=")[0].strip() for p in packages
             ],
-            logger=logger,
+            logger=get_smolagents_logger(),
             api_key=self.api_key,
         )
         return self._executor

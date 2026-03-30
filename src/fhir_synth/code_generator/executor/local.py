@@ -20,26 +20,20 @@ from smolagents.local_python_executor import (
     evaluate_python_code,
 )
 
+from fhir_synth.code_generator.constants import ALLOWED_MODULE_PREFIXES, ALLOWED_MODULES
 from fhir_synth.code_generator.executor.base import ExecutionResult
 
 logger = logging.getLogger(__name__)
 
 # Modules that the secure interpreter is allowed to import.
-# Combines smolagents defaults with FHIR / data-generation extras.
-_AUTHORIZED_IMPORTS: list[str] = list(BASE_BUILTIN_MODULES) + [
-    "fhir.resources.*",
-    "pydantic.*",
-    "faker",
-    "dateutil.*",
-    "uuid",
-    "json",
-    "copy",
-    "string",
-    "decimal",
-    "enum",
-    "functools",
-    "typing",
-]
+# Combines smolagents defaults with the project-wide allowed list
+# from constants.py + FHIR / data-generation wildcard prefixes.
+_AUTHORIZED_IMPORTS: list[str] = (
+    list(BASE_BUILTIN_MODULES)
+    + sorted(ALLOWED_MODULES)
+    + [f"{p}.*" for p in ALLOWED_MODULE_PREFIXES]
+    + ["dateutil.*"]
+)
 
 # Append to the generated code so that evaluate_python_code returns the
 # FHIR resource list as its output value.

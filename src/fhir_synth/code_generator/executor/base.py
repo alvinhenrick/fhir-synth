@@ -46,6 +46,21 @@ def get_execution_packages() -> list[str]:
     return packages or sorted(_EXECUTION_PACKAGE_NAMES)
 
 
+def get_smolagents_logger() -> Any:
+    """Return a smolagents-compatible ``AgentLogger``.
+
+    smolagents' remote executors (Docker, E2B, Blaxel) call
+    ``self.logger.log(msg, level=LogLevel.INFO)`` — a signature that is
+    **incompatible** with Python's ``logging.Logger.log(level, msg)``.
+
+    This helper lazily imports and returns a ``smolagents.AgentLogger``
+    so that all remote executor backends get the correct logger type.
+    """
+    from smolagents.monitoring import AgentLogger, LogLevel
+
+    return AgentLogger(level=LogLevel.INFO)
+
+
 class ExecutorBackend(enum.StrEnum):
     """Supported executor backends."""
 
@@ -98,7 +113,7 @@ def get_executor(
     """Factory that returns a concrete executor for the requested backend.
 
     All backends are powered by `smolagents <https://huggingface.co/docs/smolagents>`_.
-    Each backend uses sensible defaults (Docker: ``127.0.0.1:8888``,
+    Each backend uses sensible defaults (Docker: auto-selected free port,
     E2B: ``E2B_API_KEY`` env var, Blaxel: auto-provisioned sandbox).
 
     Args:
