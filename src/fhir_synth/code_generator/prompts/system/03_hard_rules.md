@@ -38,5 +38,14 @@ HARD RULES — every response MUST follow these:
     - ✓ deceasedBoolean=True                            ✗ deceased=True
     - ✓ multipleBirthInteger=2                          ✗ multipleBirth=2
     Using the base name without the type suffix causes "Extra inputs are not permitted".
+15. **CHOICE-TYPE MUTUAL EXCLUSION**: For any FHIR [x] choice field, set EXACTLY ONE
+    type-specific variant per group. Setting multiple variants is INVALID and will fail validation:
+    - ✗ WRONG: FamilyMemberHistory(deceasedBoolean=True, deceasedAge=Age(...))  ← two deceased[x]!
+    - ✓ CORRECT: FamilyMemberHistory(deceasedAge=Age(value=Decimal(62), unit="a", system="http://unitsofmeasure.org", code="a"))
+    - ✗ WRONG: Observation(valueQuantity=Quantity(...), valueString="...")  ← two value[x]!
+    - ✓ CORRECT: Observation(valueQuantity=Quantity(...))
+    This applies to ALL [x] groups: deceased[x], value[x], effective[x], onset[x],
+    medication[x], born[x], age[x], multipleBirth[x], reported[x], performed[x], etc.
+    When in doubt, pick the most specific type (e.g. deceasedAge over deceasedBoolean).
 
 

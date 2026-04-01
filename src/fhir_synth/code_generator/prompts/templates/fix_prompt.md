@@ -37,6 +37,16 @@ Read the error carefully and fix the code:
   Then use: period=Period(start=dt_iso(start_dt), end=dt_iso(end_dt))
 - Date-only fields (birthDate, onsetDate) should use date().isoformat(), NOT datetime
 
+⚠️  CHOICE-TYPE MUTUAL EXCLUSION ERROR:
+- If the error mentions "one field value is expected from this list [...] but got multiple"
+  or "Choice-type ... conflict": you set MORE THAN ONE variant of a choice-type [x] field.
+- FHIR [x] fields (deceased[x], value[x], onset[x], effective[x], medication[x], born[x],
+  age[x]) allow EXACTLY ONE variant per resource. Remove the extra fields, keep only the
+  most specific one.
+- ✗ WRONG: FamilyMemberHistory(deceasedBoolean=True, deceasedAge=Age(...))
+- ✓ FIX:   FamilyMemberHistory(deceasedAge=Age(value=Decimal(62), unit="a", system="http://unitsofmeasure.org", code="a"))
+  Keep deceasedAge (more informative) and REMOVE deceasedBoolean entirely.
+
 Fix the code so it runs without errors. Keep the same function signature:
   def generate_resources() -> list[dict]:
 Return ONLY the corrected Python code, no explanation.
