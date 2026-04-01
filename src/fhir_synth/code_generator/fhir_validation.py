@@ -13,6 +13,7 @@ Enhanced with:
 
 from __future__ import annotations
 
+from collections import defaultdict
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -67,6 +68,12 @@ def validate_resource(resource: dict[str, Any], *, strict: bool = True) -> list[
         return [f"Unknown resource type: {resource_type}"]
 
     errors = []
+
+    # Step 0: Check choice-type [x] mutual exclusion before Pydantic validation
+    # so the error message is clear and actionable for LLM self-healing retries.
+    errors.extend(_check_choice_type_fields(resource, resource_type, cls))
+    if errors:
+        return errors
 
     # Step 1: Pydantic model validation with strict mode
     try:
@@ -260,6 +267,50 @@ def _check_required_elements(resource: dict[str, Any], resource_type: str) -> li
         if field_name not in resource or resource[field_name] is None:
             errors.append(f"Missing required element for {resource_type}: {field_name}")
 
+    return errors
+
+
+def _check_choice_type_fields(
+    resource: dict[str, Any], resource_type: str, cls: type | None = None
+) -> list[str]:
+    """Detect multiple choice-type [x] variants set on the same resource.
+
+    FHIR choice-type fields (e.g. ``deceased[x]``, ``value[x]``) allow
+    exactly ONE type-specific variant per group.  This function dynamically
+    discovers the groups from the Pydantic model's ``one_of_many`` metadata
+    so it works for every resource type without hardcoding.
+
+    Args:
+        resource: The FHIR resource dictionary.
+        resource_type: The resource type (e.g., "FamilyMemberHistory").
+        cls: Optional pre-resolved Pydantic model class.
+
+    Returns:
+        List of error messages for choice-type violations.
+    """
+    if cls is None:
+        try:
+            cls = get_resource_class(resource_type)
+        except ValueError:
+            return []
+
+    # Build {group_name: [field_name, ...]} from Pydantic model_fields metadata
+    groups: dict[str, list[str]] = defaultdict(list)
+    for name, fld in cls.model_fields.items():
+        extra = fld.json_schema_extra or {}
+        group = extra.get("one_of_many")
+        if group:
+            groups[group].append(name)
+
+    errors: list[str] = []
+    for group_name, fields in groups.items():
+        present = [f for f in fields if f in resource and resource[f] is not None]
+        if len(present) > 1:
+            errors.append(
+                f"Choice-type '{group_name}[x]' conflict in {resource_type}: "
+                f"fields {present} are all set, but ONLY ONE is allowed. "
+                f"Keep the most specific (e.g. {present[-1]}) and remove the rest."
+            )
     return errors
 
 
