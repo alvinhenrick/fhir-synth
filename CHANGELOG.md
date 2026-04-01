@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.10.0 (2026-04-01)
+
+### Features
+
+- Add CLI logging for skill discovery and selection
+  ([`c391c74`](https://github.com/alvinhenrick/fhir-synth/commit/c391c7469bf3bf7350a410d6bc3dc68b13819afa))
+
+
 ## v1.9.0 (2026-04-01)
 
 ### Features
