@@ -6901,73 +6901,73 @@ generate Person→Patient linkage directly in the code it produces.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/fhir_synth/code_generator/prompts/__init__.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-240">240</a></span>
-<span class="normal"><a href="#__codelineno-0-241">241</a></span>
-<span class="normal"><a href="#__codelineno-0-242">242</a></span>
-<span class="normal"><a href="#__codelineno-0-243">243</a></span>
-<span class="normal"><a href="#__codelineno-0-244">244</a></span>
-<span class="normal"><a href="#__codelineno-0-245">245</a></span>
-<span class="normal"><a href="#__codelineno-0-246">246</a></span>
-<span class="normal"><a href="#__codelineno-0-247">247</a></span>
-<span class="normal"><a href="#__codelineno-0-248">248</a></span>
-<span class="normal"><a href="#__codelineno-0-249">249</a></span>
-<span class="normal"><a href="#__codelineno-0-250">250</a></span>
-<span class="normal"><a href="#__codelineno-0-251">251</a></span>
-<span class="normal"><a href="#__codelineno-0-252">252</a></span>
-<span class="normal"><a href="#__codelineno-0-253">253</a></span>
-<span class="normal"><a href="#__codelineno-0-254">254</a></span>
-<span class="normal"><a href="#__codelineno-0-255">255</a></span>
-<span class="normal"><a href="#__codelineno-0-256">256</a></span>
-<span class="normal"><a href="#__codelineno-0-257">257</a></span>
-<span class="normal"><a href="#__codelineno-0-258">258</a></span>
-<span class="normal"><a href="#__codelineno-0-259">259</a></span>
-<span class="normal"><a href="#__codelineno-0-260">260</a></span>
-<span class="normal"><a href="#__codelineno-0-261">261</a></span>
-<span class="normal"><a href="#__codelineno-0-262">262</a></span>
-<span class="normal"><a href="#__codelineno-0-263">263</a></span>
-<span class="normal"><a href="#__codelineno-0-264">264</a></span>
-<span class="normal"><a href="#__codelineno-0-265">265</a></span>
-<span class="normal"><a href="#__codelineno-0-266">266</a></span>
-<span class="normal"><a href="#__codelineno-0-267">267</a></span>
-<span class="normal"><a href="#__codelineno-0-268">268</a></span>
-<span class="normal"><a href="#__codelineno-0-269">269</a></span>
-<span class="normal"><a href="#__codelineno-0-270">270</a></span>
-<span class="normal"><a href="#__codelineno-0-271">271</a></span>
-<span class="normal"><a href="#__codelineno-0-272">272</a></span>
-<span class="normal"><a href="#__codelineno-0-273">273</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-240" name="__codelineno-0-240"></a><span class="k">def</span><span class="w"> </span><span class="nf">build_empi_prompt</span><span class="p">(</span>
-<a id="__codelineno-0-241" name="__codelineno-0-241"></a>    <span class="n">user_prompt</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-<a id="__codelineno-0-242" name="__codelineno-0-242"></a>    <span class="n">persons</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-<a id="__codelineno-0-243" name="__codelineno-0-243"></a>    <span class="n">systems</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-<a id="__codelineno-0-244" name="__codelineno-0-244"></a>    <span class="n">include_organizations</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-<a id="__codelineno-0-245" name="__codelineno-0-245"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<a id="__codelineno-0-246" name="__codelineno-0-246"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Build a prompt that includes EMPI linkage instructions.</span>
-<a id="__codelineno-0-247" name="__codelineno-0-247"></a>
-<a id="__codelineno-0-248" name="__codelineno-0-248"></a><span class="sd">    Instead of post-processing EMPI in Python, this tells the LLM to</span>
-<a id="__codelineno-0-249" name="__codelineno-0-249"></a><span class="sd">    generate Person→Patient linkage directly in the code it produces.</span>
-<a id="__codelineno-0-250" name="__codelineno-0-250"></a>
-<a id="__codelineno-0-251" name="__codelineno-0-251"></a><span class="sd">    Args:</span>
-<a id="__codelineno-0-252" name="__codelineno-0-252"></a><span class="sd">        user_prompt: Original user prompt</span>
-<a id="__codelineno-0-253" name="__codelineno-0-253"></a><span class="sd">        persons: Number of Person resources</span>
-<a id="__codelineno-0-254" name="__codelineno-0-254"></a><span class="sd">        systems: List of EMR system identifiers</span>
-<a id="__codelineno-0-255" name="__codelineno-0-255"></a><span class="sd">        include_organizations: Whether to include Organization resources</span>
-<a id="__codelineno-0-256" name="__codelineno-0-256"></a>
-<a id="__codelineno-0-257" name="__codelineno-0-257"></a><span class="sd">    Returns:</span>
-<a id="__codelineno-0-258" name="__codelineno-0-258"></a><span class="sd">        Augmented prompt with EMPI instructions</span>
-<a id="__codelineno-0-259" name="__codelineno-0-259"></a><span class="sd">    &quot;&quot;&quot;</span>
-<a id="__codelineno-0-260" name="__codelineno-0-260"></a>    <span class="n">systems</span> <span class="o">=</span> <span class="n">systems</span> <span class="ow">or</span> <span class="p">[</span><span class="s2">&quot;emr1&quot;</span><span class="p">,</span> <span class="s2">&quot;emr2&quot;</span><span class="p">]</span>
-<a id="__codelineno-0-261" name="__codelineno-0-261"></a>    <span class="n">orgs_hint</span> <span class="o">=</span> <span class="p">(</span>
-<a id="__codelineno-0-262" name="__codelineno-0-262"></a>        <span class="s2">&quot;Create Organization resources for each system and link Patients via managingOrganization.&quot;</span>
-<a id="__codelineno-0-263" name="__codelineno-0-263"></a>        <span class="k">if</span> <span class="n">include_organizations</span>
-<a id="__codelineno-0-264" name="__codelineno-0-264"></a>        <span class="k">else</span> <span class="s2">&quot;Do not create Organization resources.&quot;</span>
-<a id="__codelineno-0-265" name="__codelineno-0-265"></a>    <span class="p">)</span>
-<a id="__codelineno-0-266" name="__codelineno-0-266"></a>    <span class="n">template</span> <span class="o">=</span> <span class="n">load_prompt</span><span class="p">(</span><span class="s2">&quot;templates/empi_prompt.md&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-267" name="__codelineno-0-267"></a>    <span class="k">return</span> <span class="n">render</span><span class="p">(</span>
-<a id="__codelineno-0-268" name="__codelineno-0-268"></a>        <span class="n">template</span><span class="p">,</span>
-<a id="__codelineno-0-269" name="__codelineno-0-269"></a>        <span class="n">persons</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">persons</span><span class="p">),</span>
-<a id="__codelineno-0-270" name="__codelineno-0-270"></a>        <span class="n">systems</span><span class="o">=</span><span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">systems</span><span class="p">),</span>
-<a id="__codelineno-0-271" name="__codelineno-0-271"></a>        <span class="n">orgs_hint</span><span class="o">=</span><span class="n">orgs_hint</span><span class="p">,</span>
-<a id="__codelineno-0-272" name="__codelineno-0-272"></a>        <span class="n">user_prompt</span><span class="o">=</span><span class="n">user_prompt</span><span class="p">,</span>
-<a id="__codelineno-0-273" name="__codelineno-0-273"></a>    <span class="p">)</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-282">282</a></span>
+<span class="normal"><a href="#__codelineno-0-283">283</a></span>
+<span class="normal"><a href="#__codelineno-0-284">284</a></span>
+<span class="normal"><a href="#__codelineno-0-285">285</a></span>
+<span class="normal"><a href="#__codelineno-0-286">286</a></span>
+<span class="normal"><a href="#__codelineno-0-287">287</a></span>
+<span class="normal"><a href="#__codelineno-0-288">288</a></span>
+<span class="normal"><a href="#__codelineno-0-289">289</a></span>
+<span class="normal"><a href="#__codelineno-0-290">290</a></span>
+<span class="normal"><a href="#__codelineno-0-291">291</a></span>
+<span class="normal"><a href="#__codelineno-0-292">292</a></span>
+<span class="normal"><a href="#__codelineno-0-293">293</a></span>
+<span class="normal"><a href="#__codelineno-0-294">294</a></span>
+<span class="normal"><a href="#__codelineno-0-295">295</a></span>
+<span class="normal"><a href="#__codelineno-0-296">296</a></span>
+<span class="normal"><a href="#__codelineno-0-297">297</a></span>
+<span class="normal"><a href="#__codelineno-0-298">298</a></span>
+<span class="normal"><a href="#__codelineno-0-299">299</a></span>
+<span class="normal"><a href="#__codelineno-0-300">300</a></span>
+<span class="normal"><a href="#__codelineno-0-301">301</a></span>
+<span class="normal"><a href="#__codelineno-0-302">302</a></span>
+<span class="normal"><a href="#__codelineno-0-303">303</a></span>
+<span class="normal"><a href="#__codelineno-0-304">304</a></span>
+<span class="normal"><a href="#__codelineno-0-305">305</a></span>
+<span class="normal"><a href="#__codelineno-0-306">306</a></span>
+<span class="normal"><a href="#__codelineno-0-307">307</a></span>
+<span class="normal"><a href="#__codelineno-0-308">308</a></span>
+<span class="normal"><a href="#__codelineno-0-309">309</a></span>
+<span class="normal"><a href="#__codelineno-0-310">310</a></span>
+<span class="normal"><a href="#__codelineno-0-311">311</a></span>
+<span class="normal"><a href="#__codelineno-0-312">312</a></span>
+<span class="normal"><a href="#__codelineno-0-313">313</a></span>
+<span class="normal"><a href="#__codelineno-0-314">314</a></span>
+<span class="normal"><a href="#__codelineno-0-315">315</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-282" name="__codelineno-0-282"></a><span class="k">def</span><span class="w"> </span><span class="nf">build_empi_prompt</span><span class="p">(</span>
+<a id="__codelineno-0-283" name="__codelineno-0-283"></a>    <span class="n">user_prompt</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+<a id="__codelineno-0-284" name="__codelineno-0-284"></a>    <span class="n">persons</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+<a id="__codelineno-0-285" name="__codelineno-0-285"></a>    <span class="n">systems</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<a id="__codelineno-0-286" name="__codelineno-0-286"></a>    <span class="n">include_organizations</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+<a id="__codelineno-0-287" name="__codelineno-0-287"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<a id="__codelineno-0-288" name="__codelineno-0-288"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Build a prompt that includes EMPI linkage instructions.</span>
+<a id="__codelineno-0-289" name="__codelineno-0-289"></a>
+<a id="__codelineno-0-290" name="__codelineno-0-290"></a><span class="sd">    Instead of post-processing EMPI in Python, this tells the LLM to</span>
+<a id="__codelineno-0-291" name="__codelineno-0-291"></a><span class="sd">    generate Person→Patient linkage directly in the code it produces.</span>
+<a id="__codelineno-0-292" name="__codelineno-0-292"></a>
+<a id="__codelineno-0-293" name="__codelineno-0-293"></a><span class="sd">    Args:</span>
+<a id="__codelineno-0-294" name="__codelineno-0-294"></a><span class="sd">        user_prompt: Original user prompt</span>
+<a id="__codelineno-0-295" name="__codelineno-0-295"></a><span class="sd">        persons: Number of Person resources</span>
+<a id="__codelineno-0-296" name="__codelineno-0-296"></a><span class="sd">        systems: List of EMR system identifiers</span>
+<a id="__codelineno-0-297" name="__codelineno-0-297"></a><span class="sd">        include_organizations: Whether to include Organization resources</span>
+<a id="__codelineno-0-298" name="__codelineno-0-298"></a>
+<a id="__codelineno-0-299" name="__codelineno-0-299"></a><span class="sd">    Returns:</span>
+<a id="__codelineno-0-300" name="__codelineno-0-300"></a><span class="sd">        Augmented prompt with EMPI instructions</span>
+<a id="__codelineno-0-301" name="__codelineno-0-301"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-302" name="__codelineno-0-302"></a>    <span class="n">systems</span> <span class="o">=</span> <span class="n">systems</span> <span class="ow">or</span> <span class="p">[</span><span class="s2">&quot;emr1&quot;</span><span class="p">,</span> <span class="s2">&quot;emr2&quot;</span><span class="p">]</span>
+<a id="__codelineno-0-303" name="__codelineno-0-303"></a>    <span class="n">orgs_hint</span> <span class="o">=</span> <span class="p">(</span>
+<a id="__codelineno-0-304" name="__codelineno-0-304"></a>        <span class="s2">&quot;Create Organization resources for each system and link Patients via managingOrganization.&quot;</span>
+<a id="__codelineno-0-305" name="__codelineno-0-305"></a>        <span class="k">if</span> <span class="n">include_organizations</span>
+<a id="__codelineno-0-306" name="__codelineno-0-306"></a>        <span class="k">else</span> <span class="s2">&quot;Do not create Organization resources.&quot;</span>
+<a id="__codelineno-0-307" name="__codelineno-0-307"></a>    <span class="p">)</span>
+<a id="__codelineno-0-308" name="__codelineno-0-308"></a>    <span class="n">template</span> <span class="o">=</span> <span class="n">load_prompt</span><span class="p">(</span><span class="s2">&quot;templates/empi_prompt.md&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-309" name="__codelineno-0-309"></a>    <span class="k">return</span> <span class="n">render</span><span class="p">(</span>
+<a id="__codelineno-0-310" name="__codelineno-0-310"></a>        <span class="n">template</span><span class="p">,</span>
+<a id="__codelineno-0-311" name="__codelineno-0-311"></a>        <span class="n">persons</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">persons</span><span class="p">),</span>
+<a id="__codelineno-0-312" name="__codelineno-0-312"></a>        <span class="n">systems</span><span class="o">=</span><span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">systems</span><span class="p">),</span>
+<a id="__codelineno-0-313" name="__codelineno-0-313"></a>        <span class="n">orgs_hint</span><span class="o">=</span><span class="n">orgs_hint</span><span class="p">,</span>
+<a id="__codelineno-0-314" name="__codelineno-0-314"></a>        <span class="n">user_prompt</span><span class="o">=</span><span class="n">user_prompt</span><span class="p">,</span>
+<a id="__codelineno-0-315" name="__codelineno-0-315"></a>    <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
