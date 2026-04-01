@@ -2,6 +2,19 @@
 
 <!-- version list -->
 
+## v1.10.1 (2026-04-01)
+
+### Bug Fixes
+
+- Detect and prevent FHIR choice-type [x] mutual exclusion violations
+  ([`af0aacd`](https://github.com/alvinhenrick/fhir-synth/commit/af0aacdf288bd3c15b895b6673b252fbc2faf87c))
+
+### Refactoring
+
+- Improve type hints and formatting in FHIR validation functions
+  ([`effe7fe`](https://github.com/alvinhenrick/fhir-synth/commit/effe7fedb97091ae3508bd83b6c2d68ee2afd259))
+
+
 ## v1.10.0 (2026-04-01)
 
 ### Features
