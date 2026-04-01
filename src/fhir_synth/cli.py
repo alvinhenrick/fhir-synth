@@ -3,6 +3,7 @@
 import json
 import sys
 from pathlib import Path
+from typing import Any
 
 import typer
 from dotenv import load_dotenv
@@ -19,15 +20,18 @@ def _configure_skills(
     skills_dir: str | None,
     selector: str,
     score_threshold: float | None = None,
-) -> None:
+) -> dict[str, Any]:
     """Configure the skills system for prompt assembly.
 
     Args:
         skills_dir: Optional path to a user-provided skills directory.
         selector: Selection strategy name (``"keyword"`` or ``"faiss"``).
         score_threshold: Minimum similarity score (FAISS only).
+
+    Returns:
+        Skill discovery summary dict.
     """
-    from fhir_synth.code_generator.prompts import configure_skills
+    from fhir_synth.code_generator.prompts import configure_skills, get_skill_discovery_summary
 
     user_dirs = [Path(skills_dir)] if skills_dir else None
     skill_selector = None
@@ -39,6 +43,7 @@ def _configure_skills(
         else:
             skill_selector = FaissSelector()
     configure_skills(user_dirs=user_dirs, selector=skill_selector)
+    return get_skill_discovery_summary()
 
 
 @app.command()
@@ -174,7 +179,14 @@ def generate(
         from fhir_synth.llm import get_provider
 
         # ── Configure skills system ────────────────────────────────
-        _configure_skills(skills_dir, selector, score_threshold)
+        discovery = _configure_skills(skills_dir, selector, score_threshold)
+        builtin_n = discovery["builtin"]
+        user_n = discovery["user"]
+        total_n = discovery["total"]
+        typer.echo(f"📚 Skills: discovered {total_n} ({builtin_n} built-in, {user_n} user)")
+        if user_n:
+            user_names = [s["name"] for s in discovery["skills"] if s["source"] == "user"]
+            typer.echo(f"   User skills: {', '.join(user_names)}")
 
         # ── Load context resources ──────────────────────────────────
         context_resources = []
@@ -207,6 +219,9 @@ def generate(
                     else:
                         context_resources.append(res)
                 typer.echo(f"   Loaded {len(context_resources)} resources from context")
+
+        typer.echo(f"🤖 LLM: {provider}")
+        typer.echo(f"   Executor: {executor_backend}")
 
         llm = get_provider(provider, aws_profile=aws_profile, aws_region=aws_region)
         executor = get_executor(executor_backend)
@@ -272,6 +287,19 @@ def generate(
 
         # Step 1 — generate code
         typer.echo("⚙  Generating code from prompt …")
+
+        # Show which skills were selected for this prompt
+        from fhir_synth.code_generator.prompts import get_selected_skill_names
+
+        selected_names = get_selected_skill_names(prompt_text)
+        if selected_names:
+            typer.echo(
+                f"   🎯 Selected {len(selected_names)}/{total_n} skills: "
+                f"{', '.join(selected_names)}"
+            )
+        else:
+            typer.echo("   ⚠️  No skills matched — using all available skills")
+
         code = code_gen.generate_code_from_prompt(prompt_text)
 
         if save_code:
@@ -403,7 +431,16 @@ def codegen(
         from fhir_synth.llm import get_provider
 
         # ── Configure skills system ────────────────────────────────
-        _configure_skills(skills_dir, selector, score_threshold)
+        discovery = _configure_skills(skills_dir, selector, score_threshold)
+        builtin_n = discovery["builtin"]
+        user_n = discovery["user"]
+        total_n = discovery["total"]
+        typer.echo(f"📚 Skills: discovered {total_n} ({builtin_n} built-in, {user_n} user)")
+        if user_n:
+            user_names = [s["name"] for s in discovery["skills"] if s["source"] == "user"]
+            typer.echo(f"   User skills: {', '.join(user_names)}")
+
+        typer.echo(f"🤖 LLM: {provider}")
 
         llm = get_provider(provider, aws_profile=aws_profile, aws_region=aws_region)
         executor = get_executor(executor_backend)
@@ -418,6 +455,16 @@ def codegen(
                 persons=persons,
                 systems=system_list or None,
                 include_organizations=not no_orgs,
+            )
+
+        # Show which skills were selected for this prompt
+        from fhir_synth.code_generator.prompts import get_selected_skill_names
+
+        selected_names = get_selected_skill_names(prompt_text)
+        if selected_names:
+            typer.echo(
+                f"   🎯 Selected {len(selected_names)}/{total_n} skills: "
+                f"{', '.join(selected_names)}"
             )
 
         code = code_gen.generate_code_from_prompt(prompt_text)

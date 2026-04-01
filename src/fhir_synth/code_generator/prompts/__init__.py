@@ -150,6 +150,48 @@ def get_system_prompt(user_prompt: str | None = None) -> str:
     return _build_system_prompt(user_prompt=user_prompt)
 
 
+# ── Introspection helpers for CLI logging ──────────────────────────────
+
+
+def get_skill_discovery_summary() -> dict[str, Any]:
+    """Return a summary of discovered skills.
+
+    Returns:
+        Dict with ``total``, ``builtin``, ``user``, and ``skills`` (list of
+        dicts with ``name``, ``source``, ``keywords_count``).
+    """
+    loader = _state.get_loader()
+    all_skills = loader.discover()
+    return {
+        "total": len(all_skills),
+        "builtin": sum(1 for s in all_skills if s.source == "builtin"),
+        "user": sum(1 for s in all_skills if s.source == "user"),
+        "skills": [
+            {"name": s.name, "source": s.source, "keywords_count": len(s.keywords)}
+            for s in all_skills
+        ],
+    }
+
+
+def get_selected_skill_names(user_prompt: str) -> list[str]:
+    """Return the names of skills that would be selected for *user_prompt*.
+
+    Useful for CLI logging without rebuilding the full system prompt.
+
+    Args:
+        user_prompt: The user's natural-language request.
+
+    Returns:
+        List of selected skill names.
+    """
+    loader = _state.get_loader()
+    all_skills = loader.discover()
+    if not all_skills:
+        return []
+    selected = _state.selector.select(user_prompt, all_skills)
+    return [s.name for s in selected]
+
+
 # ── Backward-compatible lazy SYSTEM_PROMPT ─────────────────────────────
 # Production code should use get_system_prompt().  Accessing SYSTEM_PROMPT
 # via the module attribute still works but emits a deprecation warning.
@@ -278,6 +320,8 @@ __all__ = [
     "build_empi_prompt",
     "build_fix_prompt",
     "configure_skills",
+    "get_selected_skill_names",
+    "get_skill_discovery_summary",
     "get_system_prompt",
     "reset_skills",
 ]
