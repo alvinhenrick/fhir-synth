@@ -17,7 +17,7 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from typing import Any
 
-from pydantic import ValidationError
+from pydantic import BaseModel, ValidationError
 
 from fhir_synth.fhir_spec import get_resource_class
 
@@ -244,7 +244,7 @@ def _check_required_elements(resource: dict[str, Any], resource_type: str) -> li
     """
     errors = []
 
-    # Common required elements across all resources
+    # Commonly required elements across all resources
     if not resource.get("resourceType"):
         errors.append("Missing required element: resourceType")
 
@@ -271,11 +271,11 @@ def _check_required_elements(resource: dict[str, Any], resource_type: str) -> li
 
 
 def _check_choice_type_fields(
-    resource: dict[str, Any], resource_type: str, cls: type | None = None
+    resource: dict[str, Any], resource_type: str, cls: type[BaseModel] | None = None
 ) -> list[str]:
     """Detect multiple choice-type [x] variants set on the same resource.
 
-    FHIR choice-type fields (e.g. ``deceased[x]``, ``value[x]``) allow
+    FHIR choice-type fields (e.g. "deceased[x]``, ``value[x]``) allow
     exactly ONE type-specific variant per group.  This function dynamically
     discovers the groups from the Pydantic model's ``one_of_many`` metadata
     so it works for every resource type without hardcoding.
@@ -297,9 +297,11 @@ def _check_choice_type_fields(
     # Build {group_name: [field_name, ...]} from Pydantic model_fields metadata
     groups: dict[str, list[str]] = defaultdict(list)
     for name, fld in cls.model_fields.items():
-        extra = fld.json_schema_extra or {}
+        extra = fld.json_schema_extra
+        if not isinstance(extra, dict):
+            continue
         group = extra.get("one_of_many")
-        if group:
+        if isinstance(group, str):
             groups[group].append(name)
 
     errors: list[str] = []

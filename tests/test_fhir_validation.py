@@ -96,7 +96,9 @@ def test_choice_type_single_variant_valid():
         "status": "completed",
         "patient": {"reference": "Patient/p1"},
         "relationship": {
-            "coding": [{"system": "http://terminology.hl7.org/CodeSystem/v3-RoleCode", "code": "MTH"}]
+            "coding": [
+                {"system": "http://terminology.hl7.org/CodeSystem/v3-RoleCode", "code": "MTH"}
+            ]
         },
         "deceasedBoolean": True,
     }
@@ -109,7 +111,12 @@ def test_choice_type_multiple_variants_detected():
     resource = {
         "resourceType": "FamilyMemberHistory",
         "deceasedBoolean": True,
-        "deceasedAge": {"value": 62, "unit": "a", "system": "http://unitsofmeasure.org", "code": "a"},
+        "deceasedAge": {
+            "value": 62,
+            "unit": "a",
+            "system": "http://unitsofmeasure.org",
+            "code": "a",
+        },
     }
     errors = _check_choice_type_fields(resource, "FamilyMemberHistory")
     assert len(errors) == 1
@@ -135,7 +142,12 @@ def test_choice_type_none_values_ignored():
     resource = {
         "resourceType": "FamilyMemberHistory",
         "deceasedBoolean": None,
-        "deceasedAge": {"value": 62, "unit": "a", "system": "http://unitsofmeasure.org", "code": "a"},
+        "deceasedAge": {
+            "value": 62,
+            "unit": "a",
+            "system": "http://unitsofmeasure.org",
+            "code": "a",
+        },
     }
     errors = _check_choice_type_fields(resource, "FamilyMemberHistory")
     assert errors == []
@@ -167,10 +179,17 @@ def test_validate_resource_catches_choice_type_conflict():
         "status": "completed",
         "patient": {"reference": "Patient/p1"},
         "relationship": {
-            "coding": [{"system": "http://terminology.hl7.org/CodeSystem/v3-RoleCode", "code": "MTH"}]
+            "coding": [
+                {"system": "http://terminology.hl7.org/CodeSystem/v3-RoleCode", "code": "MTH"}
+            ]
         },
         "deceasedBoolean": True,
-        "deceasedAge": {"value": 62, "unit": "a", "system": "http://unitsofmeasure.org", "code": "a"},
+        "deceasedAge": {
+            "value": 62,
+            "unit": "a",
+            "system": "http://unitsofmeasure.org",
+            "code": "a",
+        },
     }
     errors = validate_resource(resource)
     assert len(errors) > 0
