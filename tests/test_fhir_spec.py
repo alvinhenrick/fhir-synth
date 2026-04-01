@@ -221,10 +221,10 @@ def test_spec_summary_choice_fields_not_in_optional_list():
     # The choice fields are shown in the medication[x] line, not as separate optional fields
     lines = summary.split("\n")
     optional_lines = [
-        l for l in lines
-        if l.strip().startswith("medication") and "[x]" not in l
+        line for line in lines
+        if line.strip().startswith("medication") and "[x]" not in line
     ]
     # medicationCodeableConcept/medicationReference should NOT appear as standalone optional lines
-    assert not any("medicationCodeableConcept:" in l for l in optional_lines)
-    assert not any("medicationReference:" in l for l in optional_lines)
+    assert not any("medicationCodeableConcept:" in line for line in optional_lines)
+    assert not any("medicationReference:" in line for line in optional_lines)
 
