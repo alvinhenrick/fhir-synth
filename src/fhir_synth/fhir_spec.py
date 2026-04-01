@@ -129,11 +129,7 @@ class ResourceMeta:
     @property
     def choice_required_groups(self) -> dict[str, tuple["FieldMeta", ...]]:
         """Choice groups where at least one variant is required."""
-        return {
-            k: v
-            for k, v in self.choice_groups.items()
-            if any(f.choice_required for f in v)
-        }
+        return {k: v for k, v in self.choice_groups.items() if any(f.choice_required for f in v)}
 
 
 # ── Single unified scan ──────────────────────────────────────────────────
