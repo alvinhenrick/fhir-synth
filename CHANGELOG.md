@@ -2,6 +2,22 @@
 
 <!-- version list -->
 
+## v1.9.0 (2026-04-01)
+
+### Features
+
+- Add support for choice-type [x] fields in FHIR specification and introspection
+  ([`e4742da`](https://github.com/alvinhenrick/fhir-synth/commit/e4742daf53e8e15d2255478d510b7cdf59d586de))
+
+### Refactoring
+
+- Improve variable naming for clarity in test_fhir_spec.py
+  ([`b63ef66`](https://github.com/alvinhenrick/fhir-synth/commit/b63ef66e21656654efab3b3f4b25c22acf4588db))
+
+- Streamline dictionary comprehension in choice_required_groups method
+  ([`cf5873a`](https://github.com/alvinhenrick/fhir-synth/commit/cf5873a4aefef8fbfedb043ce2039c1aec2268b4))
+
+
 ## v1.8.0 (2026-03-30)
 
 ### Features
