@@ -23,4 +23,20 @@ HARD RULES — every response MUST follow these:
 13. **NO UNREQUESTED RESOURCES**: Do NOT generate Person, Organization, or cross-system linkage
     resources unless the prompt explicitly asks for them. By default, generate only the resource
     types the user asks for (Patient + clinical resources).
+14. **FHIR CHOICE-TYPE [x] FIELDS**: fhir.resources R4B keeps the FULL suffixed field
+    names for polymorphic choice-type fields. Always use the type-specific name:
+    - ✓ medicationCodeableConcept=CodeableConcept(...)  ✗ medication=CodeableConcept(...)
+    - ✓ medicationReference=Reference(...)              ✗ medication=Reference(...)
+    - ✓ valueQuantity=Quantity(...)                     ✗ value=Quantity(...)
+    - ✓ valueCodeableConcept=CodeableConcept(...)       ✗ value=CodeableConcept(...)
+    - ✓ valueString="..."                               ✗ value="..."
+    - ✓ onsetDateTime="2025-03-08"                      ✗ onset="2025-03-08"
+    - ✓ effectivePeriod=Period(...)                     ✗ effective=Period(...)
+    - ✓ effectiveDateTime="..."                         ✗ effective="..."
+    - ✓ performedPeriod=Period(...)                     ✗ performed=Period(...)
+    - ✓ reportedBoolean=True                            ✗ reported=True
+    - ✓ deceasedBoolean=True                            ✗ deceased=True
+    - ✓ multipleBirthInteger=2                          ✗ multipleBirth=2
+    Using the base name without the type suffix causes "Extra inputs are not permitted".
+
 

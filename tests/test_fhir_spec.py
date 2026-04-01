@@ -2,6 +2,7 @@
 
 from fhir_synth.fhir_spec import (
     CLINICAL_RESOURCES,
+    _introspect,
     class_to_module,
     get_resource_class,
     import_guide,
@@ -150,3 +151,78 @@ def test_import_guide_includes_warning():
     """Import guide should contain the warning about not inventing module names."""
     guide = import_guide(["Patient"])
     assert "Do NOT invent module names" in guide
+
+
+# ── choice-type [x] field introspection tests ─────────────────────────────
+
+
+def test_introspect_medication_choice_group():
+    """MedicationRequest should detect medication[x] as a required choice group."""
+    meta = _introspect("MedicationRequest")
+    groups = meta.choice_groups
+    assert "medication" in groups
+    field_names = [f.name for f in groups["medication"]]
+    assert "medicationCodeableConcept" in field_names
+    assert "medicationReference" in field_names
+    # medication[x] is required
+    assert all(f.choice_required for f in groups["medication"])
+
+
+def test_introspect_medication_choice_required_groups():
+    """choice_required_groups should include medication but not reported."""
+    meta = _introspect("MedicationRequest")
+    req_groups = meta.choice_required_groups
+    assert "medication" in req_groups
+    assert "reported" not in req_groups
+
+
+def test_introspect_observation_choice_groups():
+    """Observation should detect value[x] and effective[x] as optional choice groups."""
+    meta = _introspect("Observation")
+    groups = meta.choice_groups
+    assert "value" in groups
+    assert "effective" in groups
+    # value[x] fields
+    value_names = [f.name for f in groups["value"]]
+    assert "valueQuantity" in value_names
+    assert "valueString" in value_names
+    assert "valueCodeableConcept" in value_names
+    # Both are optional
+    assert all(not f.choice_required for f in groups["value"])
+    assert all(not f.choice_required for f in groups["effective"])
+
+
+def test_introspect_patient_choice_groups():
+    """Patient should detect deceased[x] and multipleBirth[x]."""
+    meta = _introspect("Patient")
+    groups = meta.choice_groups
+    assert "deceased" in groups
+    assert "multipleBirth" in groups
+
+
+def test_spec_summary_shows_medication_choice_required():
+    """spec_summary should show medication[x] as [ONE REQUIRED]."""
+    summary = spec_summary(["MedicationRequest"])
+    assert "medication[x] [ONE REQUIRED]" in summary
+    assert "medicationCodeableConcept" in summary
+    assert "medicationReference" in summary
+
+
+def test_spec_summary_shows_optional_choice_groups():
+    """spec_summary should show optional choice groups with [pick one]."""
+    summary = spec_summary(["Observation"])
+    assert "value[x] [pick one]" in summary
+    assert "effective[x] [pick one]" in summary
+
+
+def test_spec_summary_choice_fields_not_in_optional_list():
+    """Choice-type fields should not appear in the regular optional fields list."""
+    summary = spec_summary(["MedicationRequest"])
+    # The choice fields are shown in the medication[x] line, not as separate optional fields
+    lines = summary.split("\n")
+    optional_lines = [
+        line for line in lines if line.strip().startswith("medication") and "[x]" not in line
+    ]
+    # medicationCodeableConcept/medicationReference should NOT appear as standalone optional lines
+    assert not any("medicationCodeableConcept:" in line for line in optional_lines)
+    assert not any("medicationReference:" in line for line in optional_lines)
