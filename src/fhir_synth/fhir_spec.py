@@ -96,6 +96,8 @@ class FieldMeta:
     type_annotation: str
     is_reference: bool = False
     is_list: bool = False
+    choice_group: str | None = None
+    choice_required: bool = False
 
 
 @dataclass(frozen=True)
@@ -114,6 +116,24 @@ class ResourceMeta:
     @property
     def reference_fields(self) -> tuple[str, ...]:
         return tuple(f.name for f in self.all_fields if f.is_reference)
+
+    @property
+    def choice_groups(self) -> dict[str, tuple["FieldMeta", ...]]:
+        """Group fields by their choice-type base name (e.g. ``medication``)."""
+        groups: dict[str, list[FieldMeta]] = {}
+        for f in self.all_fields:
+            if f.choice_group is not None:
+                groups.setdefault(f.choice_group, []).append(f)
+        return {k: tuple(v) for k, v in groups.items()}
+
+    @property
+    def choice_required_groups(self) -> dict[str, tuple["FieldMeta", ...]]:
+        """Choice groups where at least one variant is required."""
+        return {
+            k: v
+            for k, v in self.choice_groups.items()
+            if any(f.choice_required for f in v)
+        }
 
 
 # ── Single unified scan ──────────────────────────────────────────────────
@@ -254,6 +274,8 @@ def _introspect(name: str) -> ResourceMeta:
         ann = str(finfo.annotation) if finfo.annotation else "Any"
         is_ref = "ReferenceType" in ann
         is_list = "List" in ann or "list" in ann
+        choice_group = extras.get("one_of_many")
+        choice_required = bool(extras.get("one_of_many_required"))
         fields.append(
             FieldMeta(
                 name=fname,
@@ -261,6 +283,8 @@ def _introspect(name: str) -> ResourceMeta:
                 type_annotation=ann,
                 is_reference=is_ref,
                 is_list=is_list,
+                choice_group=choice_group if isinstance(choice_group, str) else None,
+                choice_required=choice_required,
             )
         )
         if is_req:
@@ -412,10 +436,20 @@ def spec_summary(resource_types: list[str] | None = None) -> str:
         if req_parts:
             lines.extend(req_parts)
 
-        # Key optional fields with types (skip noise fields, cap at 12)
+        # Choice-type [x] field groups — shown prominently, exempt from cap
+        choice_field_names: set[str] = set()
+        for group_name, group_fields in meta.choice_groups.items():
+            choice_field_names.update(f.name for f in group_fields)
+            tag = "[ONE REQUIRED]" if group_fields[0].choice_required else "[pick one]"
+            variants = ", ".join(
+                f"{f.name} ({_short_type(f.type_annotation)})" for f in group_fields
+            )
+            lines.append(f"    {group_name}[x] {tag}: {variants}")
+
+        # Key optional fields with types (skip noise fields AND choice fields, cap at 12)
         opt_parts = []
         for f in meta.all_fields:
-            if not f.required and f.name not in _skip:
+            if not f.required and f.name not in _skip and f.name not in choice_field_names:
                 t = _short_type(f.type_annotation)
                 tag = " [ref]" if f.is_reference else ""
                 opt_parts.append(f"    {f.name}: {t}{tag}")
