@@ -45,6 +45,41 @@ def test_apply_metadata_to_resources():
         assert resource["meta"]["source"] == source
 
 
+def test_apply_metadata_deduplicates():
+    """Metadata overlay does not duplicate values already present on resources."""
+    profile_url = "http://example.org/StructureDefinition/test"
+    security = [{"system": "http://security.org", "code": "N", "display": "Normal"}]
+    tag = [{"system": "http://tags.org", "code": "test"}]
+
+    # Simulate LLM already having added the same meta values
+    resources = [
+        {
+            "resourceType": "Patient",
+            "id": "p1",
+            "meta": {
+                "profile": [profile_url],
+                "security": [{"system": "http://security.org", "code": "N", "display": "Normal"}],
+                "tag": [{"system": "http://tags.org", "code": "test"}],
+            },
+        },
+    ]
+
+    CodeGenerator.apply_metadata_to_resources(
+        resources,
+        security=security,
+        tag=tag,
+        profile=[profile_url],
+        source="http://test.org",
+    )
+
+    meta = resources[0]["meta"]
+    # Each should appear exactly once, not duplicated
+    assert meta["profile"] == [profile_url]
+    assert len(meta["security"]) == 1
+    assert len(meta["tag"]) == 1
+    assert meta["source"] == "http://test.org"
+
+
 def test_code_generator_extracts_code_block():
     response = """Here is code:\n```python\nprint('hi')\n```\n"""
     llm = MockLLMProvider(response=response)

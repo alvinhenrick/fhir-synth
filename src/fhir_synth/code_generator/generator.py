@@ -229,15 +229,37 @@ class CodeGenerator:
 
             if security:
                 existing = meta.get("security", [])
-                meta["security"] = existing + security
+                # Deduplicate by (system, code) tuple
+                seen = {(s.get("system"), s.get("code")) for s in existing}
+                merged = list(existing)
+                for s in security:
+                    key = (s.get("system"), s.get("code"))
+                    if key not in seen:
+                        merged.append(s)
+                        seen.add(key)
+                meta["security"] = merged
 
             if tag:
                 existing = meta.get("tag", [])
-                meta["tag"] = existing + tag
+                seen = {(t.get("system"), t.get("code")) for t in existing}
+                merged = list(existing)
+                for t in tag:
+                    key = (t.get("system"), t.get("code"))
+                    if key not in seen:
+                        merged.append(t)
+                        seen.add(key)
+                meta["tag"] = merged
 
             if profile:
                 existing = meta.get("profile", [])
-                meta["profile"] = existing + profile
+                # Deduplicate profile URLs
+                seen_profiles = set(existing)
+                merged = list(existing)
+                for p in profile:
+                    if p not in seen_profiles:
+                        merged.append(p)
+                        seen_profiles.add(p)
+                meta["profile"] = merged
 
             if source:
                 meta["source"] = source
