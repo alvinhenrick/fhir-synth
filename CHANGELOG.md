@@ -2,6 +2,24 @@
 
 <!-- version list -->
 
+## v1.12.0 (2026-04-03)
+
+### Bug Fixes
+
+- Update mypy configuration to simplify module overrides for boto3
+  ([`cb630f7`](https://github.com/alvinhenrick/fhir-synth/commit/cb630f71a8a25b9a0b2a0bffff07b3b27079bd4f))
+
+### Documentation
+
+- Update CLI documentation for output structure and executor options
+  ([`6911a04`](https://github.com/alvinhenrick/fhir-synth/commit/6911a04d079c5d6e8826739304bc964606adac1f))
+
+### Features
+
+- Deduplicate metadata values in resource overlay
+  ([`6ca4269`](https://github.com/alvinhenrick/fhir-synth/commit/6ca42692333ce5487df974d81958f243a6b7575f))
+
+
 ## v1.11.0 (2026-04-03)
 
 ### Features
