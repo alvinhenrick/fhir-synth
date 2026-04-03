@@ -5050,7 +5050,29 @@ container — only :meth:<code>cleanup</code> does that.</p>
 <span class="normal"><a href="#__codelineno-0-242">242</a></span>
 <span class="normal"><a href="#__codelineno-0-243">243</a></span>
 <span class="normal"><a href="#__codelineno-0-244">244</a></span>
-<span class="normal"><a href="#__codelineno-0-245">245</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-27" name="__codelineno-0-27"></a><span class="k">class</span><span class="w"> </span><span class="nc">CodeGenerator</span><span class="p">:</span>
+<span class="normal"><a href="#__codelineno-0-245">245</a></span>
+<span class="normal"><a href="#__codelineno-0-246">246</a></span>
+<span class="normal"><a href="#__codelineno-0-247">247</a></span>
+<span class="normal"><a href="#__codelineno-0-248">248</a></span>
+<span class="normal"><a href="#__codelineno-0-249">249</a></span>
+<span class="normal"><a href="#__codelineno-0-250">250</a></span>
+<span class="normal"><a href="#__codelineno-0-251">251</a></span>
+<span class="normal"><a href="#__codelineno-0-252">252</a></span>
+<span class="normal"><a href="#__codelineno-0-253">253</a></span>
+<span class="normal"><a href="#__codelineno-0-254">254</a></span>
+<span class="normal"><a href="#__codelineno-0-255">255</a></span>
+<span class="normal"><a href="#__codelineno-0-256">256</a></span>
+<span class="normal"><a href="#__codelineno-0-257">257</a></span>
+<span class="normal"><a href="#__codelineno-0-258">258</a></span>
+<span class="normal"><a href="#__codelineno-0-259">259</a></span>
+<span class="normal"><a href="#__codelineno-0-260">260</a></span>
+<span class="normal"><a href="#__codelineno-0-261">261</a></span>
+<span class="normal"><a href="#__codelineno-0-262">262</a></span>
+<span class="normal"><a href="#__codelineno-0-263">263</a></span>
+<span class="normal"><a href="#__codelineno-0-264">264</a></span>
+<span class="normal"><a href="#__codelineno-0-265">265</a></span>
+<span class="normal"><a href="#__codelineno-0-266">266</a></span>
+<span class="normal"><a href="#__codelineno-0-267">267</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-27" name="__codelineno-0-27"></a><span class="k">class</span><span class="w"> </span><span class="nc">CodeGenerator</span><span class="p">:</span>
 <a id="__codelineno-0-28" name="__codelineno-0-28"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Generates Python code for FHIR resource creation from natural language.&quot;&quot;&quot;</span>
 <a id="__codelineno-0-29" name="__codelineno-0-29"></a>
 <a id="__codelineno-0-30" name="__codelineno-0-30"></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
@@ -5255,20 +5277,42 @@ container — only :meth:<code>cleanup</code> does that.</p>
 <a id="__codelineno-0-229" name="__codelineno-0-229"></a>
 <a id="__codelineno-0-230" name="__codelineno-0-230"></a>            <span class="k">if</span> <span class="n">security</span><span class="p">:</span>
 <a id="__codelineno-0-231" name="__codelineno-0-231"></a>                <span class="n">existing</span> <span class="o">=</span> <span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;security&quot;</span><span class="p">,</span> <span class="p">[])</span>
-<a id="__codelineno-0-232" name="__codelineno-0-232"></a>                <span class="n">meta</span><span class="p">[</span><span class="s2">&quot;security&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">existing</span> <span class="o">+</span> <span class="n">security</span>
-<a id="__codelineno-0-233" name="__codelineno-0-233"></a>
-<a id="__codelineno-0-234" name="__codelineno-0-234"></a>            <span class="k">if</span> <span class="n">tag</span><span class="p">:</span>
-<a id="__codelineno-0-235" name="__codelineno-0-235"></a>                <span class="n">existing</span> <span class="o">=</span> <span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;tag&quot;</span><span class="p">,</span> <span class="p">[])</span>
-<a id="__codelineno-0-236" name="__codelineno-0-236"></a>                <span class="n">meta</span><span class="p">[</span><span class="s2">&quot;tag&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">existing</span> <span class="o">+</span> <span class="n">tag</span>
-<a id="__codelineno-0-237" name="__codelineno-0-237"></a>
-<a id="__codelineno-0-238" name="__codelineno-0-238"></a>            <span class="k">if</span> <span class="n">profile</span><span class="p">:</span>
-<a id="__codelineno-0-239" name="__codelineno-0-239"></a>                <span class="n">existing</span> <span class="o">=</span> <span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;profile&quot;</span><span class="p">,</span> <span class="p">[])</span>
-<a id="__codelineno-0-240" name="__codelineno-0-240"></a>                <span class="n">meta</span><span class="p">[</span><span class="s2">&quot;profile&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">existing</span> <span class="o">+</span> <span class="n">profile</span>
+<a id="__codelineno-0-232" name="__codelineno-0-232"></a>                <span class="c1"># Deduplicate by (system, code) tuple</span>
+<a id="__codelineno-0-233" name="__codelineno-0-233"></a>                <span class="n">seen</span> <span class="o">=</span> <span class="p">{(</span><span class="n">s</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;system&quot;</span><span class="p">),</span> <span class="n">s</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;code&quot;</span><span class="p">))</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">existing</span><span class="p">}</span>
+<a id="__codelineno-0-234" name="__codelineno-0-234"></a>                <span class="n">merged</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">existing</span><span class="p">)</span>
+<a id="__codelineno-0-235" name="__codelineno-0-235"></a>                <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">security</span><span class="p">:</span>
+<a id="__codelineno-0-236" name="__codelineno-0-236"></a>                    <span class="n">key</span> <span class="o">=</span> <span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;system&quot;</span><span class="p">),</span> <span class="n">s</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;code&quot;</span><span class="p">))</span>
+<a id="__codelineno-0-237" name="__codelineno-0-237"></a>                    <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">seen</span><span class="p">:</span>
+<a id="__codelineno-0-238" name="__codelineno-0-238"></a>                        <span class="n">merged</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+<a id="__codelineno-0-239" name="__codelineno-0-239"></a>                        <span class="n">seen</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+<a id="__codelineno-0-240" name="__codelineno-0-240"></a>                <span class="n">meta</span><span class="p">[</span><span class="s2">&quot;security&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">merged</span>
 <a id="__codelineno-0-241" name="__codelineno-0-241"></a>
-<a id="__codelineno-0-242" name="__codelineno-0-242"></a>            <span class="k">if</span> <span class="n">source</span><span class="p">:</span>
-<a id="__codelineno-0-243" name="__codelineno-0-243"></a>                <span class="n">meta</span><span class="p">[</span><span class="s2">&quot;source&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">source</span>
-<a id="__codelineno-0-244" name="__codelineno-0-244"></a>
-<a id="__codelineno-0-245" name="__codelineno-0-245"></a>        <span class="k">return</span> <span class="n">resources</span>
+<a id="__codelineno-0-242" name="__codelineno-0-242"></a>            <span class="k">if</span> <span class="n">tag</span><span class="p">:</span>
+<a id="__codelineno-0-243" name="__codelineno-0-243"></a>                <span class="n">existing</span> <span class="o">=</span> <span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;tag&quot;</span><span class="p">,</span> <span class="p">[])</span>
+<a id="__codelineno-0-244" name="__codelineno-0-244"></a>                <span class="n">seen</span> <span class="o">=</span> <span class="p">{(</span><span class="n">t</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;system&quot;</span><span class="p">),</span> <span class="n">t</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;code&quot;</span><span class="p">))</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">existing</span><span class="p">}</span>
+<a id="__codelineno-0-245" name="__codelineno-0-245"></a>                <span class="n">merged</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">existing</span><span class="p">)</span>
+<a id="__codelineno-0-246" name="__codelineno-0-246"></a>                <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">tag</span><span class="p">:</span>
+<a id="__codelineno-0-247" name="__codelineno-0-247"></a>                    <span class="n">key</span> <span class="o">=</span> <span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;system&quot;</span><span class="p">),</span> <span class="n">t</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;code&quot;</span><span class="p">))</span>
+<a id="__codelineno-0-248" name="__codelineno-0-248"></a>                    <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">seen</span><span class="p">:</span>
+<a id="__codelineno-0-249" name="__codelineno-0-249"></a>                        <span class="n">merged</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+<a id="__codelineno-0-250" name="__codelineno-0-250"></a>                        <span class="n">seen</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+<a id="__codelineno-0-251" name="__codelineno-0-251"></a>                <span class="n">meta</span><span class="p">[</span><span class="s2">&quot;tag&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">merged</span>
+<a id="__codelineno-0-252" name="__codelineno-0-252"></a>
+<a id="__codelineno-0-253" name="__codelineno-0-253"></a>            <span class="k">if</span> <span class="n">profile</span><span class="p">:</span>
+<a id="__codelineno-0-254" name="__codelineno-0-254"></a>                <span class="n">existing</span> <span class="o">=</span> <span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;profile&quot;</span><span class="p">,</span> <span class="p">[])</span>
+<a id="__codelineno-0-255" name="__codelineno-0-255"></a>                <span class="c1"># Deduplicate profile URLs</span>
+<a id="__codelineno-0-256" name="__codelineno-0-256"></a>                <span class="n">seen_profiles</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">existing</span><span class="p">)</span>
+<a id="__codelineno-0-257" name="__codelineno-0-257"></a>                <span class="n">merged</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">existing</span><span class="p">)</span>
+<a id="__codelineno-0-258" name="__codelineno-0-258"></a>                <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">profile</span><span class="p">:</span>
+<a id="__codelineno-0-259" name="__codelineno-0-259"></a>                    <span class="k">if</span> <span class="n">p</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">seen_profiles</span><span class="p">:</span>
+<a id="__codelineno-0-260" name="__codelineno-0-260"></a>                        <span class="n">merged</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+<a id="__codelineno-0-261" name="__codelineno-0-261"></a>                        <span class="n">seen_profiles</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+<a id="__codelineno-0-262" name="__codelineno-0-262"></a>                <span class="n">meta</span><span class="p">[</span><span class="s2">&quot;profile&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">merged</span>
+<a id="__codelineno-0-263" name="__codelineno-0-263"></a>
+<a id="__codelineno-0-264" name="__codelineno-0-264"></a>            <span class="k">if</span> <span class="n">source</span><span class="p">:</span>
+<a id="__codelineno-0-265" name="__codelineno-0-265"></a>                <span class="n">meta</span><span class="p">[</span><span class="s2">&quot;source&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">source</span>
+<a id="__codelineno-0-266" name="__codelineno-0-266"></a>
+<a id="__codelineno-0-267" name="__codelineno-0-267"></a>        <span class="k">return</span> <span class="n">resources</span>
 </code></pre></div></td></tr></table></div>
               </details>
 
@@ -6077,7 +6121,29 @@ corrected version. This repeats up to <code>max_retries</code> times.</p>
 <span class="normal"><a href="#__codelineno-0-242">242</a></span>
 <span class="normal"><a href="#__codelineno-0-243">243</a></span>
 <span class="normal"><a href="#__codelineno-0-244">244</a></span>
-<span class="normal"><a href="#__codelineno-0-245">245</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-204" name="__codelineno-0-204"></a><span class="nd">@staticmethod</span>
+<span class="normal"><a href="#__codelineno-0-245">245</a></span>
+<span class="normal"><a href="#__codelineno-0-246">246</a></span>
+<span class="normal"><a href="#__codelineno-0-247">247</a></span>
+<span class="normal"><a href="#__codelineno-0-248">248</a></span>
+<span class="normal"><a href="#__codelineno-0-249">249</a></span>
+<span class="normal"><a href="#__codelineno-0-250">250</a></span>
+<span class="normal"><a href="#__codelineno-0-251">251</a></span>
+<span class="normal"><a href="#__codelineno-0-252">252</a></span>
+<span class="normal"><a href="#__codelineno-0-253">253</a></span>
+<span class="normal"><a href="#__codelineno-0-254">254</a></span>
+<span class="normal"><a href="#__codelineno-0-255">255</a></span>
+<span class="normal"><a href="#__codelineno-0-256">256</a></span>
+<span class="normal"><a href="#__codelineno-0-257">257</a></span>
+<span class="normal"><a href="#__codelineno-0-258">258</a></span>
+<span class="normal"><a href="#__codelineno-0-259">259</a></span>
+<span class="normal"><a href="#__codelineno-0-260">260</a></span>
+<span class="normal"><a href="#__codelineno-0-261">261</a></span>
+<span class="normal"><a href="#__codelineno-0-262">262</a></span>
+<span class="normal"><a href="#__codelineno-0-263">263</a></span>
+<span class="normal"><a href="#__codelineno-0-264">264</a></span>
+<span class="normal"><a href="#__codelineno-0-265">265</a></span>
+<span class="normal"><a href="#__codelineno-0-266">266</a></span>
+<span class="normal"><a href="#__codelineno-0-267">267</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-204" name="__codelineno-0-204"></a><span class="nd">@staticmethod</span>
 <a id="__codelineno-0-205" name="__codelineno-0-205"></a><span class="k">def</span><span class="w"> </span><span class="nf">apply_metadata_to_resources</span><span class="p">(</span>
 <a id="__codelineno-0-206" name="__codelineno-0-206"></a>    <span class="n">resources</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]],</span>
 <a id="__codelineno-0-207" name="__codelineno-0-207"></a>    <span class="n">security</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -6105,20 +6171,42 @@ corrected version. This repeats up to <code>max_retries</code> times.</p>
 <a id="__codelineno-0-229" name="__codelineno-0-229"></a>
 <a id="__codelineno-0-230" name="__codelineno-0-230"></a>        <span class="k">if</span> <span class="n">security</span><span class="p">:</span>
 <a id="__codelineno-0-231" name="__codelineno-0-231"></a>            <span class="n">existing</span> <span class="o">=</span> <span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;security&quot;</span><span class="p">,</span> <span class="p">[])</span>
-<a id="__codelineno-0-232" name="__codelineno-0-232"></a>            <span class="n">meta</span><span class="p">[</span><span class="s2">&quot;security&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">existing</span> <span class="o">+</span> <span class="n">security</span>
-<a id="__codelineno-0-233" name="__codelineno-0-233"></a>
-<a id="__codelineno-0-234" name="__codelineno-0-234"></a>        <span class="k">if</span> <span class="n">tag</span><span class="p">:</span>
-<a id="__codelineno-0-235" name="__codelineno-0-235"></a>            <span class="n">existing</span> <span class="o">=</span> <span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;tag&quot;</span><span class="p">,</span> <span class="p">[])</span>
-<a id="__codelineno-0-236" name="__codelineno-0-236"></a>            <span class="n">meta</span><span class="p">[</span><span class="s2">&quot;tag&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">existing</span> <span class="o">+</span> <span class="n">tag</span>
-<a id="__codelineno-0-237" name="__codelineno-0-237"></a>
-<a id="__codelineno-0-238" name="__codelineno-0-238"></a>        <span class="k">if</span> <span class="n">profile</span><span class="p">:</span>
-<a id="__codelineno-0-239" name="__codelineno-0-239"></a>            <span class="n">existing</span> <span class="o">=</span> <span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;profile&quot;</span><span class="p">,</span> <span class="p">[])</span>
-<a id="__codelineno-0-240" name="__codelineno-0-240"></a>            <span class="n">meta</span><span class="p">[</span><span class="s2">&quot;profile&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">existing</span> <span class="o">+</span> <span class="n">profile</span>
+<a id="__codelineno-0-232" name="__codelineno-0-232"></a>            <span class="c1"># Deduplicate by (system, code) tuple</span>
+<a id="__codelineno-0-233" name="__codelineno-0-233"></a>            <span class="n">seen</span> <span class="o">=</span> <span class="p">{(</span><span class="n">s</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;system&quot;</span><span class="p">),</span> <span class="n">s</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;code&quot;</span><span class="p">))</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">existing</span><span class="p">}</span>
+<a id="__codelineno-0-234" name="__codelineno-0-234"></a>            <span class="n">merged</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">existing</span><span class="p">)</span>
+<a id="__codelineno-0-235" name="__codelineno-0-235"></a>            <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">security</span><span class="p">:</span>
+<a id="__codelineno-0-236" name="__codelineno-0-236"></a>                <span class="n">key</span> <span class="o">=</span> <span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;system&quot;</span><span class="p">),</span> <span class="n">s</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;code&quot;</span><span class="p">))</span>
+<a id="__codelineno-0-237" name="__codelineno-0-237"></a>                <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">seen</span><span class="p">:</span>
+<a id="__codelineno-0-238" name="__codelineno-0-238"></a>                    <span class="n">merged</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+<a id="__codelineno-0-239" name="__codelineno-0-239"></a>                    <span class="n">seen</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+<a id="__codelineno-0-240" name="__codelineno-0-240"></a>            <span class="n">meta</span><span class="p">[</span><span class="s2">&quot;security&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">merged</span>
 <a id="__codelineno-0-241" name="__codelineno-0-241"></a>
-<a id="__codelineno-0-242" name="__codelineno-0-242"></a>        <span class="k">if</span> <span class="n">source</span><span class="p">:</span>
-<a id="__codelineno-0-243" name="__codelineno-0-243"></a>            <span class="n">meta</span><span class="p">[</span><span class="s2">&quot;source&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">source</span>
-<a id="__codelineno-0-244" name="__codelineno-0-244"></a>
-<a id="__codelineno-0-245" name="__codelineno-0-245"></a>    <span class="k">return</span> <span class="n">resources</span>
+<a id="__codelineno-0-242" name="__codelineno-0-242"></a>        <span class="k">if</span> <span class="n">tag</span><span class="p">:</span>
+<a id="__codelineno-0-243" name="__codelineno-0-243"></a>            <span class="n">existing</span> <span class="o">=</span> <span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;tag&quot;</span><span class="p">,</span> <span class="p">[])</span>
+<a id="__codelineno-0-244" name="__codelineno-0-244"></a>            <span class="n">seen</span> <span class="o">=</span> <span class="p">{(</span><span class="n">t</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;system&quot;</span><span class="p">),</span> <span class="n">t</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;code&quot;</span><span class="p">))</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">existing</span><span class="p">}</span>
+<a id="__codelineno-0-245" name="__codelineno-0-245"></a>            <span class="n">merged</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">existing</span><span class="p">)</span>
+<a id="__codelineno-0-246" name="__codelineno-0-246"></a>            <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">tag</span><span class="p">:</span>
+<a id="__codelineno-0-247" name="__codelineno-0-247"></a>                <span class="n">key</span> <span class="o">=</span> <span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;system&quot;</span><span class="p">),</span> <span class="n">t</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;code&quot;</span><span class="p">))</span>
+<a id="__codelineno-0-248" name="__codelineno-0-248"></a>                <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">seen</span><span class="p">:</span>
+<a id="__codelineno-0-249" name="__codelineno-0-249"></a>                    <span class="n">merged</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+<a id="__codelineno-0-250" name="__codelineno-0-250"></a>                    <span class="n">seen</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+<a id="__codelineno-0-251" name="__codelineno-0-251"></a>            <span class="n">meta</span><span class="p">[</span><span class="s2">&quot;tag&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">merged</span>
+<a id="__codelineno-0-252" name="__codelineno-0-252"></a>
+<a id="__codelineno-0-253" name="__codelineno-0-253"></a>        <span class="k">if</span> <span class="n">profile</span><span class="p">:</span>
+<a id="__codelineno-0-254" name="__codelineno-0-254"></a>            <span class="n">existing</span> <span class="o">=</span> <span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;profile&quot;</span><span class="p">,</span> <span class="p">[])</span>
+<a id="__codelineno-0-255" name="__codelineno-0-255"></a>            <span class="c1"># Deduplicate profile URLs</span>
+<a id="__codelineno-0-256" name="__codelineno-0-256"></a>            <span class="n">seen_profiles</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">existing</span><span class="p">)</span>
+<a id="__codelineno-0-257" name="__codelineno-0-257"></a>            <span class="n">merged</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">existing</span><span class="p">)</span>
+<a id="__codelineno-0-258" name="__codelineno-0-258"></a>            <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">profile</span><span class="p">:</span>
+<a id="__codelineno-0-259" name="__codelineno-0-259"></a>                <span class="k">if</span> <span class="n">p</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">seen_profiles</span><span class="p">:</span>
+<a id="__codelineno-0-260" name="__codelineno-0-260"></a>                    <span class="n">merged</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+<a id="__codelineno-0-261" name="__codelineno-0-261"></a>                    <span class="n">seen_profiles</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+<a id="__codelineno-0-262" name="__codelineno-0-262"></a>            <span class="n">meta</span><span class="p">[</span><span class="s2">&quot;profile&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">merged</span>
+<a id="__codelineno-0-263" name="__codelineno-0-263"></a>
+<a id="__codelineno-0-264" name="__codelineno-0-264"></a>        <span class="k">if</span> <span class="n">source</span><span class="p">:</span>
+<a id="__codelineno-0-265" name="__codelineno-0-265"></a>            <span class="n">meta</span><span class="p">[</span><span class="s2">&quot;source&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">source</span>
+<a id="__codelineno-0-266" name="__codelineno-0-266"></a>
+<a id="__codelineno-0-267" name="__codelineno-0-267"></a>    <span class="k">return</span> <span class="n">resources</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
