@@ -34,41 +34,39 @@ echo "OPENAI_API_KEY=sk-..." > .env
 
 ### 2. Generate data from a prompt
 
-Describe what you need in plain English → get NDJSON output (one patient bundle per line):
+Describe what you need in plain English → all outputs auto-saved to `runs/<name>/`:
 
 ```bash
 # 10 diabetic patients with labs (uses gpt-4 by default)
-fhir-synth generate "10 diabetic patients with HbA1c observations" -o diabetes.ndjson
+# → runs/brave_phoenix/ with prompt.txt, .py, .ndjson
+fhir-synth generate "10 diabetic patients with HbA1c observations"
 
 # 5 patients with hypertension, encounters, and meds
-fhir-synth generate "5 patients with hypertension, office encounters, and antihypertensive medications" -o hypertension.ndjson
+fhir-synth generate "5 patients with hypertension, office encounters, and antihypertensive medications"
 
-# Save the generated code for inspection
-fhir-synth generate "20 patients with conditions and observations" -o data.ndjson --save-code generated.py
-
-# Split output into one JSON file per patient
-fhir-synth generate "10 diabetic patients" --split -o patients/
+# Also split output into one JSON file per patient
+fhir-synth generate "10 diabetic patients" --split
 
 # Apply custom metadata (security labels, tags, profiles)
-fhir-synth generate "10 patients" --meta-config examples/meta-normal.yaml -o output.ndjson
+fhir-synth generate "10 patients" --meta-config examples/meta-normal.yaml
 
 # EMPI: Person → Patients across EMR systems
-fhir-synth generate "EMPI dataset" --empi --persons 3 -o empi.ndjson
+fhir-synth generate "EMPI dataset" --empi --persons 3
 
 # Stateful generation: add follow-up encounters to existing patients
-fhir-synth generate "5 diabetic patients" -o initial.ndjson
-fhir-synth generate "follow-up visits with HbA1c labs" --context initial.ndjson -o followup.ndjson
+fhir-synth generate "5 diabetic patients"
+fhir-synth generate "follow-up visits with HbA1c labs" --context runs/brave_phoenix.ndjson
 
 # AWS Bedrock provider with named profile
 fhir-synth generate "5 patients" \
   --provider bedrock/us.anthropic.claude-3-5-sonnet-20241022-v2:0 \
-  --aws-profile my-profile --aws-region us-east-1 -o output.json
+  --aws-profile my-profile --aws-region us-east-1
 
 # Try without an API key (mock LLM for testing)
-fhir-synth generate "5 patients" --provider mock -o test.json
+fhir-synth generate "5 patients" --provider mock
 
 # Generate STU3 resources instead of R4B (case-insensitive)
-fhir-synth generate "10 patients with diabetes" --fhir-version stu3 -o output.ndjson
+fhir-synth generate "10 patients with diabetes" --fhir-version stu3
 ```
 
 **What happens under the hood:**
@@ -78,19 +76,30 @@ fhir-synth generate "10 patients with diabetes" --fhir-version stu3 -o output.nd
 4. Code is safety-checked (import whitelist + dangerous builtins scan) and auto-fixed (naive datetimes → UTC)
 5. Code executes via a pluggable executor backend powered by [smolagents](https://huggingface.co/docs/smolagents) (local AST interpreter, Docker, or E2B cloud)
 6. **Enhanced FHIR validation** — offline validation using `fhir.resources`:
-   - Strict Pydantic mode (comprehensive type/format checking)
-   - Required field verification (e.g., `Observation.status`, `Observation.code`)
-   - Cardinality validation (min/max array occurrences)
+   - Pydantic model validation (required fields, types, cardinality)
+   - Choice-type [x] mutual exclusion checks
    - Reference integrity checks (cross-resource references)
 7. If anything fails, the error is sent back to the LLM for self-healing (up to 2 retries)
 8. Resources are split by patient and saved as FHIR Bundle (JSON) or NDJSON (R4B or STU3 depending on `--fhir-version`)
 
-### Output Modes
+### Output Structure
+
+Each run auto-generates a unique Docker-style name and saves all artifacts in a directory:
+
+```
+runs/
+  brave_phoenix/
+    prompt.txt              ← the user's prompt
+    brave_phoenix.py        ← generated Python code
+    brave_phoenix.ndjson    ← NDJSON output (one patient bundle per line)
+    patient_001.json        ← (with --split) per-patient JSON files
+    patient_002.json
+```
 
 | Mode | Flag | Output |
 |------|------|--------|
-| **Bundle** (default) | — | Single JSON bundle + `.ndjson` sidecar |
-| **Split** | `--split` | One JSON file per patient + `all_patients.ndjson` |
+| **Default** | — | `runs/<name>/prompt.txt` + `<name>.py` + `<name>.ndjson` |
+| **Split** | `--split` | Also creates `patient_*.json` in the run directory |
 
 ## CLI Reference
 
@@ -99,11 +108,9 @@ End-to-end: prompt → LLM → code → execute → FHIR Bundle.
 
 | Flag | Default | Description |
 |------|---------|-------------|
-| `-o / --out` | `output.json` | Output file (or directory with `--split`) |
 | `-p / --provider` | `gpt-4` | LLM model/provider |
-| `-t / --type` | `transaction` | Bundle type |
-| `--save-code` | — | Save generated Python code |
-| `--split` | off | One JSON file per patient (default: single bundle) |
+| `--fhir-version` | `R4B` | FHIR version: `R4B`, `STU3` (case-insensitive) |
+| `--split` | off | Also split into one JSON file per patient in a subdirectory |
 | `--meta-config` | — | YAML file with metadata configuration |
 | `--empi` | off | Include EMPI Person→Patient linkage |
 | `--persons` | `1` | Number of Persons (EMPI) |
@@ -197,11 +204,11 @@ meta:
 
 **Usage:**
 ```bash
-# Single bundle with metadata
-fhir-synth generate "10 patients" --meta-config examples/meta-normal.yaml -o output.json
+# With metadata
+fhir-synth generate "10 patients" --meta-config examples/meta-normal.yaml
 
 # Split per-patient files with metadata
-fhir-synth generate "10 diabetic patients" --meta-config examples/meta-normal.yaml --split -o patients/
+fhir-synth generate "10 diabetic patients" --meta-config examples/meta-normal.yaml --split
 ```
 
 **Supported metadata fields:**
@@ -243,7 +250,7 @@ The system includes 13+ built-in skills following the [agentskills.io](https://a
 **Keyword selector** (default) — Zero-dependency fuzzy matching with typo tolerance:
 ```bash
 # "diabtes" → "diabetes" ✓, "medicaton" → "medication" ✓
-fhir-synth generate "10 diabtes patients with medicaton" -o output.ndjson
+fhir-synth generate "10 diabtes patients with medicaton"
 ```
 
 **FAISS selector** (optional) — Semantic similarity for advanced users:
@@ -312,9 +319,10 @@ FHIR Synth is organized into focused packages:
 - **`bundle/`** — Bundle creation and management (`BundleBuilder`, `BundleManager`, `BundleFactory`, `split_resources_by_patient`, `write_ndjson`, `write_split_bundles`)
 - **`code_generator/`** — LLM-powered code generation with self-healing execution (`CodeGenerator`)
     - **`code_generator/executor/`** — Pluggable executor backends powered by [smolagents](https://huggingface.co/docs/smolagents) (`LocalSmolagentsExecutor`, `DockerSandboxExecutor`, `E2BExecutor`, `BlaxelExecutor`)
-    - **`code_generator/fhir_validation.py`** — Enhanced offline FHIR validation (strict mode, required fields, cardinality, references)
+    - **`code_generator/fhir_validation.py`** — FHIR validation via Pydantic models (choice-type [x] checks, reference integrity)
 - **`fhir_utils/`** — FHIR resource factory and lazy resource class map (`FHIRResourceFactory`)
 - **`llm.py`** — Unified LLM provider interface via LiteLLM (`LLMProvider`, `get_provider`)
+- **`naming.py`** — Docker-style run name generator (`coolname`)
 - **`cli.py`** — Typer-based CLI
 
 ### Executor Backends
