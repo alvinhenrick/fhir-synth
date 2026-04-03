@@ -49,13 +49,9 @@ def _configure_skills(
 @app.command()
 def generate(
     prompt: str = typer.Argument(..., help="Natural language description of data to generate"),
-    out: str = typer.Option("output.ndjson", "--out", "-o", help="Output file path"),
     provider: str = typer.Option("gpt-4", "--provider", "-p", help="LLM model/provider"),
     fhir_version: str = typer.Option(
         "R4B", "--fhir-version", help="FHIR version: R4B, STU3 (case-insensitive)"
-    ),
-    save_code: str | None = typer.Option(
-        None, "--save-code", help="Also save generated code to this file"
     ),
     empi: bool = typer.Option(False, "--empi", help="Include EMPI Person/Patient linkage"),
     persons: int = typer.Option(1, "--persons", help="Number of Persons for EMPI"),
@@ -67,7 +63,7 @@ def generate(
     split: bool = typer.Option(
         False,
         "--split",
-        help="Split output into one JSON file per patient in a directory",
+        help="Also split output into one JSON file per patient in a subdirectory",
     ),
     aws_profile: str | None = typer.Option(
         None, "--aws-profile", help="AWS profile for Bedrock (reads ~/.aws/credentials)"
@@ -102,8 +98,12 @@ def generate(
 ) -> None:
     """Generate synthetic FHIR data end-to-end: prompt → LLM → code → execute → NDJSON.
 
-    The default output is a single NDJSON file (one patient bundle per line).
-    Use --split to write one JSON file per patient into a directory instead.
+    All outputs are saved to a ``runs/`` directory with an auto-generated
+    Docker-style name (e.g. ``brave_phoenix``).  Each run produces:
+
+    - ``runs/<name>.py``      — the generated Python code
+    - ``runs/<name>.ndjson``  — NDJSON data (one patient bundle per line)
+    - ``runs/<name>/``        — (with --split) per-patient JSON files
 
     Example prompts:
 
@@ -143,18 +143,14 @@ def generate(
       # With metadata (security labels, tags, profiles)
       fhir-synth generate "10 patients" --meta-config examples/meta-normal.yaml
 
-      # Split into per-patient files
-      fhir-synth generate "20 patients with conditions" --split -o patients/
+      # Split into per-patient files (also creates the NDJSON)
+      fhir-synth generate "20 patients with conditions" --split
 
       # AWS Bedrock provider
       fhir-synth generate "5 patients" --provider bedrock/us.anthropic.claude-3-5-sonnet-20241022-v2:0 --aws-profile my-profile --aws-region us-east-1
 
-      # Save generated code for debugging
-      fhir-synth generate "10 patients with labs" --save-code generated.py
-
       # Use Docker sandbox executor for sandboxed execution (requires Docker)
       fhir-synth generate "5 patients" --executor docker
-
 
       # E2B cloud sandbox (requires E2B_API_KEY env var)
       fhir-synth generate "5 patients" --executor e2b
@@ -177,6 +173,15 @@ def generate(
     try:
         from fhir_synth.code_generator import CodeGenerator, get_executor
         from fhir_synth.llm import get_provider
+        from fhir_synth.naming import resolve_run_name
+
+        # ── Resolve run name & output paths ─────────────────────────
+        runs_dir = Path("runs")
+        runs_dir.mkdir(parents=True, exist_ok=True)
+        run_name = resolve_run_name(runs_dir)
+        code_path = runs_dir / f"{run_name}.py"
+        ndjson_path = runs_dir / f"{run_name}.ndjson"
+        typer.echo(f"📂 Run: {run_name}")
 
         # ── Configure skills system ────────────────────────────────
         discovery = _configure_skills(skills_dir, selector, score_threshold)
@@ -189,7 +194,7 @@ def generate(
             typer.echo(f"   User skills: {', '.join(user_names)}")
 
         # ── Load context resources ──────────────────────────────────
-        context_resources = []
+        context_resources: list[dict[str, Any]] = []
         if context:
             context_path = Path(context)
             if context_path.exists():
@@ -243,7 +248,7 @@ def generate(
                 metadata_config = yaml.safe_load(f)
 
             # Build prompt hints from YAML config
-            metadata_hints = []
+            metadata_hints: list[str] = []
             meta = metadata_config.get("meta", {})
 
             if meta.get("security"):
@@ -302,9 +307,9 @@ def generate(
 
         code = code_gen.generate_code_from_prompt(prompt_text)
 
-        if save_code:
-            Path(save_code).write_text(code)
-            typer.echo(f"   Saved code → {save_code}")
+        # Always save the generated code
+        code_path.write_text(code)
+        typer.echo(f"   Saved code → {code_path}")
 
         # Step 2 — execute code (self-healing retries built-in)
         typer.echo("▶  Executing generated code …")
@@ -344,19 +349,16 @@ def generate(
 
         per_patient_bundles = split_resources_by_patient(resources)
 
+        # Always write NDJSON
+        write_ndjson(per_patient_bundles, ndjson_path)
+        typer.echo(f"✓  {len(per_patient_bundles)} patient bundles → {ndjson_path}")
+
+        # --split: also write per-patient JSON files into same-named directory
         if split:
-            # --split: one JSON file per patient in a directory
-            out_dir = Path(out)
-            paths = write_split_bundles(per_patient_bundles, out_dir)
-            typer.echo(f"✓  {len(paths)} patient bundles → {out_dir}/")
-        else:
-            # Default: single NDJSON file (one bundle per patient per line)
-            out_path = Path(out)
-            if out_path.suffix != ".ndjson":
-                out_path = out_path.with_suffix(".ndjson")
-            out_path.parent.mkdir(parents=True, exist_ok=True)
-            ndjson_path = write_ndjson(per_patient_bundles, out_path)
-            typer.echo(f"✓  {len(per_patient_bundles)} patient bundles → {ndjson_path}")
+            split_dir = runs_dir / run_name
+            paths = write_split_bundles(per_patient_bundles, split_dir)
+            typer.echo(f"✓  {len(paths)} patient files → {split_dir}/")
+
     except Exception as exc:
         error_msg = str(exc)
 
@@ -366,20 +368,12 @@ def generate(
             typer.echo(f"   {exc}", err=True)
             typer.echo("\n💡 Suggestions:", err=True)
             typer.echo("   1. Try a more reliable provider: --provider gpt-4", err=True)
-            if save_code:
-                typer.echo(f"   2. Check the saved code: {save_code}", err=True)
-            else:
-                typer.echo("   2. Save and inspect the code: --save-code output.py", err=True)
+            typer.echo("   2. Check the saved code in runs/", err=True)
             typer.echo("   3. The LLM may have used incorrect import paths", err=True)
         elif "Code execution failed" in error_msg:
             typer.echo("❌ Code execution failed after retries", err=True)
             typer.echo(f"   {exc}", err=True)
-            if save_code:
-                typer.echo(f"\n💡 Check the saved code: {save_code}", err=True)
-            else:
-                typer.echo(
-                    "\n💡 Try: --save-code output.py to inspect the generated code", err=True
-                )
+            typer.echo("\n💡 Check the saved code in runs/", err=True)
         else:
             typer.echo(f"❌ Error: {exc}", err=True)
 
