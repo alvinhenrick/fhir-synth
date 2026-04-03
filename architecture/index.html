@@ -966,10 +966,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#output-modes" class="md-nav__link">
+  <a href="#output-structure" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Output Modes
+        Output Structure
       
     </span>
   </a>
@@ -1359,10 +1359,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#output-modes" class="md-nav__link">
+  <a href="#output-structure" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Output Modes
+        Output Structure
       
     </span>
   </a>
@@ -1471,7 +1471,7 @@ graph TB
     participant BB as 📦 BundleBuilder
     participant F as 💾 File
 
-    U-&gt;&gt;CLI: fhir-synth generate "10 diabetic patients" -o out.json
+    U-&gt;&gt;CLI: fhir-synth generate "10 diabetic patients"
     CLI-&gt;&gt;CG: generate_code_from_prompt(prompt)
 
     Note over CG,LLM: System prompt includes FHIR spec,&lt;br/&gt;sandbox constraints, import guide
@@ -1488,7 +1488,7 @@ graph TB
     Note over EX: Pre-flight: import whitelist + dangerous builtins
     Note over EX: Auto-fix: naive datetime.now() → UTC
     EX-&gt;&gt;EX: Subprocess: exec(code) → generate_resources()
-    EX-&gt;&gt;EX: Enhanced validation: strict mode + required fields + cardinality
+    EX-&gt;&gt;EX: Enhanced validation: Pydantic strict mode + choice-type [x] checks
 
     alt ❌ Execution or smoke test fails
         EX--&gt;&gt;CG: error message
@@ -1504,8 +1504,8 @@ graph TB
     CLI-&gt;&gt;BB: build()
     BB--&gt;&gt;CLI: FHIR Bundle dict
 
-    CLI-&gt;&gt;F: write JSON / NDJSON
-    CLI--&gt;&gt;U: ✓ Bundle → out.json (or per-patient with --split)</code></pre>
+    CLI-&gt;&gt;F: write to runs/&lt;name&gt;/ directory
+    CLI--&gt;&gt;U: ✓ runs/&lt;name&gt;/ (prompt.txt + .py + .ndjson + patient_*.json with --split)</code></pre>
 <hr />
 <h2 id="self-healing-code-execution">Self-Healing Code Execution<a class="headerlink" href="#self-healing-code-execution" title="Permanent link">&para;</a></h2>
 <p>When LLM-generated code fails, the error is automatically sent back to the LLM for correction (up to 2 retries). The fix prompt includes the error, the failing code, the FHIR import guide, and specific hints for common error types.</p>
@@ -1522,13 +1522,11 @@ graph TB
     D --&gt;|Pass| E["🧪 Enhanced FHIR validation"]
     E --&gt; E1{"Non-empty list?"}
     E1 --&gt;|Empty| RETRY
-    E1 --&gt;|Pass| E2{"Strict Pydantic validation?"}
-    E2 --&gt;|Type/format errors| RETRY
-    E2 --&gt;|Pass| E3{"Required fields present?"}
-    E3 --&gt;|Missing| RETRY
-    E3 --&gt;|Pass| E4{"Cardinality constraints?"}
-    E4 --&gt;|Violations| RETRY
-    E4 --&gt;|Pass| F["✓ Return resources"]
+    E1 --&gt;|Pass| E2{"Choice-type [x] conflicts?"}
+    E2 --&gt;|Multiple variants set| RETRY
+    E2 --&gt;|Pass| E3{"Pydantic model_validate?"}
+    E3 --&gt;|ValidationError| RETRY
+    E3 --&gt;|Pass| F["✓ Return resources"]
 
     RETRY{"🔄 Retries left?"}
     RETRY --&gt;|"Yes (max 2)"| FIX2["📤 Send error + code to LLM"]
@@ -1562,24 +1560,14 @@ graph TB
 <td>"Replace with allowed alternative"</td>
 </tr>
 <tr>
-<td>Pydantic <code>ValidationError</code> (strict mode)</td>
+<td>Pydantic <code>ValidationError</code> (required fields, types, cardinality)</td>
 <td>—</td>
 <td>"Fix the invalid field value or type"</td>
 </tr>
 <tr>
-<td>Missing required field (<code>status</code>, <code>code</code>, etc.)</td>
+<td>Choice-type [x] conflict (e.g. both <code>deceasedBoolean</code> and <code>deceasedAge</code>)</td>
 <td>—</td>
-<td>"Add the missing required field"</td>
-</tr>
-<tr>
-<td>Invalid data type (e.g., string instead of list)</td>
-<td>—</td>
-<td>"Fix type to match FHIR spec"</td>
-</tr>
-<tr>
-<td>Cardinality violation (min/max occurrences)</td>
-<td>—</td>
-<td>"Adjust array length to meet cardinality constraints"</td>
+<td>"Keep only one variant per choice group"</td>
 </tr>
 <tr>
 <td>Missing <code>resourceType</code> in output</td>
@@ -1668,7 +1656,8 @@ graph TB
 </table>
 <p>All backends implement the <code>Executor</code> protocol and return a uniform <code>ExecutionResult(stdout, stderr, artifacts)</code>. Shared pre-flight validation (import whitelist, dangerous-pattern scan, naive datetime fix) runs before any backend executes.</p>
 <p>The E2B API key is resolved in order: <code>E2B_API_KEY</code> env var (set it once, works automatically).</p>
-<h3 id="output-modes">Output Modes<a class="headerlink" href="#output-modes" title="Permanent link">&para;</a></h3>
+<h3 id="output-structure">Output Structure<a class="headerlink" href="#output-structure" title="Permanent link">&para;</a></h3>
+<p>All outputs are auto-saved to <code>runs/&lt;name&gt;/</code> with a unique Docker-style name (e.g. <code>brave_phoenix</code>):</p>
 <table>
 <thead>
 <tr>
@@ -1679,11 +1668,11 @@ graph TB
 <tbody>
 <tr>
 <td><em>(default)</em></td>
-<td>Single JSON — one Bundle with all patients</td>
+<td><code>runs/&lt;name&gt;/prompt.txt</code> + <code>&lt;name&gt;.py</code> + <code>&lt;name&gt;.ndjson</code></td>
 </tr>
 <tr>
 <td><code>--split</code></td>
-<td>One JSON file per patient in output directory</td>
+<td>Also creates <code>patient_*.json</code> in the run directory</td>
 </tr>
 </tbody>
 </table>
