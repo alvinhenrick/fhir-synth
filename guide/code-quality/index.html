@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Dynamic FHIR R4B synthetic data generator using LLM-powered code generation">
+        <meta name="description" content="Dynamic FHIR synthetic data generator using LLM-powered code generation (supports R4B, STU3)">
       
       
       
@@ -1932,9 +1932,11 @@
 </code></pre></div>
 <h2 id="debugging-generated-code">Debugging Generated Code<a class="headerlink" href="#debugging-generated-code" title="Permanent link">&para;</a></h2>
 <h3 id="inspect-generated-code">Inspect Generated Code<a class="headerlink" href="#inspect-generated-code" title="Permanent link">&para;</a></h3>
-<p>Generated code is always saved to <code>runs/</code> automatically:</p>
+<p>Generated code is always saved to <code>runs/&lt;name&gt;/</code> automatically:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;10 patients&quot;</span>
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="c1"># → runs/brave_phoenix.py (code) + runs/brave_phoenix.ndjson (data)</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="c1"># → runs/brave_phoenix/brave_phoenix.py (code)</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="c1"># → runs/brave_phoenix/brave_phoenix.ndjson (data)</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="c1"># → runs/brave_phoenix/prompt.txt (your prompt)</span>
 </code></pre></div>
 <h3 id="enable-quality-scoring">Enable Quality Scoring<a class="headerlink" href="#enable-quality-scoring" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="n">generator</span> <span class="o">=</span> <span class="n">CodeGenerator</span><span class="p">(</span><span class="n">llm</span><span class="p">,</span> <span class="n">enable_scoring</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
@@ -1962,9 +1964,9 @@
 <a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;...&quot;</span><span class="w"> </span>--provider<span class="w"> </span>gpt-3.5-turbo
 </code></pre></div>
 <h3 id="2-review-generated-code">2. Review Generated Code<a class="headerlink" href="#2-review-generated-code" title="Permanent link">&para;</a></h3>
-<p>Code is always saved to <code>runs/</code> — check it after each run:</p>
+<p>Code is always saved to <code>runs/&lt;name&gt;/</code> — check it after each run:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;complex requirement&quot;</span><span class="w"> </span>--provider<span class="w"> </span>gpt-4
-<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="c1"># → runs/&lt;name&gt;.py (inspect this file)</span>
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="c1"># → runs/&lt;name&gt;/&lt;name&gt;.py (inspect this file)</span>
 </code></pre></div>
 <h3 id="3-enable-logging">3. Enable Logging<a class="headerlink" href="#3-enable-logging" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>

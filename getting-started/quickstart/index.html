@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Dynamic FHIR R4B synthetic data generator using LLM-powered code generation">
+        <meta name="description" content="Dynamic FHIR synthetic data generator using LLM-powered code generation (supports R4B, STU3)">
       
       
       
@@ -1294,7 +1294,7 @@ All outputs are auto-saved to <code>runs/</code> with a unique Docker-style name
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># 10 diabetic patients with labs → runs/brave_phoenix/</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;10 diabetic patients with HbA1c observations&quot;</span>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="c1"># Also split: one JSON file per patient in a subdirectory</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="c1"># Also split: one JSON file per patient in the run directory</span>
 <a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;10 diabetic patients with HbA1c observations&quot;</span><span class="w"> </span>--split
 <a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>
 <a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="c1"># 5 patients with hypertension, encounters, and meds</span>

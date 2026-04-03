@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Dynamic FHIR R4B synthetic data generator using LLM-powered code generation">
+        <meta name="description" content="Dynamic FHIR synthetic data generator using LLM-powered code generation (supports R4B, STU3)">
       
       
       
@@ -1631,7 +1631,7 @@
 </ul>
 <p>Skills are automatically selected based on your prompt and injected into the system context, ensuring the LLM generates realistic, compliant FHIR data.</p>
 <h2 id="built-in-skills">Built-in Skills<a class="headerlink" href="#built-in-skills" title="Permanent link">&para;</a></h2>
-<p>FHIR Synth includes 13+ production-ready skills covering core healthcare domains:</p>
+<p>FHIR Synth includes 16 production-ready skills covering core healthcare domains:</p>
 <table>
 <thead>
 <tr>
@@ -1682,9 +1682,24 @@
 <td><code>CarePlan</code>, <code>Goal</code>, <code>ServiceRequest</code></td>
 </tr>
 <tr>
+<td><strong>care-team</strong></td>
+<td>Care team composition and roles</td>
+<td><code>CareTeam</code></td>
+</tr>
+<tr>
 <td><strong>diagnostics-documents</strong></td>
 <td>Imaging, reports, diagnostic procedures</td>
 <td><code>DiagnosticReport</code>, <code>DocumentReference</code></td>
+</tr>
+<tr>
+<td><strong>procedures</strong></td>
+<td>Surgical and non-surgical procedures</td>
+<td><code>Procedure</code></td>
+</tr>
+<tr>
+<td><strong>claims-eob</strong></td>
+<td>Claims and explanation of benefits</td>
+<td><code>Claim</code>, <code>ExplanationOfBenefit</code></td>
 </tr>
 <tr>
 <td><strong>sdoh</strong></td>
@@ -1909,7 +1924,7 @@
 <a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;10 patients with diabetes&quot;</span>
 </code></pre></div>
 <p>Look for:
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>INFO Selected 3/13 skills: medications, comorbidity, vitals-and-labs
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>INFO Selected 3/16 skills: medications, comorbidity, vitals-and-labs
 </code></pre></div></p>
 <h2 id="api-usage">API Usage<a class="headerlink" href="#api-usage" title="Permanent link">&para;</a></h2>
 <p>Use skills programmatically in Python:</p>

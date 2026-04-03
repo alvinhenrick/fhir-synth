@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Dynamic FHIR R4B synthetic data generator using LLM-powered code generation">
+        <meta name="description" content="Dynamic FHIR synthetic data generator using LLM-powered code generation (supports R4B, STU3)">
       
       
       
@@ -663,6 +663,39 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#output-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Output Structure
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#options" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Options
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Examples
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#environment-variables" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1176,6 +1209,39 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#output-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Output Structure
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#options" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Options
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Examples
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#environment-variables" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1236,64 +1302,145 @@
 <h1 id="cli-reference">CLI Reference<a class="headerlink" href="#cli-reference" title="Permanent link">&para;</a></h1>
 <h2 id="fhir-synth-generate"><code>fhir-synth generate</code><a class="headerlink" href="#fhir-synth-generate" title="Permanent link">&para;</a></h2>
 <p>End-to-end: prompt → LLM → code → execute → NDJSON.</p>
-<p>```bash fhir-synth generate "10 diabetic patients with HbA1c observations"
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>All outputs are saved to a `runs/` directory with an auto-generated Docker-style name (e.g. `brave_phoenix`). Each run creates its own directory:
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>- `runs/&lt;name&gt;/prompt.txt`     — the user&#39;s prompt
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>- `runs/&lt;name&gt;/&lt;name&gt;.py`      — the generated Python code
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>- `runs/&lt;name&gt;/&lt;name&gt;.ndjson`  — NDJSON data (one patient bundle per line)
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>- `runs/&lt;name&gt;/patient_*.json` — (with `--split`) per-patient JSON files
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>### Options
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>
-<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>| Flag | Default | Description |
-<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>|------|---------|-------------|
-<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>| `-p / --provider` | `gpt-4` | LLM model/provider |
-<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>| `--fhir-version` | `R4B` | FHIR version: `R4B`, `STU3` (case-insensitive) |
-<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>| `--split` | off | Also split output into one JSON file per patient in a subdirectory |
-<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>| `--empi` | off | Include EMPI Person→Patient linkage |
-<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>| `--persons` | `1` | Number of Persons (EMPI) |
-<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>| `--systems` | `emr1,emr2` | EMR system ids (EMPI) |
-<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>| `--no-orgs` | off | Skip Organization resources (EMPI) |
-<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>| `--meta-config` | — | Path to metadata YAML config file |
-<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>| `-e / --executor` | `local` | Execution backend: `local`, `docker`, `e2b`, or `blaxel` (powered by [smolagents](https://huggingface.co/docs/smolagents)) |
-<a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a>| `--aws-profile` | — | AWS profile for Bedrock |
-<a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a>| `--aws-region` | — | AWS region for Bedrock |
-<a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a>| `--skills-dir` | — | Directory with user-provided SKILL.md skills |
-<a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a>| `--selector` | `keyword` | Skill selection: `keyword` (fuzzy) or `faiss` (semantic) |
-<a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a>| `--score-threshold` | `0.3` | Min similarity score 0.0-1.0 (FAISS only) |
-<a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a>| `--context` | — | Path to NDJSON/JSON with existing resources for stateful generation |
-<a id="__codelineno-0-27" name="__codelineno-0-27" href="#__codelineno-0-27"></a>
-<a id="__codelineno-0-28" name="__codelineno-0-28" href="#__codelineno-0-28"></a>### Examples
-<a id="__codelineno-0-29" name="__codelineno-0-29" href="#__codelineno-0-29"></a>
-<a id="__codelineno-0-30" name="__codelineno-0-30" href="#__codelineno-0-30"></a>```bash
-<a id="__codelineno-0-31" name="__codelineno-0-31" href="#__codelineno-0-31"></a># Default: generates runs/brave_phoenix/ with prompt.txt, .py, .ndjson
-<a id="__codelineno-0-32" name="__codelineno-0-32" href="#__codelineno-0-32"></a>fhir-synth generate &quot;10 diabetic patients with HbA1c observations&quot;
-<a id="__codelineno-0-33" name="__codelineno-0-33" href="#__codelineno-0-33"></a>
-<a id="__codelineno-0-34" name="__codelineno-0-34" href="#__codelineno-0-34"></a># Also split per patient → runs/&lt;name&gt;/patient_001.json ...
-<a id="__codelineno-0-35" name="__codelineno-0-35" href="#__codelineno-0-35"></a>fhir-synth generate &quot;10 diabetic patients with HbA1c observations&quot; --split
-<a id="__codelineno-0-36" name="__codelineno-0-36" href="#__codelineno-0-36"></a>
-<a id="__codelineno-0-37" name="__codelineno-0-37" href="#__codelineno-0-37"></a># With EMPI
-<a id="__codelineno-0-38" name="__codelineno-0-38" href="#__codelineno-0-38"></a>fhir-synth generate &quot;EMPI dataset&quot; --empi --persons 3
-<a id="__codelineno-0-39" name="__codelineno-0-39" href="#__codelineno-0-39"></a>
-<a id="__codelineno-0-40" name="__codelineno-0-40" href="#__codelineno-0-40"></a># With metadata from YAML
-<a id="__codelineno-0-41" name="__codelineno-0-41" href="#__codelineno-0-41"></a>fhir-synth generate &quot;20 patients&quot; --meta-config examples/meta-normal.yaml
-<a id="__codelineno-0-42" name="__codelineno-0-42" href="#__codelineno-0-42"></a>
-<a id="__codelineno-0-43" name="__codelineno-0-43" href="#__codelineno-0-43"></a># Mock provider (no API key needed)
-<a id="__codelineno-0-44" name="__codelineno-0-44" href="#__codelineno-0-44"></a>fhir-synth generate &quot;5 patients&quot; --provider mock
-<a id="__codelineno-0-45" name="__codelineno-0-45" href="#__codelineno-0-45"></a>
-<a id="__codelineno-0-46" name="__codelineno-0-46" href="#__codelineno-0-46"></a># Docker sandbox executor — runs code in an isolated Docker container
-<a id="__codelineno-0-47" name="__codelineno-0-47" href="#__codelineno-0-47"></a>fhir-synth generate &quot;5 patients&quot; --executor docker
-<a id="__codelineno-0-48" name="__codelineno-0-48" href="#__codelineno-0-48"></a>
-<a id="__codelineno-0-49" name="__codelineno-0-49" href="#__codelineno-0-49"></a># E2B cloud sandbox (requires E2B_API_KEY env var)
-<a id="__codelineno-0-50" name="__codelineno-0-50" href="#__codelineno-0-50"></a>fhir-synth generate &quot;5 patients&quot; --executor e2b
-<a id="__codelineno-0-51" name="__codelineno-0-51" href="#__codelineno-0-51"></a>
-<a id="__codelineno-0-52" name="__codelineno-0-52" href="#__codelineno-0-52"></a># Blaxel cloud sandbox
-<a id="__codelineno-0-53" name="__codelineno-0-53" href="#__codelineno-0-53"></a>fhir-synth generate &quot;5 patients&quot; --executor blaxel
-<a id="__codelineno-0-54" name="__codelineno-0-54" href="#__codelineno-0-54"></a>
-<a id="__codelineno-0-55" name="__codelineno-0-55" href="#__codelineno-0-55"></a># Generate STU3 resources instead of R4B (case-insensitive)
-<a id="__codelineno-0-56" name="__codelineno-0-56" href="#__codelineno-0-56"></a>fhir-synth generate &quot;10 patients with diabetes&quot; --fhir-version stu3
-</code></pre></div></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;10 diabetic patients with HbA1c observations&quot;</span>
+</code></pre></div>
+<h3 id="output-structure">Output Structure<a class="headerlink" href="#output-structure" title="Permanent link">&para;</a></h3>
+<p>All outputs are saved to <code>runs/</code> with an auto-generated Docker-style name (e.g. <code>brave_phoenix</code>).
+Each run creates its own directory:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>runs/brave_phoenix/
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>  prompt.txt              ← the user&#39;s prompt
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>  brave_phoenix.py        ← generated Python code
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>  brave_phoenix.ndjson    ← NDJSON data (one patient bundle per line)
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>  patient_001.json        ← (with --split) per-patient JSON files
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>  patient_002.json
+</code></pre></div>
+<h3 id="options">Options<a class="headerlink" href="#options" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Flag</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>-p</code> / <code>--provider</code></td>
+<td><code>gpt-4</code></td>
+<td>LLM model/provider</td>
+</tr>
+<tr>
+<td><code>--fhir-version</code></td>
+<td><code>R4B</code></td>
+<td>FHIR version: <code>R4B</code>, <code>STU3</code> (case-insensitive)</td>
+</tr>
+<tr>
+<td><code>--split</code></td>
+<td>off</td>
+<td>Also write per-patient JSON files into the run directory</td>
+</tr>
+<tr>
+<td><code>--empi</code></td>
+<td>off</td>
+<td>Include EMPI Person→Patient linkage</td>
+</tr>
+<tr>
+<td><code>--persons</code></td>
+<td><code>1</code></td>
+<td>Number of Persons (EMPI)</td>
+</tr>
+<tr>
+<td><code>--systems</code></td>
+<td><code>emr1,emr2</code></td>
+<td>Comma-separated EMR system ids (EMPI)</td>
+</tr>
+<tr>
+<td><code>--no-orgs</code></td>
+<td>off</td>
+<td>Skip Organization resources (EMPI)</td>
+</tr>
+<tr>
+<td><code>--meta-config</code></td>
+<td>—</td>
+<td>Path to metadata YAML config file</td>
+</tr>
+<tr>
+<td><code>-e</code> / <code>--executor</code></td>
+<td><code>local</code></td>
+<td>Execution backend: <code>local</code>, <code>docker</code>, <code>e2b</code>, or <code>blaxel</code></td>
+</tr>
+<tr>
+<td><code>--aws-profile</code></td>
+<td>—</td>
+<td>AWS profile for Bedrock</td>
+</tr>
+<tr>
+<td><code>--aws-region</code></td>
+<td>—</td>
+<td>AWS region for Bedrock</td>
+</tr>
+<tr>
+<td><code>--skills-dir</code></td>
+<td>—</td>
+<td>Directory with user-provided <code>SKILL.md</code> skills</td>
+</tr>
+<tr>
+<td><code>--selector</code></td>
+<td><code>keyword</code></td>
+<td>Skill selection: <code>keyword</code> (fuzzy) or <code>faiss</code> (semantic)</td>
+</tr>
+<tr>
+<td><code>--score-threshold</code></td>
+<td><code>0.3</code></td>
+<td>Minimum similarity score 0.0–1.0 (FAISS only)</td>
+</tr>
+<tr>
+<td><code>--context</code></td>
+<td>—</td>
+<td>Path to NDJSON/JSON with existing resources for stateful generation</td>
+</tr>
+</tbody>
+</table>
+<p>All executor backends are powered by <a href="https://huggingface.co/docs/smolagents">smolagents</a>.</p>
+<h3 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># Basic usage — output in runs/brave_phoenix/</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;10 diabetic patients with HbA1c observations&quot;</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="c1"># Split into per-patient JSON files alongside the NDJSON</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;10 diabetic patients with HbA1c observations&quot;</span><span class="w"> </span>--split
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="c1"># EMPI: Person → Patient linkages across EMR systems</span>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;EMPI dataset&quot;</span><span class="w"> </span>--empi<span class="w"> </span>--persons<span class="w"> </span><span class="m">3</span>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="c1"># Apply metadata (security labels, tags, profiles) from YAML</span>
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;20 patients&quot;</span><span class="w"> </span>--meta-config<span class="w"> </span>examples/meta-normal.yaml
+<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>
+<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a><span class="c1"># Mock provider — no API key needed, great for testing</span>
+<a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;5 patients&quot;</span><span class="w"> </span>--provider<span class="w"> </span>mock
+<a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a>
+<a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a><span class="c1"># Sandboxed execution backends</span>
+<a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;5 patients&quot;</span><span class="w"> </span>--executor<span class="w"> </span>docker<span class="w">   </span><span class="c1"># Docker container</span>
+<a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;5 patients&quot;</span><span class="w"> </span>--executor<span class="w"> </span>e2b<span class="w">      </span><span class="c1"># E2B cloud sandbox</span>
+<a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;5 patients&quot;</span><span class="w"> </span>--executor<span class="w"> </span>blaxel<span class="w">   </span><span class="c1"># Blaxel cloud sandbox</span>
+<a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a>
+<a id="__codelineno-2-21" name="__codelineno-2-21" href="#__codelineno-2-21"></a><span class="c1"># Generate STU3 resources instead of R4B</span>
+<a id="__codelineno-2-22" name="__codelineno-2-22" href="#__codelineno-2-22"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;10 patients with diabetes&quot;</span><span class="w"> </span>--fhir-version<span class="w"> </span>stu3
+<a id="__codelineno-2-23" name="__codelineno-2-23" href="#__codelineno-2-23"></a>
+<a id="__codelineno-2-24" name="__codelineno-2-24" href="#__codelineno-2-24"></a><span class="c1"># Stateful generation: add follow-ups to existing patients</span>
+<a id="__codelineno-2-25" name="__codelineno-2-25" href="#__codelineno-2-25"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;follow-up visits with HbA1c labs&quot;</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-2-26" name="__codelineno-2-26" href="#__codelineno-2-26"></a><span class="w">  </span>--context<span class="w"> </span>runs/brave_phoenix/brave_phoenix.ndjson
+<a id="__codelineno-2-27" name="__codelineno-2-27" href="#__codelineno-2-27"></a>
+<a id="__codelineno-2-28" name="__codelineno-2-28" href="#__codelineno-2-28"></a><span class="c1"># Custom skills directory</span>
+<a id="__codelineno-2-29" name="__codelineno-2-29" href="#__codelineno-2-29"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;5 lung cancer patients&quot;</span><span class="w"> </span>--skills-dir<span class="w"> </span>~/.fhir-synth/skills
+<a id="__codelineno-2-30" name="__codelineno-2-30" href="#__codelineno-2-30"></a>
+<a id="__codelineno-2-31" name="__codelineno-2-31" href="#__codelineno-2-31"></a><span class="c1"># FAISS semantic skill selection (requires: pip install fhir-synth[semantic])</span>
+<a id="__codelineno-2-32" name="__codelineno-2-32" href="#__codelineno-2-32"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;5 patients&quot;</span><span class="w"> </span>--selector<span class="w"> </span>faiss<span class="w"> </span>--score-threshold<span class="w"> </span><span class="m">0</span>.5
+<a id="__codelineno-2-33" name="__codelineno-2-33" href="#__codelineno-2-33"></a>
+<a id="__codelineno-2-34" name="__codelineno-2-34" href="#__codelineno-2-34"></a><span class="c1"># AWS Bedrock provider</span>
+<a id="__codelineno-2-35" name="__codelineno-2-35" href="#__codelineno-2-35"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;5 patients&quot;</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-2-36" name="__codelineno-2-36" href="#__codelineno-2-36"></a><span class="w">  </span>--provider<span class="w"> </span>bedrock/us.anthropic.claude-3-5-sonnet-20241022-v2:0<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-2-37" name="__codelineno-2-37" href="#__codelineno-2-37"></a><span class="w">  </span>--aws-profile<span class="w"> </span>my-profile<span class="w"> </span>--aws-region<span class="w"> </span>us-east-1
+</code></pre></div>
 <h3 id="environment-variables">Environment Variables<a class="headerlink" href="#environment-variables" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -1305,6 +1452,16 @@
 </thead>
 <tbody>
 <tr>
+<td><code>OPENAI_API_KEY</code></td>
+<td><code>--provider gpt-4</code></td>
+<td>OpenAI API key</td>
+</tr>
+<tr>
+<td><code>ANTHROPIC_API_KEY</code></td>
+<td><code>--provider claude-*</code></td>
+<td>Anthropic API key</td>
+</tr>
+<tr>
 <td><code>E2B_API_KEY</code></td>
 <td><code>--executor e2b</code></td>
 <td>API key for <a href="https://e2b.dev">E2B</a> cloud sandbox</td>
@@ -1313,18 +1470,20 @@
 </table>
 <hr />
 <h2 id="fhir-synth-codegen"><code>fhir-synth codegen</code><a class="headerlink" href="#fhir-synth-codegen" title="Permanent link">&para;</a></h2>
-<p>Generate executable Python code from prompts (without bundling).</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>fhir-synth<span class="w"> </span>codegen<span class="w"> </span><span class="s2">&quot;Create 50 patients&quot;</span><span class="w"> </span>--out<span class="w"> </span>code.py
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>fhir-synth<span class="w"> </span>codegen<span class="w"> </span><span class="s2">&quot;Create 50 patients&quot;</span><span class="w"> </span>--out<span class="w"> </span>code.py<span class="w"> </span>--execute
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="c1"># Execute with Docker isolation</span>
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>fhir-synth<span class="w"> </span>codegen<span class="w"> </span><span class="s2">&quot;Create 50 patients&quot;</span><span class="w"> </span>--out<span class="w"> </span>code.py<span class="w"> </span>--execute<span class="w"> </span>--executor<span class="w"> </span>docker
+<p>Generate executable Python code from a prompt (without bundling or NDJSON output).</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1"># Generate code only</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>fhir-synth<span class="w"> </span>codegen<span class="w"> </span><span class="s2">&quot;Create 50 patients&quot;</span><span class="w"> </span>--out<span class="w"> </span>code.py
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="c1"># Generate and execute</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>fhir-synth<span class="w"> </span>codegen<span class="w"> </span><span class="s2">&quot;Create 50 patients&quot;</span><span class="w"> </span>--out<span class="w"> </span>code.py<span class="w"> </span>--execute
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="c1"># Execute with Docker isolation</span>
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>fhir-synth<span class="w"> </span>codegen<span class="w"> </span><span class="s2">&quot;Create 50 patients&quot;</span><span class="w"> </span>--out<span class="w"> </span>code.py<span class="w"> </span>--execute<span class="w"> </span>--executor<span class="w"> </span>docker
 </code></pre></div>
 <hr />
 <h2 id="fhir-synth-bundle"><code>fhir-synth bundle</code><a class="headerlink" href="#fhir-synth-bundle" title="Permanent link">&para;</a></h2>
-<p>Create FHIR Bundles from NDJSON data or EMPI defaults.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>fhir-synth<span class="w"> </span>bundle<span class="w"> </span>--resources<span class="w"> </span>data.ndjson<span class="w"> </span>--out<span class="w"> </span>bundle.json<span class="w"> </span>--type<span class="w"> </span>transaction
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>fhir-synth<span class="w"> </span>bundle<span class="w"> </span>--empi<span class="w"> </span>--persons<span class="w"> </span><span class="m">5</span><span class="w"> </span>--systems<span class="w"> </span>emr1,emr2,emr3<span class="w"> </span>--no-orgs<span class="w"> </span>--out<span class="w"> </span>empi_bundle.json
+<p>Create a FHIR Bundle from existing NDJSON resources.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>fhir-synth<span class="w"> </span>bundle<span class="w"> </span>--resources<span class="w"> </span>data.ndjson<span class="w"> </span>--out<span class="w"> </span>bundle.json<span class="w"> </span>--type<span class="w"> </span>transaction
 </code></pre></div>
 
 

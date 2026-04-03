@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Dynamic FHIR R4B synthetic data generator using LLM-powered code generation">
+        <meta name="description" content="Dynamic FHIR synthetic data generator using LLM-powered code generation (supports R4B, STU3)">
       
       
       
@@ -1254,10 +1254,10 @@
 <h2 id="features">Features<a class="headerlink" href="#features" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong>Natural Language → FHIR</strong>: Describe what you need in plain English, get valid FHIR Bundles (R4B or STU3)</li>
-<li><strong>Skills System</strong>: 13+ built-in domain skills with fuzzy keyword matching (typo-tolerant) for realistic data</li>
+<li><strong>Skills System</strong>: 16 built-in domain skills with fuzzy keyword matching (typo-tolerant) for realistic data</li>
 <li><strong>LLM-Powered Code Generation</strong>: Uses GPT-4, Claude, Bedrock, or 100+ providers via <a href="https://docs.litellm.ai/">LiteLLM</a></li>
 <li><strong>Self-Healing Execution</strong>: If generated code fails, errors are sent back to the LLM for automatic retry (up to 2 retries)</li>
-<li><strong>Pluggable Executor Backends</strong>: Local subprocess (default), Dify Sandbox, or E2B cloud sandboxes</li>
+<li><strong>Pluggable Executor Backends</strong>: Local interpreter (default), Docker, E2B, or Blaxel cloud sandboxes via <a href="https://huggingface.co/docs/smolagents">smolagents</a></li>
 <li><strong>Faker Integration</strong>: Uses <a href="https://faker.readthedocs.io/">Faker</a> for realistic demographic and clinical data</li>
 <li><strong>EMPI Support</strong>: Generate Person → Patient linkages across EMR systems</li>
 <li><strong>Custom Metadata</strong>: Add security labels, tags, profiles, and source via YAML config</li>
