@@ -21,10 +21,10 @@ FHIR Bundles (JSON + NDJSON) — R4B or STU3
 ## Features
 
 - **Natural Language → FHIR**: Describe what you need in plain English, get valid FHIR Bundles (R4B or STU3)
-- **Skills System**: 13+ built-in domain skills with fuzzy keyword matching (typo-tolerant) for realistic data
+- **Skills System**: 16 built-in domain skills with fuzzy keyword matching (typo-tolerant) for realistic data
 - **LLM-Powered Code Generation**: Uses GPT-4, Claude, Bedrock, or 100+ providers via [LiteLLM](https://docs.litellm.ai/)
 - **Self-Healing Execution**: If generated code fails, errors are sent back to the LLM for automatic retry (up to 2 retries)
-- **Pluggable Executor Backends**: Local subprocess (default), Dify Sandbox, or E2B cloud sandboxes
+- **Pluggable Executor Backends**: Local interpreter (default), Docker, E2B, or Blaxel cloud sandboxes via [smolagents](https://huggingface.co/docs/smolagents)
 - **Faker Integration**: Uses [Faker](https://faker.readthedocs.io/) for realistic demographic and clinical data
 - **EMPI Support**: Generate Person → Patient linkages across EMR systems
 - **Custom Metadata**: Add security labels, tags, profiles, and source via YAML config

@@ -13,7 +13,7 @@ Skills are automatically selected based on your prompt and injected into the sys
 
 ## Built-in Skills
 
-FHIR Synth includes 13+ production-ready skills covering core healthcare domains:
+FHIR Synth includes 16 production-ready skills covering core healthcare domains:
 
 | Skill | Description | Resource Types |
 |-------|-------------|----------------|
@@ -25,7 +25,10 @@ FHIR Synth includes 13+ production-ready skills covering core healthcare domains
 | **coverage** | Insurance diversity (Medicare, Medicaid, commercial) | `Coverage` |
 | **allergies-immunizations** | CVX codes, contraindications, vaccine schedules | `AllergyIntolerance`, `Immunization` |
 | **careplan-goals** | Care coordination, goal tracking, service requests | `CarePlan`, `Goal`, `ServiceRequest` |
+| **care-team** | Care team composition and roles | `CareTeam` |
 | **diagnostics-documents** | Imaging, reports, diagnostic procedures | `DiagnosticReport`, `DocumentReference` |
+| **procedures** | Surgical and non-surgical procedures | `Procedure` |
+| **claims-eob** | Claims and explanation of benefits | `Claim`, `ExplanationOfBenefit` |
 | **sdoh** | Social determinants of health (housing, food, employment) | `Observation` |
 | **edge-cases** | Missing data, ambiguous records, real-world messiness | All |
 | **provenance-data-quality** | Audit trails, data quality flags, source attribution | `Provenance` |
@@ -247,7 +250,7 @@ fhir-synth generate "10 patients with diabetes"
 
 Look for:
 ```
-INFO Selected 3/13 skills: medications, comorbidity, vitals-and-labs
+INFO Selected 3/16 skills: medications, comorbidity, vitals-and-labs
 ```
 
 ## API Usage

@@ -42,5 +42,5 @@ ANTHROPIC_API_KEY=sk-ant-...
 fhir-synth --help
 ```
 
-You should see the available commands: `generate`, `rules`, `codegen`, `bundle`.
+You should see the available commands: `generate`, `codegen`, `bundle`.
 

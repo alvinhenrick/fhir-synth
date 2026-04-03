@@ -70,7 +70,7 @@ fhir-synth generate "10 patients with diabetes" --fhir-version stu3
 ```
 
 **What happens under the hood:**
-1. **Skills selection**: Your prompt is matched against 13+ built-in skills (patient demographics, medications, labs, etc.) using fuzzy keyword matching with typo tolerance
+1. **Skills selection**: Your prompt is matched against 16 built-in skills (patient demographics, medications, labs, etc.) using fuzzy keyword matching with typo tolerance
 2. Your prompt + selected skills go to the LLM (via [LiteLLM](https://docs.litellm.ai/) — 100+ providers)
 3. LLM generates Python code using `fhir.resources` (Pydantic FHIR models)
 4. Code is safety-checked (import whitelist + dangerous builtins scan) and auto-fixed (naive datetimes → UTC)
@@ -227,9 +227,9 @@ See the [Metadata Quick Reference](docs/guide/metadata-reference.md) for the ful
 
 FHIR Synth uses a **skills system** to inject domain-specific knowledge into the LLM context. Skills are modular Markdown files that provide guidance on generating realistic FHIR data.
 
-### Built-in Skills (13+)
+### Built-in Skills (16)
 
-The system includes 13+ built-in skills following the [agentskills.io](https://agentskills.io/specification) spec:
+The system includes 16 built-in skills following the [agentskills.io](https://agentskills.io/specification) spec:
 
 - **patient-variation** — Demographics, age distribution, race, ethnicity, language
 - **medications** — RxNorm codes, dosing, timing, adherence patterns
@@ -239,7 +239,10 @@ The system includes 13+ built-in skills following the [agentskills.io](https://a
 - **coverage** — Insurance diversity (Medicare, Medicaid, commercial)
 - **allergies-immunizations** — CVX codes, contraindications
 - **careplan-goals** — Care coordination, goal tracking
-- **diagnostics-documents** — Imaging, reports, procedures
+- **care-team** — Care team composition and roles
+- **diagnostics-documents** — Imaging, reports, diagnostic procedures
+- **procedures** — Surgical and non-surgical procedures
+- **claims-eob** — Claims and explanation of benefits
 - **sdoh** — Social determinants of health
 - **edge-cases** — Missing data, ambiguous records
 - **provenance-data-quality** — Audit trails, data quality flags
