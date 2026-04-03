@@ -2,20 +2,21 @@
 
 ## Generate Data from a Prompt
 
-Describe what you need in plain English — FHIR Synth generates the code and executes it:
+Describe what you need in plain English — FHIR Synth generates the code and executes it.
+All outputs are auto-saved to `runs/` with a unique Docker-style name (e.g. `brave_phoenix`):
 
 ```bash
-# 10 diabetic patients with labs → single NDJSON file (one patient bundle per line)
-fhir-synth generate "10 diabetic patients with HbA1c observations" -o diabetes.ndjson
+# 10 diabetic patients with labs → runs/brave_phoenix/
+fhir-synth generate "10 diabetic patients with HbA1c observations"
 
-# Split: one JSON file per patient in a directory
-fhir-synth generate "10 diabetic patients with HbA1c observations" --split -o patients/
+# Also split: one JSON file per patient in a subdirectory
+fhir-synth generate "10 diabetic patients with HbA1c observations" --split
 
 # 5 patients with hypertension, encounters, and meds
-fhir-synth generate "5 patients with hypertension, office encounters, and antihypertensive medications" -o hypertension.ndjson
+fhir-synth generate "5 patients with hypertension, office encounters, and antihypertensive medications"
 
 # Generate STU3 resources instead of R4B (case-insensitive)
-fhir-synth generate "10 patients with diabetes" --fhir-version stu3 -o output.ndjson
+fhir-synth generate "10 patients with diabetes" --fhir-version stu3
 ```
 
 ## What Happens Under the Hood
@@ -28,12 +29,19 @@ fhir-synth generate "10 patients with diabetes" --fhir-version stu3 -o output.nd
 6. If anything fails, the error is sent back to the LLM for self-healing (up to 2 retries)
 7. Resources are grouped by patient and saved as NDJSON
 
-## Save Generated Code
+## Output Structure
 
-Inspect the code the LLM generates:
+Each run auto-generates a unique name and saves all artifacts in a directory:
 
-```bash
-fhir-synth generate "20 patients with conditions" -o data.json --save-code generated.py
+```
+runs/
+  brave_phoenix/
+    prompt.txt              ← the user's prompt
+    brave_phoenix.py        ← generated Python code
+    brave_phoenix.ndjson    ← NDJSON output (one patient bundle per line)
+    patient_001.json        ← (with --split) per-patient JSON files
+    patient_002.json
+    ...
 ```
 
 ## EMPI Mode
@@ -41,7 +49,7 @@ fhir-synth generate "20 patients with conditions" -o data.json --save-code gener
 Generate Person → Patient linkages across EMR systems:
 
 ```bash
-fhir-synth generate "EMPI dataset" --empi --persons 3 -o empi.json
+fhir-synth generate "EMPI dataset" --empi --persons 3
 ```
 
 ## Use the Python API
@@ -81,12 +89,12 @@ meta:
 ```
 
 ```bash
-fhir-synth generate "20 patients" --meta-config examples/meta-normal.yaml -o output.json
+fhir-synth generate "20 patients" --meta-config examples/meta-normal.yaml
 ```
 
 ## Test Without an API Key
 
 ```bash
-fhir-synth generate "5 patients" --provider mock -o test.json
+fhir-synth generate "5 patients" --provider mock
 ```
 

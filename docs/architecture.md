@@ -84,7 +84,7 @@ sequenceDiagram
     participant BB as 📦 BundleBuilder
     participant F as 💾 File
 
-    U->>CLI: fhir-synth generate "10 diabetic patients" -o out.json
+    U->>CLI: fhir-synth generate "10 diabetic patients"
     CLI->>CG: generate_code_from_prompt(prompt)
 
     Note over CG,LLM: System prompt includes FHIR spec,<br/>sandbox constraints, import guide
@@ -101,7 +101,7 @@ sequenceDiagram
     Note over EX: Pre-flight: import whitelist + dangerous builtins
     Note over EX: Auto-fix: naive datetime.now() → UTC
     EX->>EX: Subprocess: exec(code) → generate_resources()
-    EX->>EX: Enhanced validation: strict mode + required fields + cardinality
+    EX->>EX: Enhanced validation: Pydantic strict mode + choice-type [x] checks
 
     alt ❌ Execution or smoke test fails
         EX-->>CG: error message
@@ -117,8 +117,8 @@ sequenceDiagram
     CLI->>BB: build()
     BB-->>CLI: FHIR Bundle dict
 
-    CLI->>F: write JSON / NDJSON
-    CLI-->>U: ✓ Bundle → out.json (or per-patient with --split)
+    CLI->>F: write to runs/<name>/ directory
+    CLI-->>U: ✓ runs/<name>/ (prompt.txt + .py + .ndjson + patient_*.json with --split)
 ```
 
 ---
@@ -141,13 +141,11 @@ flowchart TD
     D -->|Pass| E["🧪 Enhanced FHIR validation"]
     E --> E1{"Non-empty list?"}
     E1 -->|Empty| RETRY
-    E1 -->|Pass| E2{"Strict Pydantic validation?"}
-    E2 -->|Type/format errors| RETRY
-    E2 -->|Pass| E3{"Required fields present?"}
-    E3 -->|Missing| RETRY
-    E3 -->|Pass| E4{"Cardinality constraints?"}
-    E4 -->|Violations| RETRY
-    E4 -->|Pass| F["✓ Return resources"]
+    E1 -->|Pass| E2{"Choice-type [x] conflicts?"}
+    E2 -->|Multiple variants set| RETRY
+    E2 -->|Pass| E3{"Pydantic model_validate?"}
+    E3 -->|ValidationError| RETRY
+    E3 -->|Pass| F["✓ Return resources"]
 
     RETRY{"🔄 Retries left?"}
     RETRY -->|"Yes (max 2)"| FIX2["📤 Send error + code to LLM"]
@@ -164,10 +162,8 @@ flowchart TD
 | Wrong fhir.resources import path | `fix_common_imports()` rewrites the import | Import guide with correct module paths |
 | `datetime.now()` without timezone | Source rewrite to `datetime.now(timezone.utc)` | "Add timezone offset" |
 | Disallowed import (`os`, `socket`, etc.) | — | "Replace with allowed alternative" |
-| Pydantic `ValidationError` (strict mode) | — | "Fix the invalid field value or type" |
-| Missing required field (`status`, `code`, etc.) | — | "Add the missing required field" |
-| Invalid data type (e.g., string instead of list) | — | "Fix type to match FHIR spec" |
-| Cardinality violation (min/max occurrences) | — | "Adjust array length to meet cardinality constraints" |
+| Pydantic `ValidationError` (required fields, types, cardinality) | — | "Fix the invalid field value or type" |
+| Choice-type [x] conflict (e.g. both `deceasedBoolean` and `deceasedAge`) | — | "Keep only one variant per choice group" |
 | Missing `resourceType` in output | — | "Use `.model_dump(exclude_none=True)`" |
 | Empty result list | — | "Ensure non-empty list" |
 
@@ -234,9 +230,11 @@ All backends implement the `Executor` protocol and return a uniform `ExecutionRe
 
 The E2B API key is resolved in order: `E2B_API_KEY` env var (set it once, works automatically).
 
-### Output Modes
+### Output Structure
+
+All outputs are auto-saved to `runs/<name>/` with a unique Docker-style name (e.g. `brave_phoenix`):
 
 | Flag | Output |
 |---|---|
-| *(default)* | Single JSON — one Bundle with all patients |
-| `--split` | One JSON file per patient in output directory |
+| *(default)* | `runs/<name>/prompt.txt` + `<name>.py` + `<name>.ndjson` |
+| `--split` | Also creates `patient_*.json` in the run directory |

@@ -138,10 +138,13 @@ def generate_resources() -> list[dict]:
 
 ## Debugging Generated Code
 
-### Save Generated Code
+### Inspect Generated Code
+
+Generated code is always saved to `runs/` automatically:
 
 ```bash
-fhir-synth generate "10 patients" -o output.json --save-code generated.py
+fhir-synth generate "10 patients"
+# → runs/brave_phoenix.py (code) + runs/brave_phoenix.ndjson (data)
 ```
 
 ### Enable Quality Scoring
@@ -161,7 +164,7 @@ When generation fails, helpful suggestions are provided:
 
 💡 Suggestions:
    1. Try a more reliable provider: --provider gpt-4
-   2. Save and inspect the code: --save-code output.py
+   2. Check the saved code in runs/
    3. The LLM may have used incorrect import paths
 ```
 
@@ -180,15 +183,13 @@ fhir-synth generate "..." --provider claude-3-opus
 fhir-synth generate "..." --provider gpt-3.5-turbo
 ```
 
-### 2. Save Code for Review
+### 2. Review Generated Code
 
-Always save code when testing:
+Code is always saved to `runs/` — check it after each run:
 
 ```bash
-fhir-synth generate "complex requirement" \
-  -o output.json \
-  --save-code generated.py \
-  --provider gpt-4
+fhir-synth generate "complex requirement" --provider gpt-4
+# → runs/<name>.py (inspect this file)
 ```
 
 ### 3. Enable Logging
@@ -261,7 +262,7 @@ After collecting 100+ examples, consider using DSPy for prompt optimization.
 
 **Solution**:
 1. Try `--provider gpt-4` (more reliable)
-2. Check generated code: `--save-code output.py`
+2. Check the generated code in `runs/`
 3. Manually fix imports and run the code directly
 
 ### Issue: Low Quality Score

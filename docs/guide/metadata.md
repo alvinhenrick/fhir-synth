@@ -23,7 +23,7 @@ meta:
 ```
 
 ```bash
-fhir-synth generate "20 patients with conditions" --meta-config examples/meta-normal.yaml -o output.json
+fhir-synth generate "20 patients with conditions" --meta-config examples/meta-normal.yaml
 ```
 
 ## Supported Fields

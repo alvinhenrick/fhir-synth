@@ -142,45 +142,16 @@ def validate_references(resources: list[dict[str, Any]]) -> list[dict[str, Any]]
     This ensures that e.g. Encounter.subject points to a Patient that
     exists within the same batch.
     """
-    # 1. Collect all IDs present in the batch
-    existing_ids = set()
+    # Collect all IDs present in the batch
+    existing_ids: set[str] = set()
     for r in resources:
         res_type = r.get("resourceType")
         res_id = r.get("id")
         if res_type and res_id:
             existing_ids.add(f"{res_type}/{res_id}")
 
-    errors = []
-
-    # 2. Find all Reference fields and check if they exist
-    def _find_references(obj: Any, path: str = "") -> None:
-        if isinstance(obj, dict):
-            if "reference" in obj and isinstance(obj["reference"], str):
-                ref = obj["reference"]
-                # Skip absolute URLs or non-relative references for now
-                if "/" in ref and not ref.startswith(("http", "https", "urn:")):
-                    if ref not in existing_ids:
-                        errors.append(
-                            {
-                                "path": path,
-                                "reference": ref,
-                                "msg": f"Referenced resource '{ref}' not found in batch.",
-                            }
-                        )
-            for k, v in obj.items():
-                _find_references(v, f"{path}.{k}" if path else k)
-        elif isinstance(obj, list):
-            for i, item in enumerate(obj):
-                _find_references(item, f"{path}[{i}]")
-
-    for resource in resources:
-        _find_references(resource)
-
-    # Re-formatting to match ValidationResult.errors structure
-    formatted_errors = []
-    # (Actually the recursive _find_references approach above is a bit messy for returning)
-    # Let's do a cleaner pass:
-
+    # Check each resource for broken references
+    formatted_errors: list[dict[str, Any]] = []
     for i, resource in enumerate(resources):
         res_type = resource.get("resourceType", "Unknown")
         res_id = resource.get("id", f"index-{i}")

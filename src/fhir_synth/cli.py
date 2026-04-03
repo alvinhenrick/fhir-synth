@@ -98,12 +98,13 @@ def generate(
 ) -> None:
     """Generate synthetic FHIR data end-to-end: prompt → LLM → code → execute → NDJSON.
 
-    All outputs are saved to a ``runs/`` directory with an auto-generated
+    All outputs are saved to a ``runs/<name>/`` directory with an auto-generated
     Docker-style name (e.g. ``brave_phoenix``).  Each run produces:
 
-    - ``runs/<name>.py``      — the generated Python code
-    - ``runs/<name>.ndjson``  — NDJSON data (one patient bundle per line)
-    - ``runs/<name>/``        — (with --split) per-patient JSON files
+    - ``runs/<name>/prompt.txt``     — the user's prompt
+    - ``runs/<name>/<name>.py``      — the generated Python code
+    - ``runs/<name>/<name>.ndjson``  — NDJSON data (one patient bundle per line)
+    - ``runs/<name>/patient_*.json`` — (with --split) per-patient JSON files
 
     Example prompts:
 
@@ -173,15 +174,16 @@ def generate(
     try:
         from fhir_synth.code_generator import CodeGenerator, get_executor
         from fhir_synth.llm import get_provider
-        from fhir_synth.naming import resolve_run_name
+        from fhir_synth.naming import create_run_dir
 
-        # ── Resolve run name & output paths ─────────────────────────
-        runs_dir = Path("runs")
-        runs_dir.mkdir(parents=True, exist_ok=True)
-        run_name = resolve_run_name(runs_dir)
-        code_path = runs_dir / f"{run_name}.py"
-        ndjson_path = runs_dir / f"{run_name}.ndjson"
-        typer.echo(f"📂 Run: {run_name}")
+        # ── Create run directory & output paths ─────────────────────
+        run_dir = create_run_dir()
+        run_name = run_dir.name
+        code_path = run_dir / f"{run_name}.py"
+        ndjson_path = run_dir / f"{run_name}.ndjson"
+        prompt_path = run_dir / "prompt.txt"
+        prompt_path.write_text(prompt)
+        typer.echo(f"📂 Run: {run_dir}")
 
         # ── Configure skills system ────────────────────────────────
         discovery = _configure_skills(skills_dir, selector, score_threshold)
@@ -353,11 +355,10 @@ def generate(
         write_ndjson(per_patient_bundles, ndjson_path)
         typer.echo(f"✓  {len(per_patient_bundles)} patient bundles → {ndjson_path}")
 
-        # --split: also write per-patient JSON files into same-named directory
+        # --split: also write per-patient JSON files into run directory
         if split:
-            split_dir = runs_dir / run_name
-            paths = write_split_bundles(per_patient_bundles, split_dir)
-            typer.echo(f"✓  {len(paths)} patient files → {split_dir}/")
+            paths = write_split_bundles(per_patient_bundles, run_dir)
+            typer.echo(f"✓  {len(paths)} patient files → {run_dir}/")
 
     except Exception as exc:
         error_msg = str(exc)

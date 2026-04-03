@@ -4,19 +4,23 @@
 
 End-to-end: prompt → LLM → code → execute → NDJSON.
 
-```bash
-fhir-synth generate "10 diabetic patients with HbA1c observations" -o diabetes.ndjson
+```bash fhir-synth generate "10 diabetic patients with HbA1c observations"
 ```
+
+All outputs are saved to a `runs/` directory with an auto-generated Docker-style name (e.g. `brave_phoenix`). Each run creates its own directory:
+
+- `runs/<name>/prompt.txt`     — the user's prompt
+- `runs/<name>/<name>.py`      — the generated Python code
+- `runs/<name>/<name>.ndjson`  — NDJSON data (one patient bundle per line)
+- `runs/<name>/patient_*.json` — (with `--split`) per-patient JSON files
 
 ### Options
 
 | Flag | Default | Description |
 |------|---------|-------------|
-| `-o / --out` | `output.ndjson` | Output file (or directory with `--split`) |
 | `-p / --provider` | `gpt-4` | LLM model/provider |
 | `--fhir-version` | `R4B` | FHIR version: `R4B`, `STU3` (case-insensitive) |
-| `--split` | off | Split output: one JSON file per patient in a directory |
-| `--save-code` | — | Save generated Python code |
+| `--split` | off | Also split output into one JSON file per patient in a subdirectory |
 | `--empi` | off | Include EMPI Person→Patient linkage |
 | `--persons` | `1` | Number of Persons (EMPI) |
 | `--systems` | `emr1,emr2` | EMR system ids (EMPI) |
@@ -25,34 +29,31 @@ fhir-synth generate "10 diabetic patients with HbA1c observations" -o diabetes.n
 | `-e / --executor` | `local` | Execution backend: `local`, `docker`, `e2b`, or `blaxel` (powered by [smolagents](https://huggingface.co/docs/smolagents)) |
 | `--aws-profile` | — | AWS profile for Bedrock |
 | `--aws-region` | — | AWS region for Bedrock |
-
-Default output is a single NDJSON file (one patient bundle per line).
-Use `--split` to write one JSON file per patient into a directory instead.
+| `--skills-dir` | — | Directory with user-provided SKILL.md skills |
+| `--selector` | `keyword` | Skill selection: `keyword` (fuzzy) or `faiss` (semantic) |
+| `--score-threshold` | `0.3` | Min similarity score 0.0-1.0 (FAISS only) |
+| `--context` | — | Path to NDJSON/JSON with existing resources for stateful generation |
 
 ### Examples
 
 ```bash
-# Default: single NDJSON file (one patient bundle per line)
-fhir-synth generate "10 diabetic patients with HbA1c observations" -o diabetes.ndjson
+# Default: generates runs/brave_phoenix/ with prompt.txt, .py, .ndjson
+fhir-synth generate "10 diabetic patients with HbA1c observations"
 
-# Split per patient → patients/patient_001.json ...
-fhir-synth generate "10 diabetic patients with HbA1c observations" --split -o patients/
+# Also split per patient → runs/<name>/patient_001.json ...
+fhir-synth generate "10 diabetic patients with HbA1c observations" --split
 
 # With EMPI
-fhir-synth generate "EMPI dataset" --empi --persons 3 -o empi.ndjson
+fhir-synth generate "EMPI dataset" --empi --persons 3
 
 # With metadata from YAML
-fhir-synth generate "20 patients" --meta-config examples/meta-normal.yaml -o output.ndjson
-
-# Save generated code for inspection
-fhir-synth generate "20 patients with conditions" -o data.ndjson --save-code generated.py
+fhir-synth generate "20 patients" --meta-config examples/meta-normal.yaml
 
 # Mock provider (no API key needed)
-fhir-synth generate "5 patients" --provider mock -o test.ndjson
+fhir-synth generate "5 patients" --provider mock
 
 # Docker sandbox executor — runs code in an isolated Docker container
 fhir-synth generate "5 patients" --executor docker
-
 
 # E2B cloud sandbox (requires E2B_API_KEY env var)
 fhir-synth generate "5 patients" --executor e2b
@@ -61,8 +62,7 @@ fhir-synth generate "5 patients" --executor e2b
 fhir-synth generate "5 patients" --executor blaxel
 
 # Generate STU3 resources instead of R4B (case-insensitive)
-fhir-synth generate "10 patients with diabetes" --fhir-version stu3 -o output.ndjson
-fhir-synth generate "5 patients" --fhir-version STU3 -o output.ndjson
+fhir-synth generate "10 patients with diabetes" --fhir-version stu3
 ```
 
 ### Environment Variables

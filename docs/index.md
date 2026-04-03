@@ -44,13 +44,14 @@ pip install "fhir-synth[bedrock] @ git+https://github.com/alvinhenrick/fhir-synt
 
 ```bash
 # Generate 10 diabetic patients with labs (R4B by default)
-fhir-synth generate "10 diabetic patients with HbA1c observations" -o diabetes.ndjson
+# → runs/brave_phoenix/ with prompt.txt, .py, .ndjson
+fhir-synth generate "10 diabetic patients with HbA1c observations"
 
 # Generate STU3 resources instead
-fhir-synth generate "10 patients with diabetes" --fhir-version stu3 -o output.ndjson
+fhir-synth generate "10 patients with diabetes" --fhir-version stu3
 
 # Try without an API key (mock LLM for testing)
-fhir-synth generate "5 patients" --provider mock -o test.ndjson
+fhir-synth generate "5 patients" --provider mock
 ```
 
 ## Next Steps

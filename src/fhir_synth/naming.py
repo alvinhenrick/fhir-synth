@@ -24,35 +24,32 @@ def generate_run_name(n_words: int = 2) -> str:
     return slug.replace("-", "_")
 
 
-def resolve_run_name(base: Path, name: str | None = None) -> str:
-    """Return a unique run name under *base*, generating one if needed.
+def create_run_dir(base: Path | None = None) -> Path:
+    """Create a uniquely-named run directory under *base*.
 
-    When a collision occurs (e.g. ``runs/brave_phoenix.ndjson`` already
-    exists), a numeric suffix is appended (``brave_phoenix_2``).
+    The directory is created immediately so parallel runs
+    cannot collide on the same name.
 
     Args:
-        base: Parent directory to check for collisions (e.g. ``./runs``).
-        name: Explicit name (auto-generated when ``None``).
+        base: Parent directory (default: ``./runs``).
 
     Returns:
-        The resolved name string (no path, no extension).
+        :class:`pathlib.Path` to the newly created run directory,
+        e.g. ``runs/brave_phoenix/``.
     """
-    resolved: str = name if name is not None else generate_run_name()
+    if base is None:
+        base = Path("runs")
+    base.mkdir(parents=True, exist_ok=True)
 
-    # Check if any file with this stem already exists
-    if _name_exists(base, resolved):
+    name = generate_run_name()
+
+    # Handle the (rare) collision by appending a counter
+    run_dir = base / name
+    if run_dir.exists():
         counter = 2
-        while _name_exists(base, f"{resolved}_{counter}"):
+        while (base / f"{name}_{counter}").exists():
             counter += 1
-        resolved = f"{resolved}_{counter}"
+        run_dir = base / f"{name}_{counter}"
 
-    return resolved
-
-
-def _name_exists(base: Path, name: str) -> bool:
-    """Check if any artifact with this name already exists."""
-    return (
-        (base / f"{name}.py").exists()
-        or (base / f"{name}.ndjson").exists()
-        or (base / name).is_dir()
-    )
+    run_dir.mkdir(parents=True, exist_ok=True)
+    return run_dir
