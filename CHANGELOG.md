@@ -2,6 +2,22 @@
 
 <!-- version list -->
 
+## v1.11.0 (2026-04-03)
+
+### Features
+
+- Auto-generate unique run names and improve output handling in CLI
+  ([`4f316a7`](https://github.com/alvinhenrick/fhir-synth/commit/4f316a7113179aa662707071e125a5f619449440))
+
+- Update output structure to save all artifacts in a unique run directory
+  ([`40248d4`](https://github.com/alvinhenrick/fhir-synth/commit/40248d49116f1cf8a0fabd4f3f498a68a25d732c))
+
+### Refactoring
+
+- Enhance FHIR validation with improved error handling and code clarity
+  ([`9126967`](https://github.com/alvinhenrick/fhir-synth/commit/91269679d9b37c5b6a6752cd0c24a0bf4282d6ce))
+
+
 ## v1.10.1 (2026-04-01)
 
 ### Bug Fixes
