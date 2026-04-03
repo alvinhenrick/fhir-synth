@@ -140,11 +140,13 @@ def generate_resources() -> list[dict]:
 
 ### Inspect Generated Code
 
-Generated code is always saved to `runs/` automatically:
+Generated code is always saved to `runs/<name>/` automatically:
 
 ```bash
 fhir-synth generate "10 patients"
-# → runs/brave_phoenix.py (code) + runs/brave_phoenix.ndjson (data)
+# → runs/brave_phoenix/brave_phoenix.py (code)
+# → runs/brave_phoenix/brave_phoenix.ndjson (data)
+# → runs/brave_phoenix/prompt.txt (your prompt)
 ```
 
 ### Enable Quality Scoring
@@ -185,11 +187,11 @@ fhir-synth generate "..." --provider gpt-3.5-turbo
 
 ### 2. Review Generated Code
 
-Code is always saved to `runs/` — check it after each run:
+Code is always saved to `runs/<name>/` — check it after each run:
 
 ```bash
 fhir-synth generate "complex requirement" --provider gpt-4
-# → runs/<name>.py (inspect this file)
+# → runs/<name>/<name>.py (inspect this file)
 ```
 
 ### 3. Enable Logging

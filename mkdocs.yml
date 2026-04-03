@@ -1,5 +1,5 @@
 site_name: FHIR Synth
-site_description: Dynamic FHIR R4B synthetic data generator using LLM-powered code generation
+site_description: Dynamic FHIR synthetic data generator using LLM-powered code generation (supports R4B, STU3)
 site_url: https://alvinhenrick.github.io/fhir-synth/
 repo_url: https://github.com/alvinhenrick/fhir-synth
 repo_name: alvinhenrick/fhir-synth

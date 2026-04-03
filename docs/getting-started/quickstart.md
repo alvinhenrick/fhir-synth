@@ -9,7 +9,7 @@ All outputs are auto-saved to `runs/` with a unique Docker-style name (e.g. `bra
 # 10 diabetic patients with labs → runs/brave_phoenix/
 fhir-synth generate "10 diabetic patients with HbA1c observations"
 
-# Also split: one JSON file per patient in a subdirectory
+# Also split: one JSON file per patient in the run directory
 fhir-synth generate "10 diabetic patients with HbA1c observations" --split
 
 # 5 patients with hypertension, encounters, and meds
