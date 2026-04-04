@@ -2,6 +2,19 @@
 
 <!-- version list -->
 
+## v1.13.0 (2026-04-04)
+
+### Bug Fixes
+
+- Clean up formatting and remove unnecessary newlines in multiple files
+  ([`60e9f47`](https://github.com/alvinhenrick/fhir-synth/commit/60e9f476d603f2bb689b5354763c6cbee3565926))
+
+### Features
+
+- Add reference repair and US Core compliance validation to CLI
+  ([`351588c`](https://github.com/alvinhenrick/fhir-synth/commit/351588c0c8d89e2924c71327111813f6ec7b242c))
+
+
 ## v1.12.0 (2026-04-03)
 
 ### Bug Fixes
