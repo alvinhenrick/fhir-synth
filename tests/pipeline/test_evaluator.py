@@ -16,7 +16,6 @@ from fhir_synth.pipeline.evaluator import (
 )
 from fhir_synth.pipeline.protocols import QualityMetric
 
-
 # ── Fixtures ─────────────────────────────────────────────────────────────────
 
 
@@ -143,7 +142,7 @@ def test_metric_satisfies_protocol(metric_cls: type) -> None:
 
 def test_metric_score_is_frozen():
     ms = MetricScore(name="test", score=0.9, weight=0.5, details={})
-    with pytest.raises(Exception):  # frozen dataclass
+    with pytest.raises((AttributeError, TypeError)):  # frozen dataclass
         ms.score = 0.5  # type: ignore[misc]
 
 

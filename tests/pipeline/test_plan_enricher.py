@@ -7,8 +7,6 @@ generate valid, reference-complete FHIR resources.
 
 from __future__ import annotations
 
-import pytest
-
 from fhir_synth.pipeline.models import (
     CareTeamMember,
     ClinicalFinding,
@@ -18,7 +16,6 @@ from fhir_synth.pipeline.models import (
     PatientProfile,
 )
 from fhir_synth.pipeline.plan_enricher import PlanEnricher
-
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 

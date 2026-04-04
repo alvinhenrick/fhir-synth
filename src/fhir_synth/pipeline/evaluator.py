@@ -14,7 +14,6 @@ from typing import Any
 from fhir_synth.code_generator.fhir_validation import validate_references, validate_resources
 from fhir_synth.code_generator.us_core_validation import validate_us_core
 
-
 # ── Value objects ─────────────────────────────────────────────────────────────
 
 

@@ -12,11 +12,16 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from fhir_synth.code_generator.executor import Executor, LocalSmolagentsExecutor
-from fhir_synth.code_generator.executor import validate_code, validate_imports, fix_common_imports
+from fhir_synth.code_generator.constants import ALLOWED_MODULE_PREFIXES, ALLOWED_MODULES
+from fhir_synth.code_generator.executor import (
+    Executor,
+    LocalSmolagentsExecutor,
+    fix_common_imports,
+    validate_imports,
+)
 from fhir_synth.code_generator.fhir_validation import repair_references
 from fhir_synth.code_generator.prompts.loader import load_section, render
-from fhir_synth.code_generator.constants import ALLOWED_MODULE_PREFIXES, ALLOWED_MODULES
+from fhir_synth.code_generator.us_core_validation import us_core_must_support_guide
 from fhir_synth.fhir_spec import get_fhir_version, import_guide, spec_summary
 from fhir_synth.pipeline.evaluator import EvaluationReport, GenerationEvaluator
 from fhir_synth.pipeline.models import ClinicalPlan
@@ -92,7 +97,7 @@ class FHIRGuidelinesBuilder:
             allowed_prefixes=_ALLOWED_PREFIXES,
             fhir_version=fhir_version,
         )
-        return "\n\n".join([system_text, import_guide(), spec_summary()])
+        return "\n\n".join([system_text, us_core_must_support_guide(), import_guide(), spec_summary()])
 
 
 # ── Pipeline ──────────────────────────────────────────────────────────────────
@@ -199,7 +204,7 @@ class TwoStagePipeline:
         llm_provider: Any,
         executor: Executor | None = None,
         user_skill_dirs: list[Path] | None = None,
-    ) -> "TwoStagePipeline":
+    ) -> TwoStagePipeline:
         """Convenience factory using DSPy modules and default collaborators.
 
         Args:

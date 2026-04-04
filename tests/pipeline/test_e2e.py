@@ -8,14 +8,23 @@ Tier 3 (llm marker):  real LLM call — skipped unless OPENAI_API_KEY etc. is se
 from __future__ import annotations
 
 import os
-from typing import Any
 
 import pytest
 
 from fhir_synth.pipeline.evaluator import GenerationEvaluator
-from fhir_synth.pipeline.models import ClinicalFinding, ClinicalPlan, Coding, MedicationEntry, PatientProfile
-from fhir_synth.pipeline.pipeline import FHIRGuidelinesBuilder, PipelineResult, SkillContextBuilder, TwoStagePipeline
-
+from fhir_synth.pipeline.models import (
+    ClinicalFinding,
+    ClinicalPlan,
+    Coding,
+    MedicationEntry,
+    PatientProfile,
+)
+from fhir_synth.pipeline.pipeline import (
+    FHIRGuidelinesBuilder,
+    PipelineResult,
+    SkillContextBuilder,
+    TwoStagePipeline,
+)
 
 # ── Shared fixtures ───────────────────────────────────────────────────────────
 
@@ -222,7 +231,7 @@ def test_configure_dspy_lm_sets_global_lm() -> None:
     # Use a DummyLM so no real API call is made
     dummy = dspy.utils.DummyLM(answers=["test"])
     dspy.configure(lm=dummy)
-    configure_dspy_lm.__module__  # just verify it's importable
+    assert configure_dspy_lm.__module__  # verify it's importable
 
     # DummyLM should be set as global LM
     assert dspy.settings.lm is not None
@@ -285,7 +294,7 @@ def test_dspy_pipeline_end_to_end_with_real_llm() -> None:
     Requires OPENAI_API_KEY (or equivalent) in environment.
     Run with: pytest -m llm tests/pipeline/test_e2e.py
     """
-    dspy = pytest.importorskip("dspy")
+    pytest.importorskip("dspy")
 
     api_key = os.getenv("OPENAI_API_KEY") or os.getenv("ANTHROPIC_API_KEY")
     if not api_key:

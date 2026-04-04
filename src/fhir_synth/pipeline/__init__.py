@@ -26,7 +26,12 @@ from fhir_synth.pipeline.models import (
     PatientProfile,
 )
 from fhir_synth.pipeline.plan_enricher import PlanEnricher
-from fhir_synth.pipeline.protocols import ClinicalPlanEnricher, ClinicalPlanner, CodeSynthesizer, QualityMetric
+from fhir_synth.pipeline.protocols import (
+    ClinicalPlanEnricher,
+    ClinicalPlanner,
+    CodeSynthesizer,
+    QualityMetric,
+)
 
 __all__ = [
     # Models
