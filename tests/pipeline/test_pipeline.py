@@ -162,6 +162,7 @@ def test_pipeline_default_factory_requires_dspy() -> None:
 def test_pipeline_default_factory_raises_helpful_error_without_dspy(monkeypatch: Any) -> None:
     """When dspy import fails, the error message tells the user how to install it."""
     import builtins
+
     real_import = builtins.__import__
 
     def _block_dspy(name: str, *args: Any, **kwargs: Any) -> Any:

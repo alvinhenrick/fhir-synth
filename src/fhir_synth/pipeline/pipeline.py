@@ -97,7 +97,9 @@ class FHIRGuidelinesBuilder:
             allowed_prefixes=_ALLOWED_PREFIXES,
             fhir_version=fhir_version,
         )
-        return "\n\n".join([system_text, us_core_must_support_guide(), import_guide(), spec_summary()])
+        return "\n\n".join(
+            [system_text, us_core_must_support_guide(), import_guide(), spec_summary()]
+        )
 
 
 # ── Pipeline ──────────────────────────────────────────────────────────────────

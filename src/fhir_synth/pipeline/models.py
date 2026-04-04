@@ -67,9 +67,7 @@ class CareTeamMember(BaseModel):
 
     model_config = {"frozen": True}
 
-    role: _CARE_TEAM_ROLE = Field(
-        description="FHIR resource type to create, e.g. 'Practitioner'"
-    )
+    role: _CARE_TEAM_ROLE = Field(description="FHIR resource type to create, e.g. 'Practitioner'")
     display_name: str = Field(description="Provider name, e.g. 'Dr. Smith'")
     specialty: str | None = Field(
         default=None, description="Clinical specialty, e.g. 'Internal Medicine'"

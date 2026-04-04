@@ -255,7 +255,7 @@ class FaissSelector:
             return self._faiss, self._np
         try:
             import faiss  # type: ignore[import-not-found]
-            import numpy as np  # type: ignore[import-not-found]
+            import numpy as np
         except ImportError as exc:
             msg = (
                 "FaissSelector requires faiss-cpu and numpy. "

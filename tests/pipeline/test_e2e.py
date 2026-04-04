@@ -63,7 +63,7 @@ def _diabetic_plan() -> ClinicalPlan:
     )
 
 
-_VALID_CODE = '''
+_VALID_CODE = """
 from fhir.resources.R4B.patient import Patient
 from fhir.resources.R4B.condition import Condition
 from fhir.resources.R4B.observation import Observation
@@ -124,7 +124,7 @@ def generate_resources():
         condition.model_dump(exclude_none=True),
         observation.model_dump(exclude_none=True),
     ]
-'''
+"""
 
 
 class _PlanReturner:

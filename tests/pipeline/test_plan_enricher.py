@@ -68,9 +68,7 @@ def test_enricher_adds_practitioner_when_medications_present() -> None:
 
 def test_enricher_no_changes_when_no_medications_and_no_conditions() -> None:
     """A plan with only demographics needs no companions."""
-    plan = _bare_plan(
-        patients=[PatientProfile(age=30, gender="male")]
-    )
+    plan = _bare_plan(patients=[PatientProfile(age=30, gender="male")])
     enriched = PlanEnricher().enrich(plan)
     assert enriched.care_team == []
 

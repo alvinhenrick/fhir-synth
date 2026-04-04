@@ -62,7 +62,9 @@ class EvaluationReport:
         return {
             "overall_score": round(self.overall_score, 4),
             "grade": self.grade,
-            "metrics": {ms.name: {"score": round(ms.score, 4), **ms.details} for ms in self.metric_scores},
+            "metrics": {
+                ms.name: {"score": round(ms.score, 4), **ms.details} for ms in self.metric_scores
+            },
         }
 
 
