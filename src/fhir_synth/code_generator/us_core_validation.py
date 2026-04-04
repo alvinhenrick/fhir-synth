@@ -121,6 +121,27 @@ _CHOICE_ALTERNATIVES: dict[str, list[str]] = {
 # ---------------------------------------------------------------------------
 
 
+def us_core_must_support_guide() -> str:
+    """Compact US Core must-support field reference for LLM prompts.
+
+    Lists every profile's must-support fields so Stage 2 knows which
+    *optional* FHIR fields are required by the US Core profile.  Suitable
+    for embedding in a system prompt or FHIR guidelines section.
+    """
+    lines: list[str] = [
+        "US CORE R4 MUST-SUPPORT FIELDS",
+        "(Include ALL of these fields in every resource of that type)\n",
+    ]
+    for resource_type, checks in _PROFILES.items():
+        field_labels = ", ".join(label for _, label in checks)
+        lines.append(f"  {resource_type}: {field_labels}")
+    lines.append(
+        "\nNote: 'must-support' means the field MUST be populated if the data exists. "
+        "For synthetic data, always include all must-support fields."
+    )
+    return "\n".join(lines)
+
+
 @dataclass
 class USCoreResult:
     """Result of US Core compliance checking for a batch of resources."""
