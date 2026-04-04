@@ -53,6 +53,29 @@ class CodeSynthesizer(Protocol):
 
 
 @runtime_checkable
+class ClinicalPlanEnricher(Protocol):
+    """Detects and fills missing resource dependencies in a ClinicalPlan.
+
+    Stage 1.5 of the pipeline.  Implementations may use the FHIR spec graph,
+    rule-based heuristics, or a no-op stub for testing.
+    """
+
+    def enrich(self, plan: ClinicalPlan) -> ClinicalPlan:
+        """Return an enriched copy of *plan* with missing companions added.
+
+        Must be idempotent: calling twice must produce the same result.
+
+        Args:
+            plan: ClinicalPlan produced by Stage 1.
+
+        Returns:
+            Enriched ClinicalPlan ready for Stage 2.  May be the same object
+            if no enrichment was needed.
+        """
+        ...
+
+
+@runtime_checkable
 class QualityMetric(Protocol):
     """Single-concern quality measurement over a list of FHIR resources.
 

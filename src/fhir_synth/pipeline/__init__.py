@@ -18,22 +18,28 @@ from fhir_synth.pipeline.evaluator import (
     USCoreComplianceMetric,
 )
 from fhir_synth.pipeline.models import (
+    CareTeamMember,
     ClinicalFinding,
     ClinicalPlan,
     Coding,
     MedicationEntry,
     PatientProfile,
 )
-from fhir_synth.pipeline.protocols import ClinicalPlanner, CodeSynthesizer, QualityMetric
+from fhir_synth.pipeline.plan_enricher import PlanEnricher
+from fhir_synth.pipeline.protocols import ClinicalPlanEnricher, ClinicalPlanner, CodeSynthesizer, QualityMetric
 
 __all__ = [
     # Models
+    "CareTeamMember",
     "ClinicalFinding",
     "ClinicalPlan",
     "Coding",
     "MedicationEntry",
     "PatientProfile",
+    # Enricher
+    "PlanEnricher",
     # Protocols
+    "ClinicalPlanEnricher",
     "ClinicalPlanner",
     "CodeSynthesizer",
     "QualityMetric",

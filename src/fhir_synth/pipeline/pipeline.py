@@ -20,7 +20,8 @@ from fhir_synth.code_generator.constants import ALLOWED_MODULE_PREFIXES, ALLOWED
 from fhir_synth.fhir_spec import get_fhir_version, import_guide, spec_summary
 from fhir_synth.pipeline.evaluator import EvaluationReport, GenerationEvaluator
 from fhir_synth.pipeline.models import ClinicalPlan
-from fhir_synth.pipeline.protocols import ClinicalPlanner, CodeSynthesizer
+from fhir_synth.pipeline.plan_enricher import PlanEnricher
+from fhir_synth.pipeline.protocols import ClinicalPlanEnricher, ClinicalPlanner, CodeSynthesizer
 from fhir_synth.skills import KeywordSelector, SkillLoader, SkillSelector
 
 logger = logging.getLogger(__name__)
@@ -120,12 +121,14 @@ class TwoStagePipeline:
         evaluator: GenerationEvaluator,
         executor: Executor | None = None,
         skill_context_builder: SkillContextBuilder | None = None,
+        plan_enricher: ClinicalPlanEnricher | None = None,
     ) -> None:
         self._planner = planner
         self._synthesizer = synthesizer
         self._evaluator = evaluator
         self._executor: Executor = executor or LocalSmolagentsExecutor()
         self._skill_builder = skill_context_builder or SkillContextBuilder()
+        self._enricher: ClinicalPlanEnricher = plan_enricher or PlanEnricher()
 
     def run(self, prompt: str, timeout: int = 30) -> PipelineResult:
         """Execute the full pipeline for *prompt*.
@@ -149,6 +152,14 @@ class TwoStagePipeline:
             len(plan.patients),
             plan.care_setting,
         )
+
+        # Stage 1.5: dependency enrichment
+        plan = self._enricher.enrich(plan)
+        if plan.care_team:
+            logger.info(
+                "Stage 1.5 — Enriched plan with care team: %s",
+                [m.role for m in plan.care_team],
+            )
 
         # Stage 2: code synthesis
         logger.info("Stage 2 — Code synthesis from clinical plan")

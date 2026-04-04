@@ -313,6 +313,35 @@ def reference_targets(name: str) -> dict[str, str]:
     return {f.name: f.type_annotation for f in meta.all_fields if f.is_reference}
 
 
+def reference_allowed_types(name: str) -> dict[str, list[str]]:
+    """Mapping of reference field names → allowed target resource type names.
+
+    Uses ``enum_reference_types`` from ``json_schema_extra`` to return the
+    concrete resource types each reference field may point to.
+
+    Example::
+
+        reference_allowed_types("MedicationRequest")["requester"]
+        # → ['Practitioner', 'PractitionerRole', 'Organization', 'Patient', ...]
+
+    Args:
+        name: FHIR resource type name, e.g. ``"MedicationRequest"``.
+
+    Returns:
+        Dict mapping field name → list of allowed resource type names.
+        Fields without explicit ``enum_reference_types`` (e.g. open references)
+        are omitted.
+    """
+    cls = get_resource_class(name)
+    result: dict[str, list[str]] = {}
+    for fname, finfo in cls.model_fields.items():
+        extras = finfo.json_schema_extra if isinstance(finfo.json_schema_extra, dict) else {}
+        enum_ref = extras.get("enum_reference_types")
+        if enum_ref and isinstance(enum_ref, list):
+            result[fname] = [str(v) for v in enum_ref]
+    return result
+
+
 # ── Clinical resources (derived by introspection) ─────────────────────────
 
 # Foundational resource types always included in the clinical subset

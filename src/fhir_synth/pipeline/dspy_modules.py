@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 
 def _require_dspy() -> Any:
     try:
-        import dspy  # type: ignore[import-untyped]
+        import dspy
 
         return dspy
     except ImportError as exc:
@@ -113,7 +113,7 @@ class DSPyClinicalPlanner:
 
     def plan(self, prompt: str, skills_context: str) -> ClinicalPlan:
         result = self._predict(prompt=prompt, clinical_context=skills_context)
-        return result.plan
+        return result.plan  # type: ignore[no-any-return]
 
     # DSPy Module interface — forward() mirrors plan() for optimisation
     def forward(self, prompt: str, clinical_context: str) -> Any:

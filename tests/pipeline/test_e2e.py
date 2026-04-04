@@ -185,6 +185,7 @@ def test_pipeline_evaluation_report_scores() -> None:
 
 
 def test_pipeline_plan_captured_in_result() -> None:
+    """PipelineResult.plan is the enriched plan (may differ from the original)."""
     plan = _diabetic_plan()
     pipeline = TwoStagePipeline(
         planner=_PlanReturner(plan),
@@ -192,8 +193,9 @@ def test_pipeline_plan_captured_in_result() -> None:
         evaluator=GenerationEvaluator(),
     )
     result = pipeline.run("any")
-    assert result.plan == plan
+    # Patient data is preserved even after enrichment
     assert result.plan.patients[0].age == 62
+    assert result.plan.patients == plan.patients
 
 
 # ── Tier 2: DSPy structure (dspy-ai must be installed) ────────────────────────

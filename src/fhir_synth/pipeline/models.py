@@ -10,6 +10,9 @@ from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator
 
+# Valid roles that Stage 2 can create as standalone FHIR resources
+_CARE_TEAM_ROLE = Literal["Practitioner", "PractitionerRole", "Organization"]
+
 
 class Coding(BaseModel):
     """A clinical code from a standard terminology system (SNOMED, LOINC, RxNorm, etc.)."""
@@ -53,6 +56,25 @@ class MedicationEntry(BaseModel):
     display: str = Field(description="Medication name and strength, e.g. 'Metformin 500mg'")
     dose: str | None = Field(default=None, description="e.g. '500mg', '10 units'")
     frequency: str | None = Field(default=None, description="e.g. 'twice daily', 'every morning'")
+
+
+class CareTeamMember(BaseModel):
+    """A care provider that Stage 2 must create as a companion FHIR resource.
+
+    Added by PlanEnricher (Stage 1.5) when it detects that the plan will
+    generate resources with mandatory references to providers or organisations.
+    """
+
+    model_config = {"frozen": True}
+
+    role: _CARE_TEAM_ROLE = Field(
+        description="FHIR resource type to create, e.g. 'Practitioner'"
+    )
+    display_name: str = Field(description="Provider name, e.g. 'Dr. Smith'")
+    specialty: str | None = Field(
+        default=None, description="Clinical specialty, e.g. 'Internal Medicine'"
+    )
+    npi: str | None = Field(default=None, description="National Provider Identifier (10 digits)")
 
 
 # Valid US Core gender values
@@ -111,3 +133,11 @@ class ClinicalPlan(BaseModel):
         description="Additional code-generation hints, e.g. 'include HbA1c observations'",
     )
     fhir_version: str = Field(default="R4B", description="Target FHIR version: R4B or STU3")
+    care_team: list[CareTeamMember] = Field(
+        default_factory=list,
+        description=(
+            "Care providers to create as FHIR resources. "
+            "Populated by PlanEnricher to satisfy reference dependencies. "
+            "Stage 2 must create a resource for each entry and use it in references."
+        ),
+    )
