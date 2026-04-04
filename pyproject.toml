@@ -52,6 +52,9 @@ semantic = [
     "numpy>=1.24",
     "sentence-transformers>=2.2",
 ]
+dspy = [
+    "dspy-ai>=2.0",
+]
 docs = [
     "mkdocs>=1.6,<2",
     "mkdocs-material>=9.0,<=9.7.3",
@@ -75,7 +78,7 @@ packages = ["src/fhir_synth"]
 [tool.hatch.envs.default]
 installer = "uv"
 dependency-groups = ["dev"]
-features = ["docker", "e2b", "blaxel"]
+features = ["docker", "e2b", "blaxel", "dspy"]
 
 [tool.hatch.envs.default.scripts]
 test = "pytest {args}"
@@ -142,6 +145,10 @@ ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = ["smolagents", "smolagents.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["dspy", "dspy.*"]
 ignore_missing_imports = true
 
 

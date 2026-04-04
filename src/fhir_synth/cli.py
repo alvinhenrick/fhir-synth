@@ -95,6 +95,11 @@ def generate(
         "--context",
         help="Path to NDJSON or JSON file with existing FHIR resources for stateful generation",
     ),
+    pipeline: str = typer.Option(
+        "default",
+        "--pipeline",
+        help="Generation pipeline: 'default' (single-stage) or 'dspy' (two-stage clinical planning, requires fhir-synth[dspy])",
+    ),
 ) -> None:
     """Generate synthetic FHIR data end-to-end: prompt → LLM → code → execute → NDJSON.
 
@@ -292,30 +297,49 @@ def generate(
                 include_organizations=not no_orgs,
             )
 
-        # Step 1 — generate code
-        typer.echo("⚙  Generating code from prompt …")
+        if pipeline == "dspy":
+            # ── Two-stage DSPy pipeline ──────────────────────────────────
+            typer.echo("⚙  Two-stage pipeline: clinical planning → code synthesis …")
+            from fhir_synth.pipeline.pipeline import TwoStagePipeline
 
-        # Show which skills were selected for this prompt
-        from fhir_synth.code_generator.prompts import get_selected_skill_names
-
-        selected_names = get_selected_skill_names(prompt_text)
-        if selected_names:
+            two_stage = TwoStagePipeline.default(
+                llm_provider=llm,
+                executor=executor,
+                user_skill_dirs=[Path(skills_dir)] if skills_dir else None,
+            )
+            pipeline_result = two_stage.run(prompt_text)
+            resources = pipeline_result.resources
+            code = pipeline_result.code
+            code_path.write_text(code)
+            typer.echo(f"   Stage 1 plan: {len(pipeline_result.plan.patients)} patient(s)")
+            typer.echo(f"   Saved code → {code_path}")
             typer.echo(
-                f"   🎯 Selected {len(selected_names)}/{total_n} skills: "
-                f"{', '.join(selected_names)}"
+                f"   Quality: {pipeline_result.report.overall_score:.2f} "
+                f"({pipeline_result.report.grade})"
             )
         else:
-            typer.echo("   ⚠️  No skills matched — using all available skills")
+            # ── Default single-stage pipeline ────────────────────────────
+            # Step 1 — generate code
+            typer.echo("⚙  Generating code from prompt …")
 
-        code = code_gen.generate_code_from_prompt(prompt_text)
+            from fhir_synth.code_generator.prompts import get_selected_skill_names
 
-        # Always save the generated code
-        code_path.write_text(code)
-        typer.echo(f"   Saved code → {code_path}")
+            selected_names = get_selected_skill_names(prompt_text)
+            if selected_names:
+                typer.echo(
+                    f"   🎯 Selected {len(selected_names)}/{total_n} skills: "
+                    f"{', '.join(selected_names)}"
+                )
+            else:
+                typer.echo("   ⚠️  No skills matched — using all available skills")
 
-        # Step 2 — execute code (self-healing retries built-in)
-        typer.echo("▶  Executing generated code …")
-        resources = code_gen.execute_generated_code(code)
+            code = code_gen.generate_code_from_prompt(prompt_text)
+            code_path.write_text(code)
+            typer.echo(f"   Saved code → {code_path}")
+
+            # Step 2 — execute code (self-healing retries built-in)
+            typer.echo("▶  Executing generated code …")
+            resources = code_gen.execute_generated_code(code)
 
         # Step 2.1 — report FHIR validation
         from fhir_synth.code_generator.fhir_validation import validate_resources
