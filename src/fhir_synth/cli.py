@@ -353,9 +353,7 @@ def generate(
         ucr = validate_us_core(resources)
         if ucr.total_checked > 0:
             if not ucr.has_warnings:
-                typer.echo(
-                    f"   ✅ US Core — {ucr.total_checked} resources fully compliant"
-                )
+                typer.echo(f"   ✅ US Core — {ucr.total_checked} resources fully compliant")
             else:
                 non_compliant = ucr.total_checked - ucr.fully_compliant
                 typer.echo(

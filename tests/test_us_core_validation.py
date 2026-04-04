@@ -2,7 +2,6 @@
 
 from fhir_synth.code_generator.us_core_validation import USCoreResult, validate_us_core
 
-
 # ── Patient ──────────────────────────────────────────────────────────────────
 
 
@@ -48,8 +47,10 @@ def test_observation_compliant():
             "category": [
                 {
                     "coding": [
-                        {"system": "http://terminology.hl7.org/CodeSystem/observation-category",
-                         "code": "vital-signs"}
+                        {
+                            "system": "http://terminology.hl7.org/CodeSystem/observation-category",
+                            "code": "vital-signs",
+                        }
                     ]
                 }
             ],
@@ -88,8 +89,12 @@ def test_condition_compliant():
             "resourceType": "Condition",
             "id": "cond1",
             "clinicalStatus": {
-                "coding": [{"system": "http://terminology.hl7.org/CodeSystem/condition-clinical",
-                            "code": "active"}]
+                "coding": [
+                    {
+                        "system": "http://terminology.hl7.org/CodeSystem/condition-clinical",
+                        "code": "active",
+                    }
+                ]
             },
             "category": [{"coding": [{"code": "encounter-diagnosis"}]}],
             "code": {"coding": [{"system": "http://snomed.info/sct", "code": "44054006"}]},
@@ -128,7 +133,9 @@ def test_medication_request_choice_type_satisfied():
             "status": "active",
             "intent": "order",
             "medicationCodeableConcept": {
-                "coding": [{"system": "http://www.nlm.nih.gov/research/umls/rxnorm", "code": "6809"}]
+                "coding": [
+                    {"system": "http://www.nlm.nih.gov/research/umls/rxnorm", "code": "6809"}
+                ]
             },
             "subject": {"reference": "Patient/p1"},
             "authoredOn": "2024-01-15",

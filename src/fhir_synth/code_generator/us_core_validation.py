@@ -24,7 +24,6 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
-
 # ---------------------------------------------------------------------------
 # Per-profile must-support field specifications
 # ---------------------------------------------------------------------------
@@ -101,9 +100,17 @@ _CHOICE_ALTERNATIVES: dict[str, list[str]] = {
     "effective": ["effectiveDateTime", "effectivePeriod", "effectiveTiming", "effectiveInstant"],
     # Observation.value[x]  (dataAbsentReason also satisfies this)
     "value": [
-        "valueQuantity", "valueCodeableConcept", "valueString",
-        "valueBoolean", "valueInteger", "valueRange", "valueRatio",
-        "valueSampledData", "valueTime", "valueDateTime", "valuePeriod",
+        "valueQuantity",
+        "valueCodeableConcept",
+        "valueString",
+        "valueBoolean",
+        "valueInteger",
+        "valueRange",
+        "valueRatio",
+        "valueSampledData",
+        "valueTime",
+        "valueDateTime",
+        "valuePeriod",
         "dataAbsentReason",
     ],
 }

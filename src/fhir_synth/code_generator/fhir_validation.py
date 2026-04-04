@@ -264,9 +264,7 @@ def _repair_walk(
                     existing_ids.add(new_ref)  # prevent double-reporting
                     repairs.append(f"{ref} → {new_ref}")
                 elif len(candidates) != 1:
-                    skipped.append(
-                        f"{ref} (ambiguous: {len(candidates)} {res_type} candidates)"
-                    )
+                    skipped.append(f"{ref} (ambiguous: {len(candidates)} {res_type} candidates)")
         for v in obj.values():
             _repair_walk(v, existing_ids, by_type, repairs, skipped)
     elif isinstance(obj, list):
