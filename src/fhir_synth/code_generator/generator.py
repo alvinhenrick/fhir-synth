@@ -12,6 +12,7 @@ from fhir_synth.code_generator.executor import (
     validate_code,
     validate_imports,
 )
+from fhir_synth.code_generator.fhir_validation import repair_references
 from fhir_synth.code_generator.metrics import calculate_code_quality_score
 from fhir_synth.code_generator.prompts import (
     build_code_prompt,
@@ -157,6 +158,20 @@ class CodeGenerator:
                             self.max_retries + 1,
                             error_detail,
                         )
+
+                # Repair broken references before returning
+                resources, repair_report = repair_references(resources)
+                if repair_report["repaired"] > 0:
+                    logger.info(
+                        "Reference repair: fixed %d broken reference(s) — %s",
+                        repair_report["repaired"],
+                        "; ".join(repair_report["details"]),
+                    )
+                if repair_report["skipped"] > 0:
+                    logger.debug(
+                        "Reference repair: skipped %d ambiguous reference(s)",
+                        repair_report["skipped"],
+                    )
 
                 return resources
             except ImportError as exc:

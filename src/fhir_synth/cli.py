@@ -334,6 +334,41 @@ def generate(
                     err=True,
                 )
 
+        # Step 2.2 — report reference integrity
+        from fhir_synth.code_generator.fhir_validation import validate_references
+
+        ref_errors = validate_references(resources)
+        broken_refs = sum(len(e.get("errors", [])) for e in ref_errors)
+        if broken_refs == 0:
+            typer.echo("   ✅ Reference integrity — all references valid")
+        else:
+            typer.echo(f"   ⚠️  Reference integrity — {broken_refs} broken reference(s)")
+            for entry in ref_errors[:3]:
+                for err in entry.get("errors", [])[:2]:
+                    typer.echo(f"      ↳ {entry['resourceType']}/{entry['id']}: {err}", err=True)
+
+        # Step 2.3 — report US Core compliance
+        from fhir_synth.code_generator.us_core_validation import validate_us_core
+
+        ucr = validate_us_core(resources)
+        if ucr.total_checked > 0:
+            if not ucr.has_warnings:
+                typer.echo(
+                    f"   ✅ US Core — {ucr.total_checked} resources fully compliant"
+                )
+            else:
+                non_compliant = ucr.total_checked - ucr.fully_compliant
+                typer.echo(
+                    f"   ⚠️  US Core — {non_compliant}/{ucr.total_checked} resources "
+                    f"missing must-support fields ({ucr.compliance_rate:.0%} compliant)"
+                )
+                for w in ucr.warnings[:3]:
+                    missing = ", ".join(w["missing_must_support"][:3])
+                    typer.echo(
+                        f"      ↳ {w['resourceType']}/{w['id']}: missing {missing}",
+                        err=True,
+                    )
+
         # Step 2.5 — apply metadata from YAML config if specified
         if metadata_config and "meta" in metadata_config:
             meta = metadata_config["meta"]

@@ -3,7 +3,8 @@
 import ast
 from typing import Any
 
-from fhir_synth.code_generator.fhir_validation import validate_resources
+from fhir_synth.code_generator.fhir_validation import validate_references, validate_resources
+from fhir_synth.code_generator.us_core_validation import validate_us_core
 
 
 def calculate_code_quality_score(
@@ -88,6 +89,43 @@ def calculate_code_quality_score(
             metrics["warnings"].append(
                 f"FHIR validation: {vr.invalid}/{vr.total} resources invalid "
                 f"({vr.pass_rate:.0%} pass rate)"
+            )
+
+        # Check 7: Reference integrity (post-repair snapshot)
+        ref_errors = validate_references(resources)
+        broken_resources = len(ref_errors)
+        broken_refs = sum(len(e.get("errors", [])) for e in ref_errors)
+        metrics["reference_integrity"] = {
+            "broken_resources": broken_resources,
+            "broken_references": broken_refs,
+            "errors": ref_errors[:10],
+        }
+        if broken_refs > 0:
+            penalty = min(0.15, 0.05 * broken_refs)
+            metrics["score"] -= penalty
+            metrics["warnings"].append(
+                f"Reference integrity: {broken_refs} broken reference(s) in "
+                f"{broken_resources} resource(s)"
+            )
+
+        # Check 8: US Core must-support compliance (advisory — smaller penalty)
+        ucr = validate_us_core(resources)
+        metrics["us_core"] = {
+            "total_checked": ucr.total_checked,
+            "fully_compliant": ucr.fully_compliant,
+            "compliance_rate": ucr.compliance_rate,
+            "warnings": ucr.warnings[:10],
+        }
+        if ucr.total_checked > 0 and not ucr.has_warnings:
+            metrics["checks"]["us_core_compliant"] = True
+        elif ucr.has_warnings:
+            metrics["checks"]["us_core_compliant"] = False
+            non_compliant = ucr.total_checked - ucr.fully_compliant
+            penalty = min(0.10, 0.10 * (non_compliant / ucr.total_checked))
+            metrics["score"] -= penalty
+            metrics["warnings"].append(
+                f"US Core: {non_compliant}/{ucr.total_checked} resources missing "
+                f"must-support fields ({ucr.compliance_rate:.0%} compliant)"
             )
 
     # Final scoring

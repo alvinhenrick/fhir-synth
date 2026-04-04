@@ -194,6 +194,86 @@ def _collect_broken_refs(resource: dict[str, Any], existing_ids: set[str]) -> li
     return errors
 
 
+def repair_references(
+    resources: list[dict[str, Any]],
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    """Attempt to repair broken internal FHIR References in-place.
+
+    For each broken reference, if there is exactly **one** resource of the
+    referenced type in the batch, the reference is repointed to that
+    resource's ID.  Ambiguous cases (multiple candidates of the same type)
+    are left unchanged and reported in ``skipped``.
+
+    Args:
+        resources: Flat list of FHIR resource dicts (mutated in-place).
+
+    Returns:
+        Tuple of ``(resources, report)`` where ``report`` contains:
+
+        - ``repaired`` – number of references successfully fixed.
+        - ``skipped``  – number of references left unchanged (ambiguous).
+        - ``details``  – list of human-readable repair descriptions.
+    """
+    # Build a set of all valid ResourceType/id pairs and a type → [id] index.
+    existing_ids: set[str] = set()
+    by_type: dict[str, list[str]] = {}
+    for r in resources:
+        res_type = r.get("resourceType")
+        res_id = r.get("id")
+        if res_type and res_id:
+            existing_ids.add(f"{res_type}/{res_id}")
+            by_type.setdefault(res_type, []).append(res_id)
+
+    repairs: list[str] = []
+    skipped: list[str] = []
+
+    for resource in resources:
+        _repair_walk(resource, existing_ids, by_type, repairs, skipped)
+
+    report: dict[str, Any] = {
+        "repaired": len(repairs),
+        "skipped": len(skipped),
+        "details": repairs,
+    }
+    return resources, report
+
+
+def _repair_walk(
+    obj: Any,
+    existing_ids: set[str],
+    by_type: dict[str, list[str]],
+    repairs: list[str],
+    skipped: list[str],
+) -> None:
+    """Recursively walk a resource dict and repair broken references."""
+    if isinstance(obj, dict):
+        ref = obj.get("reference")
+        if (
+            isinstance(ref, str)
+            and "/" in ref
+            and not ref.startswith(("http", "https", "urn:"))
+            and ref not in existing_ids
+        ):
+            parts = ref.split("/", 1)
+            if len(parts) == 2:
+                res_type, broken_id = parts
+                candidates = by_type.get(res_type, [])
+                if len(candidates) == 1 and broken_id not in candidates:
+                    new_ref = f"{res_type}/{candidates[0]}"
+                    obj["reference"] = new_ref
+                    existing_ids.add(new_ref)  # prevent double-reporting
+                    repairs.append(f"{ref} → {new_ref}")
+                elif len(candidates) != 1:
+                    skipped.append(
+                        f"{ref} (ambiguous: {len(candidates)} {res_type} candidates)"
+                    )
+        for v in obj.values():
+            _repair_walk(v, existing_ids, by_type, repairs, skipped)
+    elif isinstance(obj, list):
+        for item in obj:
+            _repair_walk(item, existing_ids, by_type, repairs, skipped)
+
+
 def _check_choice_type_fields(
     resource: dict[str, Any], resource_type: str, cls: type[BaseModel] | None = None
 ) -> list[str]:
