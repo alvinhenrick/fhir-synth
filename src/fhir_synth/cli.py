@@ -393,8 +393,10 @@ def generate(
 
         # Step 2.5 — apply metadata from YAML config if specified
         if metadata_config and "meta" in metadata_config:
+            from fhir_synth.code_generator import CodeGenerator
+
             meta = metadata_config["meta"]
-            code_gen.apply_metadata_to_resources(
+            CodeGenerator.apply_metadata_to_resources(
                 resources,
                 security=meta.get("security"),
                 tag=meta.get("tag"),
