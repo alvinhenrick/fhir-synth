@@ -7,6 +7,9 @@ from fhir_synth.pipeline.models import (
     ClinicalFinding,
     ClinicalPlan,
     Coding,
+    EncounterEvent,
+    LabValue,
+    MedicationAction,
     MedicationEntry,
     PatientProfile,
 )
@@ -192,3 +195,208 @@ def test_clinical_plan_fhir_version_preserved():
         fhir_version="STU3",
     )
     assert plan.fhir_version == "STU3"
+
+
+# ── LabValue ──────────────────────────────────────────────────────────────────
+
+
+def test_lab_value_minimal():
+    lab = LabValue(loinc_code="4548-4", display="HbA1c", value=9.2, unit="%")
+    assert lab.interpretation is None
+
+
+def test_lab_value_with_interpretation():
+    lab = LabValue(loinc_code="4548-4", display="HbA1c", value=9.2, unit="%", interpretation="H")
+    assert lab.interpretation == "H"
+
+
+def test_lab_value_is_frozen():
+    lab = LabValue(loinc_code="4548-4", display="HbA1c", value=9.2, unit="%")
+    with pytest.raises((AttributeError, TypeError, ValidationError)):
+        lab.value = 7.0  # type: ignore[misc]
+
+
+# ── MedicationAction ──────────────────────────────────────────────────────────
+
+
+def test_medication_action_start():
+    action = MedicationAction(action="start", rxnorm_code="6809", display="Metformin 500mg")
+    assert action.action == "start"
+    assert action.dose is None
+    assert action.reason is None
+
+
+def test_medication_action_change_with_reason():
+    action = MedicationAction(
+        action="change",
+        rxnorm_code="6809",
+        display="Metformin 1000mg",
+        dose="1000mg twice daily",
+        reason="HbA1c above target",
+    )
+    assert action.dose == "1000mg twice daily"
+
+
+def test_medication_action_stop():
+    action = MedicationAction(
+        action="stop", rxnorm_code="6809", display="Metformin 500mg", reason="GI intolerance"
+    )
+    assert action.action == "stop"
+
+
+def test_medication_action_rejects_invalid_action():
+    with pytest.raises(ValidationError):
+        MedicationAction(action="pause", rxnorm_code="6809", display="Metformin")  # type: ignore[arg-type]
+
+
+# ── EncounterEvent ────────────────────────────────────────────────────────────
+
+
+def _hba1c(value: float) -> LabValue:
+    return LabValue(loinc_code="4548-4", display="HbA1c", value=value, unit="%")
+
+
+def test_encounter_event_minimal():
+    event = EncounterEvent(month_offset=0, reason_display="Initial diagnosis")
+    assert event.encounter_class == "AMB"
+    assert event.labs == []
+    assert event.vitals == []
+    assert event.procedures == []
+    assert event.new_conditions == []
+    assert event.medication_changes == []
+
+
+def test_encounter_event_with_labs_and_meds():
+    event = EncounterEvent(
+        month_offset=3,
+        reason_display="Diabetic follow-up",
+        labs=[_hba1c(8.1)],
+        medication_changes=[
+            MedicationAction(action="change", rxnorm_code="6809", display="Metformin 1000mg")
+        ],
+    )
+    assert event.labs[0].value == 8.1
+    assert event.medication_changes[0].action == "change"
+
+
+def test_encounter_event_emergency_class():
+    event = EncounterEvent(month_offset=7, encounter_class="EMER", reason_display="Chest pain")
+    assert event.encounter_class == "EMER"
+
+
+def test_encounter_event_rejects_invalid_class():
+    with pytest.raises(ValidationError):
+        EncounterEvent(month_offset=0, encounter_class="INVALID", reason_display="Visit")  # type: ignore[arg-type]
+
+
+def test_encounter_event_rejects_negative_offset():
+    with pytest.raises(ValidationError):
+        EncounterEvent(month_offset=-1, reason_display="Visit")
+
+
+def test_encounter_event_is_frozen():
+    event = EncounterEvent(month_offset=0, reason_display="Visit")
+    with pytest.raises((AttributeError, TypeError, ValidationError)):
+        event.month_offset = 5  # type: ignore[misc]
+
+
+# ── PatientProfile longitudinal fields ───────────────────────────────────────
+
+
+def test_patient_profile_timeline_defaults_empty():
+    p = PatientProfile(age=50, gender="male")
+    assert p.timeline == []
+    assert p.care_start_date is None
+
+
+def test_patient_profile_with_timeline():
+    p = PatientProfile(
+        age=55,
+        gender="female",
+        care_start_date="2022-01-15",
+        timeline=[
+            EncounterEvent(month_offset=0, reason_display="T2DM diagnosis", labs=[_hba1c(9.2)]),
+            EncounterEvent(month_offset=3, reason_display="Follow-up", labs=[_hba1c(8.1)]),
+            EncounterEvent(month_offset=6, reason_display="Follow-up", labs=[_hba1c(7.4)]),
+        ],
+    )
+    assert len(p.timeline) == 3
+    assert p.timeline[0].labs[0].value == 9.2
+    assert p.timeline[2].labs[0].value == 7.4
+
+
+def test_patient_profile_timeline_serialises():
+    p = PatientProfile(
+        age=55,
+        gender="female",
+        care_start_date="2022-01-15",
+        timeline=[EncounterEvent(month_offset=0, reason_display="Visit", labs=[_hba1c(9.0)])],
+    )
+    restored = PatientProfile.model_validate_json(p.model_dump_json())
+    assert restored.timeline[0].labs[0].loinc_code == "4548-4"
+    assert restored.care_start_date == "2022-01-15"
+
+
+# ── ClinicalPlan longitudinal fields ─────────────────────────────────────────
+
+
+def test_clinical_plan_time_span_default_zero():
+    plan = ClinicalPlan(
+        patients=[PatientProfile(age=40, gender="female")],
+        care_setting="outpatient",
+        encounter_type="follow-up",
+    )
+    assert plan.time_span_months == 0
+
+
+def test_clinical_plan_time_span_set():
+    plan = ClinicalPlan(
+        patients=[PatientProfile(age=40, gender="female")],
+        care_setting="outpatient",
+        encounter_type="follow-up",
+        time_span_months=24,
+    )
+    assert plan.time_span_months == 24
+
+
+def test_clinical_plan_rejects_negative_time_span():
+    with pytest.raises(ValidationError):
+        ClinicalPlan(
+            patients=[PatientProfile(age=40, gender="female")],
+            care_setting="outpatient",
+            encounter_type="follow-up",
+            time_span_months=-1,
+        )
+
+
+def test_clinical_plan_longitudinal_round_trip():
+    """Full longitudinal plan survives JSON serialisation."""
+    plan = ClinicalPlan(
+        patients=[
+            PatientProfile(
+                age=55,
+                gender="female",
+                care_start_date="2022-01-15",
+                timeline=[
+                    EncounterEvent(
+                        month_offset=0,
+                        reason_display="Diabetes diagnosis",
+                        labs=[_hba1c(9.2)],
+                        medication_changes=[
+                            MedicationAction(
+                                action="start", rxnorm_code="6809", display="Metformin 500mg"
+                            )
+                        ],
+                    ),
+                    EncounterEvent(month_offset=3, reason_display="Follow-up", labs=[_hba1c(8.1)]),
+                ],
+            )
+        ],
+        care_setting="outpatient clinic",
+        encounter_type="follow-up",
+        time_span_months=12,
+    )
+    restored = ClinicalPlan.model_validate_json(plan.model_dump_json(indent=2))
+    assert restored.time_span_months == 12
+    assert len(restored.patients[0].timeline) == 2
+    assert restored.patients[0].timeline[0].medication_changes[0].rxnorm_code == "6809"

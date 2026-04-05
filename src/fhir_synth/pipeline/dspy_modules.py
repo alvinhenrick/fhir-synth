@@ -58,7 +58,13 @@ def _make_plan_signature(dspy: Any) -> Any:
             desc=(
                 "Structured clinical plan with one PatientProfile per patient. "
                 "Use real codes (SNOMED for conditions, RxNorm for medications). "
-                "Include realistic ages, genders, and clinical findings."
+                "Include realistic ages, genders, and clinical findings. "
+                "For longitudinal prompts (multiple visits, follow-ups, progression over time): "
+                "set time_span_months to the total duration and populate each PatientProfile.timeline "
+                "with EncounterEvent entries at realistic month_offset intervals. "
+                "Each EncounterEvent must include labs with causally consistent values "
+                "(e.g. HbA1c trending down after treatment starts), vitals, and medication_changes "
+                "that reflect clinical decision-making at that point in the disease course."
             )
         )
 
@@ -148,7 +154,7 @@ class DSPyCodeSynthesizer:
 def configure_dspy_lm(model: str, **kwargs: Any) -> None:
     """Configure DSPy's global language model from a LiteLLM model string.
 
-    This bridges :class:`~fhir_synth.llm.LLMProvider` model names (which are
+    This bridges `LLMProvider` model names (which are
     LiteLLM-compatible) directly into DSPy, since DSPy also uses LiteLLM.
 
     Args:
@@ -166,12 +172,12 @@ def configure_dspy_lm(model: str, **kwargs: Any) -> None:
 
 def _extract_code(raw: str) -> str:
     """Strip Markdown fences from a code string if present."""
-    if "``python" in raw:
-        start = raw.find("``python") + 9
-        end = raw.find("``", start)
+    if "```python" in raw:
+        start = raw.find("```python") + 9
+        end = raw.find("```", start)
         return raw[start:end].strip()
-    if "``" in raw:
-        start = raw.find("``") + 3
-        end = raw.find("``", start)
+    if "```" in raw:
+        start = raw.find("```") + 3
+        end = raw.find("```", start)
         return raw[start:end].strip()
     return raw.strip()

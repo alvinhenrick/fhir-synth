@@ -135,6 +135,17 @@ def _clinical_resource_types(plan: ClinicalPlan) -> set[str]:
                 types.add(fhir_type)
         for planned in patient.resources:
             types.add(planned.resource_type)
+        # Timeline events imply additional resource types
+        for event in patient.timeline:
+            types.add("Encounter")
+            if event.labs or event.vitals:
+                types.add("Observation")
+            if event.new_conditions:
+                types.add("Condition")
+            if event.procedures:
+                types.add("Procedure")
+            if event.medication_changes:
+                types.add("MedicationRequest")
     return types
 
 
