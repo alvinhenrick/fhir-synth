@@ -24,6 +24,7 @@ from fhir_synth.pipeline.models import (
     Coding,
     MedicationEntry,
     PatientProfile,
+    PlannedResource,
 )
 from fhir_synth.pipeline.plan_enricher import PlanEnricher
 from fhir_synth.pipeline.protocols import (
@@ -41,6 +42,7 @@ __all__ = [
     "Coding",
     "MedicationEntry",
     "PatientProfile",
+    "PlannedResource",
     # Enricher
     "PlanEnricher",
     # Protocols

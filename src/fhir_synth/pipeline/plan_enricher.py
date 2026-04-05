@@ -113,15 +113,30 @@ def _clinical_resource_types(plan: ClinicalPlan) -> set[str]:
 
     Patient is intentionally excluded: it is always present and its reference
     fields (e.g. ``managingOrganization``) do not require companion creation.
+
+    The mapping from PatientProfile field → FHIR resource type is read from
+    ``json_schema_extra["fhir_resource_type"]`` on each field — declared once
+    in the model, never hardcoded here.  New typed fields on PatientProfile
+    are automatically picked up without any changes to this function.
     """
+    from fhir_synth.pipeline.models import PatientProfile
+
+    # Build field→FHIR-type map from model metadata (declared via json_schema_extra)
+    field_to_fhir: dict[str, str] = {}
+    for name, info in PatientProfile.model_fields.items():
+        extra = info.json_schema_extra
+        if isinstance(extra, dict):
+            fhir_type = extra.get("fhir_resource_type")
+            if isinstance(fhir_type, str):
+                field_to_fhir[name] = fhir_type
+
     types: set[str] = set()
     for patient in plan.patients:
-        if patient.conditions:
-            types.add("Condition")
-        if patient.medications:
-            types.add("MedicationRequest")
-        if patient.allergies:
-            types.add("AllergyIntolerance")
+        for field_name, fhir_type in field_to_fhir.items():
+            if getattr(patient, field_name):
+                types.add(fhir_type)
+        for planned in patient.resources:
+            types.add(planned.resource_type)
     return types
 
 
@@ -164,16 +179,36 @@ def _pick_by_spec_order(ordered_types: tuple[str, ...], candidates: set[str]) ->
 
 
 def _default_name(role: str) -> str:
-    """Sensible display name for an auto-added care team member."""
-    # Derive from the role name itself — no hardcoded map needed.
-    # "Practitioner" → "Dr. Smith (Practitioner)"
-    # "Organization" → "General Hospital (Organization)"
-    _names = {
-        "Practitioner": "Dr. Smith",
-        "PractitionerRole": "Dr. Smith (Attending)",
-        "Organization": "General Hospital",
-        "RelatedPerson": "Related Person",
-        "Device": "Medical Device",
-        "CareTeam": "Care Team",
-    }
-    return _names.get(role, f"Companion {role}")
+    """Generate a realistic display name for an auto-added care team member.
+
+    Uses ``faker`` (already a project dependency) seeded deterministically
+    from the role so the same role always yields the same name.  The name
+    style (person vs organisation) is inferred from fhir_spec metadata —
+    no hardcoded strings.
+    """
+    import re
+
+    from faker import Faker
+
+    from fhir_synth.fhir_spec import _introspect
+
+    fake = Faker()
+    Faker.seed(sum(ord(c) for c in role))  # deterministic per role type
+
+    # Ask the spec: does this resource type have human identity fields (person)
+    # or just a plain name field (organisation / device / location)?
+    try:
+        meta = _introspect(role)
+        field_names = {f.name for f in meta.all_fields}
+        is_person = "name" in field_names and "birthDate" in field_names
+        is_org = "name" in field_names and "birthDate" not in field_names
+    except ValueError:
+        is_person = is_org = False
+
+    label = re.sub(r"(?<=[a-z])(?=[A-Z])", " ", role)  # "PractitionerRole" → "Practitioner Role"
+
+    if is_person:
+        return f"Dr. {fake.last_name()} ({label})"
+    if is_org:
+        return f"{fake.city()} {fake.random_element(['Medical Center', 'Health System', 'Clinic'])} ({label})"
+    return f"{label} {fake.numerify('##')}"

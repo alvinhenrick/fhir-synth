@@ -55,6 +55,51 @@ class MedicationEntry(BaseModel):
     frequency: str | None = Field(default=None, description="e.g. 'twice daily', 'every morning'")
 
 
+class PlannedResource(BaseModel):
+    """Any FHIR resource the plan explicitly requests Stage 2 to generate.
+
+    Used for clinical resource types not covered by the typed fields on
+    ``PatientProfile`` (conditions, medications, allergies).  Examples:
+    Immunization, Procedure, Observation, DiagnosticReport, Encounter,
+    Goal, CarePlan, FamilyMemberHistory — anything in the FHIR spec.
+
+    ``resource_type`` is validated against the live ``fhir.resources``
+    registry so the set of accepted types grows automatically with the spec.
+    """
+
+    model_config = {"frozen": True}
+
+    resource_type: str = Field(
+        description=(
+            "FHIR resource type to generate, e.g. 'Immunization', 'Procedure', "
+            "'Observation', 'DiagnosticReport'. Must be a valid FHIR resource type."
+        )
+    )
+    description: str = Field(
+        description=(
+            "Natural language description for Stage 2, e.g. "
+            "'COVID-19 mRNA vaccine, 2023-06', 'Appendectomy 2 years ago', "
+            "'BMI 28.5 kg/m²'. Drives the clinical content of the generated resource."
+        )
+    )
+    coding: Coding | None = Field(
+        default=None,
+        description="Primary code for the resource (SNOMED, LOINC, CPT, CVX, etc.)",
+    )
+
+    @field_validator("resource_type")
+    @classmethod
+    def resource_type_must_be_valid_fhir(cls, v: str) -> str:
+        from fhir_synth.fhir_spec import resource_names
+
+        if v not in resource_names():
+            raise ValueError(
+                f"{v!r} is not a known FHIR resource type. "
+                f"Examples: Immunization, Procedure, Observation, DiagnosticReport, Encounter."
+            )
+        return v
+
+
 class CareTeamMember(BaseModel):
     """A care provider that Stage 2 must create as a companion FHIR resource.
 
@@ -114,15 +159,31 @@ class PatientProfile(BaseModel):
     ethnicity: str | None = Field(
         default=None, description="e.g. 'Hispanic or Latino', 'Not Hispanic or Latino'"
     )
-    conditions: list[ClinicalFinding] = Field(default_factory=list)
-    medications: list[MedicationEntry] = Field(default_factory=list)
+    conditions: list[ClinicalFinding] = Field(
+        default_factory=list,
+        json_schema_extra={"fhir_resource_type": "Condition"},
+    )
+    medications: list[MedicationEntry] = Field(
+        default_factory=list,
+        json_schema_extra={"fhir_resource_type": "MedicationRequest"},
+    )
     allergies: list[str] = Field(
         default_factory=list,
         description="Allergy substances, e.g. ['penicillin', 'latex']",
+        json_schema_extra={"fhir_resource_type": "AllergyIntolerance"},
     )
     encounter_type: str = Field(
         default="outpatient",
         description="Primary encounter type for this patient",
+    )
+    resources: list[PlannedResource] = Field(
+        default_factory=list,
+        description=(
+            "Additional FHIR resources to generate for this patient beyond the typed fields. "
+            "Use for Immunization, Procedure, Observation, DiagnosticReport, Encounter, "
+            "Goal, CarePlan, FamilyMemberHistory, and any other FHIR resource type. "
+            "Stage 2 must create one FHIR resource per entry."
+        ),
     )
 
 
