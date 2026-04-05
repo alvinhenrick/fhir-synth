@@ -5,14 +5,17 @@ Requires the optional `dspy-ai` dependency:
 
 Design decisions
 ----------------
-- `PlanFromPromptSignature`: TypedPredictor enforces ClinicalPlan as output,
-  giving us Pydantic validation for free.
+- `PlanFromPromptSignature`: uses `plan: ClinicalPlan` typed output so DSPy
+  provides the JSON schema to the model, enforcing the correct structure.
+  `_parse_clinical_plan` is a fallback for models that return malformed JSON.
 - `CodeFromPlanSignature`: ChainOfThought lets the model reason step-by-step
   before emitting code — empirically better for structured code generation.
 - Both modules implement their corresponding Protocol so they can be used
   interchangeably with non-DSPy stubs in tests.
 """
 
+import ast
+import json
 import logging
 from typing import Any
 
@@ -117,7 +120,13 @@ class DSPyClinicalPlanner:
 
     def plan(self, prompt: str, skills_context: str) -> ClinicalPlan:
         result = self._predict(prompt=prompt, clinical_context=skills_context)
-        return result.plan  # type: ignore[no-any-return]
+        # DSPy parses the typed Pydantic field; if it succeeded we get a
+        # ClinicalPlan directly.  Some models return malformed JSON so DSPy
+        # may fall back to storing the raw string — handle both.
+        plan = result.plan
+        if isinstance(plan, ClinicalPlan):
+            return plan
+        return _parse_clinical_plan(str(plan))
 
     # DSPy Module interface — forward() mirrors plan() for optimisation
     def forward(self, prompt: str, clinical_context: str) -> Any:
@@ -146,6 +155,37 @@ class DSPyCodeSynthesizer:
 
     def forward(self, plan_json: str, fhir_guidelines: str) -> Any:
         return self._predict(plan_json=plan_json, fhir_guidelines=fhir_guidelines)
+
+
+# ── Internal helpers ──────────────────────────────────────────────────────────
+
+
+def _parse_clinical_plan(raw: str) -> ClinicalPlan:
+    """Parse a ClinicalPlan from an LM response string.
+
+    Some models return Python dict syntax (single quotes) instead of valid JSON.
+    Falls back to ``ast.literal_eval`` so the pipeline doesn't crash on those.
+    """
+    raw = raw.strip()
+    try:
+        return ClinicalPlan.model_validate_json(raw)
+    except Exception:
+        pass
+    # Fallback: try ast.literal_eval (handles single-quoted Python dicts)
+    try:
+        data = ast.literal_eval(raw)
+        return ClinicalPlan.model_validate(data)
+    except Exception:
+        pass
+    # Last resort: re-encode via json to normalise any oddities, then parse
+    try:
+        data = json.loads(raw.replace("'", '"'))
+        return ClinicalPlan.model_validate(data)
+    except Exception as exc:
+        raise ValueError(
+            f"Could not parse ClinicalPlan from LM output. "
+            f"First 200 chars: {raw[:200]!r}"
+        ) from exc
 
 
 # ── LLM configuration helper ──────────────────────────────────────────────────

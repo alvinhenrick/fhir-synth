@@ -246,6 +246,10 @@ def generate(
 
         # Load metadata configuration from YAML if provided
         prompt_text = prompt
+        # dspy_prompt stays free of metadata instructions — Stage 1 is clinical
+        # planning only; metadata (security labels, profiles, tags) is applied
+        # as post-processing on the generated resources (step 2.5).
+        dspy_prompt = prompt
         metadata_config = None
 
         if meta_config:
@@ -284,6 +288,7 @@ def generate(
                     f"- {hint}" for hint in metadata_hints
                 )
                 prompt_text = f"{metadata_instructions}\n\n{prompt_text}"
+                # dspy_prompt deliberately not updated here
 
         # Augment prompt with EMPI hints if requested
         if empi:
@@ -292,6 +297,13 @@ def generate(
             system_list = [s.strip() for s in systems.split(",") if s.strip()]
             prompt_text = build_empi_prompt(
                 user_prompt=prompt_text,
+                persons=persons,
+                systems=system_list or None,
+                include_organizations=not no_orgs,
+            )
+            # EMPI is clinical context — include it for DSPy too
+            dspy_prompt = build_empi_prompt(
+                user_prompt=dspy_prompt,
                 persons=persons,
                 systems=system_list or None,
                 include_organizations=not no_orgs,
@@ -307,7 +319,7 @@ def generate(
                 executor=executor,
                 user_skill_dirs=[Path(skills_dir)] if skills_dir else None,
             )
-            pipeline_result = two_stage.run(prompt_text)
+            pipeline_result = two_stage.run(dspy_prompt)
             resources = pipeline_result.resources
             code = pipeline_result.code
             code_path.write_text(code)
