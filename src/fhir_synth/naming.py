@@ -4,8 +4,6 @@ Uses the ``coolname`` library to produce memorable, unique names
 for each generation run, so users never need to specify ``--out``.
 """
 
-from __future__ import annotations
-
 from pathlib import Path
 
 from coolname import generate_slug  # type: ignore[attr-defined]

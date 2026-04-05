@@ -4,8 +4,6 @@ All models are immutable Pydantic value objects — no business logic lives here
 They are the ubiquitous language of the Clinical Planning bounded context.
 """
 
-from __future__ import annotations
-
 from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator

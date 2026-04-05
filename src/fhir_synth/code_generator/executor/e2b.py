@@ -10,8 +10,6 @@ Requires the ``e2b-code-interpreter`` package and an ``E2B_API_KEY``::
     export E2B_API_KEY=e2b_...
 """
 
-from __future__ import annotations
-
 import json
 import logging
 import os

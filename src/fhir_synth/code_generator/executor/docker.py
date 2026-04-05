@@ -16,8 +16,6 @@ Requires the ``docker`` Python package::
 A local Docker daemon must be running (``docker info`` should succeed).
 """
 
-from __future__ import annotations
-
 import json
 import logging
 import socket

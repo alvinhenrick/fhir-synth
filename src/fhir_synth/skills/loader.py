@@ -5,8 +5,6 @@ Scans directories for ``SKILL.md`` files, parses YAML frontmatter per the
 :class:`Skill` dataclass instances.
 """
 
-from __future__ import annotations
-
 import importlib.resources
 import logging
 import re

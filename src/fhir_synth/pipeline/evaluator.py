@@ -6,8 +6,6 @@ them into a single weighted EvaluationReport.
 The overall_score is what DSPy uses as its optimization target.
 """
 
-from __future__ import annotations
-
 from dataclasses import dataclass
 from typing import Any
 

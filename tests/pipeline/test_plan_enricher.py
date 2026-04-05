@@ -5,8 +5,6 @@ companions in a ClinicalPlan and adds minimal stubs so Stage 2 can
 generate valid, reference-complete FHIR resources.
 """
 
-from __future__ import annotations
-
 from fhir_synth.pipeline.models import (
     CareTeamMember,
     ClinicalFinding,

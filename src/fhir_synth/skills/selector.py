@@ -12,8 +12,6 @@ Both return the Markdown bodies of the selected skills, ready for injection
 into the LLM system prompt.
 """
 
-from __future__ import annotations
-
 import difflib
 import hashlib
 import json

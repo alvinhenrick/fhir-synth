@@ -27,8 +27,6 @@ This means:
   fields, avoiding over-population of the plan.
 """
 
-from __future__ import annotations
-
 import logging
 
 from fhir_synth.fhir_spec import _FOUNDATIONAL_TYPES, FieldMeta

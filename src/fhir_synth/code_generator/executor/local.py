@@ -6,8 +6,6 @@ which interprets code at the AST level with fine-grained import control
 and a restricted set of built-in functions.
 """
 
-from __future__ import annotations
-
 import json
 import logging
 from typing import Any

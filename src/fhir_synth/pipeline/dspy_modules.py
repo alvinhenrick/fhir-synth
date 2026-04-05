@@ -13,8 +13,6 @@ Design decisions
   interchangeably with non-DSPy stubs in tests.
 """
 
-from __future__ import annotations
-
 import logging
 from typing import Any
 

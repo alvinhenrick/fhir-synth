@@ -14,8 +14,6 @@ This module re-exports the **same public API** that ``generator.py`` consumes:
 -: func:`build_empi_prompt`
 """
 
-from __future__ import annotations
-
 import logging
 import warnings
 from dataclasses import dataclass, field

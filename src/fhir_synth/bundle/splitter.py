@@ -1,7 +1,5 @@
 """Split a flat list of FHIR resources into per-patient bundles."""
 
-from __future__ import annotations
-
 import json
 import re
 from pathlib import Path

@@ -1,10 +1,8 @@
 """Abstract interfaces (protocols) for the two-stage pipeline.
 
 Depend on these abstractions — never on concrete implementations.
-All types are runtime-checkable so isinstance() works in tests.
+All types are runtime-checkable, so isinstance() works in tests.
 """
-
-from __future__ import annotations
 
 from typing import Any, Protocol, runtime_checkable
 

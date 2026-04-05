@@ -4,8 +4,6 @@ All tests use stub implementations of ClinicalPlanner and CodeSynthesizer
 so no LLM or DSPy installation is needed.
 """
 
-from __future__ import annotations
-
 from typing import Any
 from unittest.mock import MagicMock
 

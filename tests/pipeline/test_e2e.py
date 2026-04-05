@@ -5,8 +5,6 @@ Tier 2 (dspy marker): DSPy module structure and DummyLM-based planner tests.
 Tier 3 (llm marker):  real LLM call — skipped unless OPENAI_API_KEY etc. is set.
 """
 
-from __future__ import annotations
-
 import os
 
 import pytest

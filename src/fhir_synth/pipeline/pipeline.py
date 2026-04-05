@@ -5,12 +5,10 @@ ClinicalPlanner, CodeSynthesizer, and GenerationEvaluator abstractions,
 not on DSPy or any specific LLM implementation.
 """
 
-from __future__ import annotations
-
 import logging
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import Any, Self
 
 from fhir_synth.code_generator.constants import ALLOWED_MODULE_PREFIXES, ALLOWED_MODULES
 from fhir_synth.code_generator.executor import (
@@ -206,7 +204,7 @@ class TwoStagePipeline:
         llm_provider: Any,
         executor: Executor | None = None,
         user_skill_dirs: list[Path] | None = None,
-    ) -> TwoStagePipeline:
+    ) -> Self:
         """Convenience factory using DSPy modules and default collaborators.
 
         Args:
