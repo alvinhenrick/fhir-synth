@@ -35,7 +35,7 @@ class CodeSynthesizer(Protocol):
     """Converts a ClinicalPlan into executable Python code.
 
     Stage 2 of the pipeline.  The generated code must define a
-    ``generate_resources() -> list[dict]`` function.
+    `generate_resources() -> list[dict]` function.
     """
 
     def synthesize(self, plan: ClinicalPlan) -> str:

@@ -25,7 +25,7 @@ def _configure_skills(
 
     Args:
         skills_dir: Optional path to a user-provided skills directory.
-        selector: Selection strategy name (``"keyword"`` or ``"faiss"``).
+        selector: Selection strategy name (`"keyword"` or `"faiss"`).
         score_threshold: Minimum similarity score (FAISS only).
 
     Returns:
@@ -103,13 +103,13 @@ def generate(
 ) -> None:
     """Generate synthetic FHIR data end-to-end: prompt → LLM → code → execute → NDJSON.
 
-    All outputs are saved to a ``runs/<name>/`` directory with an auto-generated
-    Docker-style name (e.g. ``brave_phoenix``).  Each run produces:
+    All outputs are saved to a `runs/<name>/` directory with an auto-generated
+    Docker-style name (e.g. `brave_phoenix`).  Each run produces:
 
-    - ``runs/<name>/prompt.txt``     — the user's prompt
-    - ``runs/<name>/<name>.py``      — the generated Python code
-    - ``runs/<name>/<name>.ndjson``  — NDJSON data (one patient bundle per line)
-    - ``runs/<name>/patient_*.json`` — (with --split) per-patient JSON files
+    - `runs/<name>/prompt.txt`     — the user's prompt
+    - `runs/<name>/<name>.py`      — the generated Python code
+    - `runs/<name>/<name>.ndjson`  — NDJSON data (one patient bundle per line)
+    - `runs/<name>/patient_*.json` — (with --split) per-patient JSON files
 
     Example prompts:
 

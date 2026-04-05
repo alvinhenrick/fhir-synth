@@ -6,19 +6,19 @@ reference-complete FHIR resources without broken references.
 
 Design
 ------
-All enrichment rules are derived at runtime from ``fhir.resources`` field
+All enrichment rules are derived at runtime from `fhir.resources` field
 metadata — nothing is hardcoded.  The algorithm:
 
 1. Derive the set of FHIR resource types the plan will generate.
-2. For each resource type, query ``fhir_spec._introspect()`` for reference
-   fields that are either **required** (``element_required=True``) or
-   **summary** (``summary_element_property=True``).  These are the fields the
+2. For each resource type, query `fhir_spec._introspect()` for reference
+   fields that are either **required** (`element_required=True`) or
+   **summary** (`summary_element_property=True`).  These are the fields the
    FHIR spec considers important enough to warrant coverage.
-3. Cross-reference each field's ``enum_reference_types`` against the types
+3. Cross-reference each field's `enum_reference_types` against the types
    already covered by the plan (generated types + existing care_team roles).
 4. For any uncovered required/summary reference field, resolve the preferred
    target type (using frequency of appearance across the spec as a proxy for
-   importance) and add a minimal ``CareTeamMember`` stub.
+   importance) and add a minimal `CareTeamMember` stub.
 
 This means:
 - New FHIR versions, new resource types, and changed reference constraints are
@@ -44,7 +44,7 @@ logger = logging.getLogger(__name__)
 class PlanEnricher:
     """Detect and fill missing FHIR resource dependencies in a ClinicalPlan.
 
-    Fully spec-driven: all reference field discovery uses ``fhir_spec``
+    Fully spec-driven: all reference field discovery uses `fhir_spec`
     introspection.  No resource type names or field names are hardcoded here.
     """
 
@@ -110,10 +110,10 @@ def _clinical_resource_types(plan: ClinicalPlan) -> set[str]:
     """Derive the set of FHIR resource types created from explicit clinical entries.
 
     Patient is intentionally excluded: it is always present and its reference
-    fields (e.g. ``managingOrganization``) do not require companion creation.
+    fields (e.g. `managingOrganization`) do not require companion creation.
 
     The mapping from PatientProfile field → FHIR resource type is read from
-    ``json_schema_extra["fhir_resource_type"]`` on each field — declared once
+    `json_schema_extra["fhir_resource_type"]` on each field — declared once
     in the model, never hardcoded here.  New typed fields on PatientProfile
     are automatically picked up without any changes to this function.
     """
@@ -141,13 +141,13 @@ def _clinical_resource_types(plan: ClinicalPlan) -> set[str]:
 def _provider_reference_fields(resource_type: str) -> list[FieldMeta]:
     """Return summary reference fields that may point to provider-type resources.
 
-    Filters to fields where ``enum_reference_types`` overlaps with
-    ``_PROVIDER_TYPES`` (Practitioner, PractitionerRole, Organization, …).
+    Filters to fields where `enum_reference_types` overlaps with
+    `_PROVIDER_TYPES` (Practitioner, PractitionerRole, Organization, …).
     Fields that only reference Patient/Group are automatically excluded by
     this intersection — no field names are hardcoded.
 
-    Both ``is_summary`` and ``enum_reference_types`` come directly from
-    ``fhir.resources`` field metadata.
+    Both `is_summary` and `enum_reference_types` come directly from
+    `fhir.resources` field metadata.
     """
     from fhir_synth.fhir_spec import _introspect
 
@@ -166,7 +166,7 @@ def _provider_reference_fields(resource_type: str) -> list[FieldMeta]:
 def _pick_by_spec_order(ordered_types: tuple[str, ...], candidates: set[str]) -> str | None:
     """Return the first type from *ordered_types* that is in *candidates*.
 
-    The FHIR spec lists ``enum_reference_types`` in preferred order (most
+    The FHIR spec lists `enum_reference_types` in preferred order (most
     common / most applicable target first).  Walking that order gives us a
     spec-derived preference without any hardcoded ranking.
     """
@@ -179,7 +179,7 @@ def _pick_by_spec_order(ordered_types: tuple[str, ...], candidates: set[str]) ->
 def _default_name(role: str) -> str:
     """Generate a realistic display name for an auto-added care team member.
 
-    Uses ``faker`` (already a project dependency) seeded deterministically
+    Uses `faker` (already a project dependency) seeded deterministically
     from the role so the same role always yields the same name.  The name
     style (person vs organisation) is inferred from fhir_spec metadata —
     no hardcoded strings.

@@ -50,7 +50,7 @@ def validate_resource(resource: dict[str, Any], *, strict: bool = True) -> list[
     2. Pydantic model validation (required fields, types, cardinality)
 
     Args:
-        resource: FHIR resource dictionary (must include ``resourceType``).
+        resource: FHIR resource dictionary (must include `resourceType`).
         strict: If True, enables comprehensive validation mode. Default: True.
 
     Returns:
@@ -96,7 +96,7 @@ def validate_resource(resource: dict[str, Any], *, strict: bool = True) -> list[
 def validate_resources(resources: list[dict[str, Any]]) -> ValidationResult:
     """Validate a list of FHIR resource dicts.
 
-    Each resource is independently validated against its ``fhir.resources``
+    Each resource is independently validated against its `fhir.resources`
     Pydantic model. Validation errors are collected (not raised) so the
     caller can decide how to handle them.
 
@@ -200,17 +200,17 @@ def repair_references(
     For each broken reference, if there is exactly **one** resource of the
     referenced type in the batch, the reference is repointed to that
     resource's ID.  Ambiguous cases (multiple candidates of the same type)
-    are left unchanged and reported in ``skipped``.
+    are left unchanged and reported in `skipped`.
 
     Args:
         resources: Flat list of FHIR resource dicts (mutated in-place).
 
     Returns:
-        Tuple of ``(resources, report)`` where ``report`` contains:
+        Tuple of `(resources, report)` where `report` contains:
 
-        - ``repaired`` – number of references successfully fixed.
-        - ``skipped``  – number of references left unchanged (ambiguous).
-        - ``details``  – list of human-readable repair descriptions.
+        - `repaired` – number of references successfully fixed.
+        - `skipped`  – number of references left unchanged (ambiguous).
+        - `details`  – list of human-readable repair descriptions.
     """
     # Build a set of all valid ResourceType/id pairs and a type → [id] index.
     existing_ids: set[str] = set()

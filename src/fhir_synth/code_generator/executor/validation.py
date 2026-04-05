@@ -38,7 +38,7 @@ def validate_code(code: str) -> bool:
 
 
 def validate_imports(code: str) -> list[str]:
-    """Validate that ``fhir.resources`` imports reference real modules.
+    """Validate that `fhir.resources` imports reference real modules.
 
     Returns:
         List of error messages, empty if all imports are valid.
@@ -76,7 +76,7 @@ _IMPORT_RE = re.compile(r"^(from fhir\.resources\.R4B\.)(\w+)(\s+import\s+)(.+)$
 def fix_common_imports(code: str) -> str:
     """Auto-fix import mistakes using the introspected class→module map.
 
-    Rewrites ``from fhir.resources.R4B.{wrong} import {Cls}`` to the
+    Rewrites `from fhir.resources.R4B.{wrong} import {Cls}` to the
     correct module for each class.
 
     Returns:
@@ -145,11 +145,11 @@ def build_runner_script(code: str) -> str:
 
     This is the single source of truth for the runner used by all remote
     executor backends (Docker, E2B, Blaxel).  It exec's the user code,
-    calls ``generate_resources()``, validates the output, and prints JSON
+    calls `generate_resources()`, validates the output, and prints JSON
     to stdout.
 
     Package installation is handled by smolagents during executor init
-    (via ``install_packages()``), so this function only wraps the code.
+    (via `install_packages()`), so this function only wraps the code.
 
     Args:
         code: The user-generated Python source code.

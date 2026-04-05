@@ -29,7 +29,7 @@ from typing import Any
 # Each entry is (field_path, human_label).
 # field_path uses dot-notation for nested checks; a plain name checks the
 # top-level key.  A path like "name.family" checks that at least one element
-# of the ``name`` list has a ``family`` key.
+# of the `name` list has a `family` key.
 _PROFILES: dict[str, list[tuple[str, str]]] = {
     "Patient": [
         ("identifier", "identifier (at least one)"),

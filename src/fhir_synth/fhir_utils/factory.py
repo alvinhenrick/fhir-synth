@@ -10,7 +10,7 @@ from fhir_synth.fhir_spec import get_resource_class
 class FHIRResourceFactory:
     """Factory for creating FHIR resources from dictionaries.
 
-    All factory methods use ``get_resource_class`` so they support every
+    All factory methods use `get_resource_class` so they support every
     FHIR R4B resource type without hardcoding imports.
     """
 

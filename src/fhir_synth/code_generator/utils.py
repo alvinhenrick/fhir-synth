@@ -13,15 +13,15 @@ def extract_code(response: str) -> str:
         Extracted Python code
     """
     # Try to extract from the Markdown code block
-    if "```python" in response:
-        start = response.find("```python") + 9
-        end = response.find("```", start)
+    if "``python" in response:
+        start = response.find("``python") + 9
+        end = response.find("``", start)
         if end > start:
             return response[start:end].strip()
 
-    if "```" in response:
-        start = response.find("```") + 3
-        end = response.find("```", start)
+    if "``" in response:
+        start = response.find("``") + 3
+        end = response.find("``", start)
         if end > start:
             code = response[start:end].strip()
             # Remove language specifier if present

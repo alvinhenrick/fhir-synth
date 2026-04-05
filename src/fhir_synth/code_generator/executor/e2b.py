@@ -1,10 +1,10 @@
 """E2B executor — powered by smolagents.
 
 Runs LLM-generated code in an `E2B <https://e2b.dev>`_ cloud sandbox
-via smolagents' ``E2BExecutor``.  E2B provides fully isolated micro-VMs
+via smolagents' `E2BExecutor`.  E2B provides fully isolated micro-VMs
 with pre-installed Python environments.
 
-Requires the ``e2b-code-interpreter`` package and an ``E2B_API_KEY``::
+Requires the `e2b-code-interpreter` package and an `E2B_API_KEY`::
 
     pip install "fhir-synth[e2b]"
     export E2B_API_KEY=e2b_...
@@ -30,11 +30,11 @@ class E2BExecutor:
 
     The API key is resolved in order:
 
-    1. ``api_key`` constructor argument
-    2. ``E2B_API_KEY`` environment variable
+    1. `api_key` constructor argument
+    2. `E2B_API_KEY` environment variable
 
     Args:
-        api_key: E2B API key. Falls back to ``E2B_API_KEY`` env var.
+        api_key: E2B API key. Falls back to `E2B_API_KEY` env var.
         timeout: Execution timeout in seconds.
     """
 
@@ -53,8 +53,8 @@ class E2BExecutor:
         """Run *code* in an E2B cloud sandbox via smolagents.
 
         Args:
-            code: Python source defining ``generate_resources() -> list[dict]``.
-            timeout: Wall-clock seconds. ``0`` means use the default.
+            code: Python source defining `generate_resources() -> list[dict]`.
+            timeout: Wall-clock seconds. `0` means use the default.
 
         Returns:
             :class:`ExecutionResult` with parsed FHIR resource dicts.

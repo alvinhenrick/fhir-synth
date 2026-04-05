@@ -1,7 +1,7 @@
 """Auto-generate run names (Docker-style: adjective_noun).
 
-Uses the ``coolname`` library to produce memorable, unique names
-for each generation run, so users never need to specify ``--out``.
+Uses the `coolname` library to produce memorable, unique names
+for each generation run, so users never need to specify `--out`.
 """
 
 from pathlib import Path
@@ -10,13 +10,13 @@ from coolname import generate_slug  # type: ignore[attr-defined]
 
 
 def generate_run_name(n_words: int = 2) -> str:
-    """Return a Docker-style slug like ``brave_phoenix``.
+    """Return a Docker-style slug like `brave_phoenix`.
 
     Args:
         n_words: Number of words in the slug (default 2).
 
     Returns:
-        Underscore-joined slug, e.g. ``"happy_helix"``.
+        Underscore-joined slug, e.g. `"happy_helix"`.
     """
     slug: str = generate_slug(n_words)
     return slug.replace("-", "_")
@@ -29,11 +29,11 @@ def create_run_dir(base: Path | None = None) -> Path:
     cannot collide on the same name.
 
     Args:
-        base: Parent directory (default: ``./runs``).
+        base: Parent directory (default: `./runs`).
 
     Returns:
         :class:`pathlib.Path` to the newly created run directory,
-        e.g. ``runs/brave_phoenix/``.
+        e.g. `runs/brave_phoenix/`.
     """
     if base is None:
         base = Path("runs")

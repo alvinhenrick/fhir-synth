@@ -119,8 +119,8 @@ class GenerationEvaluator:
     """Aggregates QualityMetric instances into a weighted EvaluationReport.
 
     Designed to be the DSPy optimization target: pass
-    ``evaluator.dspy_metric`` directly to ``dspy.Evaluate`` or
-    ``dspy.BootstrapFewShot``.
+    `evaluator.dspy_metric` directly to `dspy.Evaluate` or
+    `dspy.BootstrapFewShot`.
     """
 
     def __init__(self, metrics: list[Any] | None = None) -> None:
@@ -153,8 +153,8 @@ class GenerationEvaluator:
     def dspy_metric(self, example: Any, prediction: Any, trace: Any = None) -> float:
         """DSPy-compatible metric function.
 
-        DSPy calls this as ``metric(example, prediction, trace)``.
-        We extract ``prediction.resources`` and return the overall score.
+        DSPy calls this as `metric(example, prediction, trace)`.
+        We extract `prediction.resources` and return the overall score.
         """
         resources: list[dict[str, Any]] = getattr(prediction, "resources", None) or []
         if not resources:

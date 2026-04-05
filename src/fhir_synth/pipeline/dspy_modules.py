@@ -1,13 +1,13 @@
 """DSPy signatures and modules for the two-stage pipeline.
 
-Requires the optional ``dspy-ai`` dependency:
+Requires the optional `dspy-ai` dependency:
     pip install 'fhir-synth[dspy]'
 
 Design decisions
 ----------------
-- ``PlanFromPromptSignature``: TypedPredictor enforces ClinicalPlan as output,
+- `PlanFromPromptSignature`: TypedPredictor enforces ClinicalPlan as output,
   giving us Pydantic validation for free.
-- ``CodeFromPlanSignature``: ChainOfThought lets the model reason step-by-step
+- `CodeFromPlanSignature`: ChainOfThought lets the model reason step-by-step
   before emitting code — empirically better for structured code generation.
 - Both modules implement their corresponding Protocol so they can be used
   interchangeably with non-DSPy stubs in tests.
@@ -69,10 +69,10 @@ def _make_code_signature(dspy: Any) -> Any:
     class CodeFromPlanSignature(dspy.Signature):  # type: ignore[misc]
         """Generate Python code that creates FHIR resources from a clinical plan.
 
-        The code must define ``generate_resources() -> list[dict]``.
-        Use ``fhir.resources.{fhir_version}`` Pydantic models.
-        Call ``.model_dump(exclude_none=True)`` on every resource.
-        Assign consistent UUIDs using ``str(uuid4())``.
+        The code must define `generate_resources() -> list[dict]`.
+        Use `fhir.resources.{fhir_version}` Pydantic models.
+        Call `.model_dump(exclude_none=True)` on every resource.
+        Assign consistent UUIDs using `str(uuid4())`.
         """
 
         plan_json: str = dspy.InputField(
@@ -146,14 +146,14 @@ class DSPyCodeSynthesizer:
 
 
 def configure_dspy_lm(model: str, **kwargs: Any) -> None:
-    """Configure DSPy's global language model from an LiteLLM model string.
+    """Configure DSPy's global language model from a LiteLLM model string.
 
     This bridges :class:`~fhir_synth.llm.LLMProvider` model names (which are
     LiteLLM-compatible) directly into DSPy, since DSPy also uses LiteLLM.
 
     Args:
-        model: LiteLLM model string, e.g. ``"gpt-4o"``, ``"claude-3-5-sonnet"``.
-        **kwargs: Extra kwargs forwarded to ``dspy.LM`` (api_key, api_base, etc.).
+        model: LiteLLM model string, e.g. `"gpt-4o"`, `"claude-3-5-sonnet"`.
+        **kwargs: Extra kwargs forwarded to `dspy.LM` (api_key, api_base, etc.).
     """
     dspy = _require_dspy()
     lm = dspy.LM(model=model, **kwargs)
@@ -166,12 +166,12 @@ def configure_dspy_lm(model: str, **kwargs: Any) -> None:
 
 def _extract_code(raw: str) -> str:
     """Strip Markdown fences from a code string if present."""
-    if "```python" in raw:
-        start = raw.find("```python") + 9
-        end = raw.find("```", start)
+    if "``python" in raw:
+        start = raw.find("``python") + 9
+        end = raw.find("``", start)
         return raw[start:end].strip()
-    if "```" in raw:
-        start = raw.find("```") + 3
-        end = raw.find("```", start)
+    if "``" in raw:
+        start = raw.find("``") + 3
+        end = raw.find("``", start)
         return raw[start:end].strip()
     return raw.strip()

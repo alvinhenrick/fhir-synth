@@ -75,15 +75,15 @@ class LocalSmolagentsExecutor:
 
     1. **AST-level execution** — every operation is interpreted node-by-node.
     2. **Import whitelist** — only explicitly authorized modules are importable.
-    3. **Restricted builtins** — no ``open``, ``compile``, ``__import__``, etc.
-    4. **Timeout** — hard wall-clock limit via ``concurrent.futures``.
+    3. **Restricted builtins** — no `open`, `compile`, `__import__`, etc.
+    4. **Timeout** — hard wall-clock limit via `concurrent.futures`.
     """
 
     def execute(self, code: str, timeout: int = 30) -> ExecutionResult:
         """Run *code* via smolagents' secure AST interpreter.
 
         Args:
-            code: Python source defining ``generate_resources() -> list[dict]``.
+            code: Python source defining `generate_resources() -> list[dict]`.
             timeout: Maximum wall-clock seconds.
 
         Returns:

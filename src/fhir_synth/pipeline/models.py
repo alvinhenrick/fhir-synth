@@ -57,11 +57,11 @@ class PlannedResource(BaseModel):
     """Any FHIR resource the plan explicitly requests Stage 2 to generate.
 
     Used for clinical resource types not covered by the typed fields on
-    ``PatientProfile`` (conditions, medications, allergies).  Examples:
+    `PatientProfile` (conditions, medications, allergies).  Examples:
     Immunization, Procedure, Observation, DiagnosticReport, Encounter,
     Goal, CarePlan, FamilyMemberHistory — anything in the FHIR spec.
 
-    ``resource_type`` is validated against the live ``fhir.resources``
+    `resource_type` is validated against the live `fhir.resources`
     registry so the set of accepted types grows automatically with the spec.
     """
 
@@ -104,7 +104,7 @@ class CareTeamMember(BaseModel):
     Added by PlanEnricher (Stage 1.5) when it detects that the plan will
     generate resources with mandatory references to providers or organisations.
 
-    ``role`` is any valid FHIR resource type name — validated at construction
+    `role` is any valid FHIR resource type name — validated at construction
     time against the live fhir.resources registry so new FHIR resource types
     are automatically accepted without code changes.
     """

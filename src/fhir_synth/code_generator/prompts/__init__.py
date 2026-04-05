@@ -2,11 +2,11 @@
 
 All prompt content lives in Markdown files organised by concern:
 
-- ``system/`` — engineering rules, sandbox constraints, role definition
-- ``skills/``  — modular SKILL.md files (agentskills.io spec) for clinical knowledge
-- ``templates/``— user-facing prompt templates with ``$variable`` placeholders
+- `system/` — engineering rules, sandbox constraints, role definition
+- `skills/`  — modular SKILL.md files (agentskills.io spec) for clinical knowledge
+- `templates/`— user-facing prompt templates with `$variable` placeholders
 
-This module re-exports the **same public API** that ``generator.py`` consumes:
+This module re-exports the **same public API** that `generator.py` consumes:
 
 -: func:`get_system_prompt`
 -: func:`build_code_prompt`
@@ -66,7 +66,7 @@ def configure_skills(
     """Configure the skills' system.
 
     Call before generating prompts to set up user skill directories and/or
-    swap the selection strategy (e.g. ``FaissSelector``).
+    swap the selection strategy (e.g. `FaissSelector`).
 
     Args:
         user_dirs: User-provided skill directories (higher priority than built-in).
@@ -97,7 +97,7 @@ def _build_system_prompt(
       2. skills — selectively loaded clinical knowledge based on the user prompt
 
     When *user_prompt* is provided, the skills selector chooses only the
-    relevant skills.  Otherwise, **all** skills are included (backward-compatible fallback identical to loading ``clinical/``).
+    relevant skills.  Otherwise, **all** skills are included (backward-compatible fallback identical to loading `clinical/`).
 
     Args:
         fhir_version: FHIR version to use in prompts. If None, uses current version.
@@ -143,7 +143,7 @@ def get_system_prompt(user_prompt: str | None = None) -> str:
 
     Args:
         user_prompt: When provided, only relevant skills are loaded.
-            When ``None``, all skills are loaded (backward-compatible).
+            When `None`, all skills are loaded (backward-compatible).
     """
     return _build_system_prompt(user_prompt=user_prompt)
 
@@ -155,8 +155,8 @@ def get_skill_discovery_summary() -> dict[str, Any]:
     """Return a summary of discovered skills.
 
     Returns:
-        Dict with ``total``, ``builtin``, ``user``, and ``skills`` (list of
-        dicts with ``name``, ``source``, ``keywords_count``).
+        Dict with `total`, `builtin`, `user`, and `skills` (list of
+        dicts with `name`, `source`, `keywords_count`).
     """
     loader = _state.get_loader()
     all_skills = loader.discover()

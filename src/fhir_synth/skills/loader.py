@@ -1,6 +1,6 @@
 """Skill discovery and parsing.
 
-Scans directories for ``SKILL.md`` files, parses YAML frontmatter per the
+Scans directories for `SKILL.md` files, parses YAML frontmatter per the
 `agentskills.io <https://agentskills.io/specification>`_ spec, and returns
 :class:`Skill` dataclass instances.
 """
@@ -38,7 +38,7 @@ class Skill:
         resource_types: FHIR resource types this skill covers.
         always: Whether this skill is always included.
         path: Filesystem path to the SKILL.md file.
-        source: Origin of the skill (``"builtin"`` or ``"user"``).
+        source: Origin of the skill (`"builtin"` or `"user"`).
     """
 
     name: str
@@ -52,15 +52,15 @@ class Skill:
 
 
 def _parse_skill_md(content: str, skill_path: str, source: str = "builtin") -> Skill | None:
-    """Parse a ``SKILL.md`` file into a :class:`Skill`.
+    """Parse a `SKILL.md` file into a :class:`Skill`.
 
     Args:
         content: Raw file content with YAML frontmatter.
         skill_path: Path to the file (for logging).
-        source: ``"builtin"`` or ``"user"``.
+        source: `"builtin"` or `"user"`.
 
     Returns:
-        A :class:`Skill` instance, or ``None`` if parsing fails.
+        A :class:`Skill` instance, or `None` if parsing fails.
     """
     match = _FRONTMATTER_RE.match(content)
     if not match:
@@ -116,7 +116,7 @@ def _parse_skill_md(content: str, skill_path: str, source: str = "builtin") -> S
 
 
 def _discover_from_directory(directory: Path, source: str = "user") -> list[Skill]:
-    """Scan a directory for skill folders containing ``SKILL.md``.
+    """Scan a directory for skill folders containing `SKILL.md`.
 
     Args:
         directory: Root directory to scan.
@@ -150,7 +150,7 @@ def _discover_from_directory(directory: Path, source: str = "user") -> list[Skil
 def _discover_builtin() -> list[Skill]:
     """Discover built-in skills shipped with the package.
 
-    Uses ``importlib.resources`` so skills are found in installed wheels
+    Uses `importlib.resources` so skills are found in installed wheels
     and editable installs alike.
 
     Returns:

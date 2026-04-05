@@ -76,7 +76,7 @@ class CodeGenerator:
         """Execute generated code safely, with self-healing retry on failure.
 
         If execution fails, the error is sent back to the LLM to produce a
-        corrected version. This repeats up to ``max_retries`` times.
+        corrected version. This repeats up to `max_retries` times.
 
         Args:
             code: Generated Python code

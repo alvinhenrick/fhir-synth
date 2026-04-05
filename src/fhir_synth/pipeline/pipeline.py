@@ -209,7 +209,7 @@ class TwoStagePipeline:
 
         Args:
             llm_provider: An :class:`~fhir_synth.llm.LLMProvider` instance.
-                Its ``.model`` string is used to configure DSPy.
+                Its `.model` string is used to configure DSPy.
             executor: Optional custom executor backend.
             user_skill_dirs: Additional skill directories.
 
