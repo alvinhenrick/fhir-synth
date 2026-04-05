@@ -10,9 +10,6 @@ from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator
 
-# Valid roles that Stage 2 can create as standalone FHIR resources
-_CARE_TEAM_ROLE = Literal["Practitioner", "PractitionerRole", "Organization"]
-
 
 class Coding(BaseModel):
     """A clinical code from a standard terminology system (SNOMED, LOINC, RxNorm, etc.)."""
@@ -63,16 +60,39 @@ class CareTeamMember(BaseModel):
 
     Added by PlanEnricher (Stage 1.5) when it detects that the plan will
     generate resources with mandatory references to providers or organisations.
+
+    ``role`` is any valid FHIR resource type name — validated at construction
+    time against the live fhir.resources registry so new FHIR resource types
+    are automatically accepted without code changes.
     """
 
     model_config = {"frozen": True}
 
-    role: _CARE_TEAM_ROLE = Field(description="FHIR resource type to create, e.g. 'Practitioner'")
+    role: str = Field(
+        description=(
+            "FHIR resource type to create, e.g. 'Practitioner', 'Organization', "
+            "'RelatedPerson', 'Device', 'CareTeam'. Must be a valid FHIR resource type."
+        )
+    )
     display_name: str = Field(description="Provider name, e.g. 'Dr. Smith'")
     specialty: str | None = Field(
         default=None, description="Clinical specialty, e.g. 'Internal Medicine'"
     )
     npi: str | None = Field(default=None, description="National Provider Identifier (10 digits)")
+
+    @field_validator("role")
+    @classmethod
+    def role_must_be_valid_fhir_resource(cls, v: str) -> str:
+        from fhir_synth.fhir_spec import resource_names
+
+        known = resource_names()
+        if v not in known:
+            raise ValueError(
+                f"{v!r} is not a known FHIR resource type. "
+                f"Examples: Practitioner, PractitionerRole, Organization, "
+                f"RelatedPerson, Device, CareTeam."
+            )
+        return v
 
 
 # Valid US Core gender values

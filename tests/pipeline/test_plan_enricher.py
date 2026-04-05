@@ -73,11 +73,15 @@ def test_enricher_no_changes_when_no_medications_and_no_conditions() -> None:
     assert enriched.care_team == []
 
 
-def test_enricher_no_changes_when_conditions_only() -> None:
-    """Condition.subject → Patient (always present); no extra companion needed."""
+def test_enricher_adds_practitioner_when_conditions_present() -> None:
+    """Condition.recorder and Condition.asserter are summary provider refs in the spec.
+
+    The enricher detects these via fhir_spec introspection — no field names hardcoded.
+    """
     plan = _bare_plan(patients=[_patient_with_conditions_only()])
     enriched = PlanEnricher().enrich(plan)
-    assert enriched.care_team == []
+    roles = {m.role for m in enriched.care_team}
+    assert "Practitioner" in roles
 
 
 def test_enricher_does_not_duplicate_existing_practitioner() -> None:
