@@ -183,8 +183,7 @@ def _parse_clinical_plan(raw: str) -> ClinicalPlan:
         return ClinicalPlan.model_validate(data)
     except Exception as exc:
         raise ValueError(
-            f"Could not parse ClinicalPlan from LM output. "
-            f"First 200 chars: {raw[:200]!r}"
+            f"Could not parse ClinicalPlan from LM output. First 200 chars: {raw[:200]!r}"
         ) from exc
 
 

@@ -323,6 +323,11 @@ def generate(
             resources = pipeline_result.resources
             code = pipeline_result.code
             code_path.write_text(code)
+            if pipeline_result.selected_skills:
+                typer.echo(
+                    f"   🎯 Selected {len(pipeline_result.selected_skills)}/{pipeline_result.total_skills} skills: "
+                    f"{', '.join(pipeline_result.selected_skills)}"
+                )
             typer.echo(f"   Stage 1 plan: {len(pipeline_result.plan.patients)} patient(s)")
             typer.echo(f"   Saved code → {code_path}")
             typer.echo(

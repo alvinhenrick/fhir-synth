@@ -45,6 +45,8 @@ class PipelineResult:
     resources: list[dict[str, Any]]
     report: EvaluationReport
     repair_report: dict[str, Any] = field(default_factory=dict)
+    selected_skills: list[str] = field(default_factory=list)
+    total_skills: int = 0
 
 
 # ── Supporting services ───────────────────────────────────────────────────────
@@ -68,12 +70,23 @@ class SkillContextBuilder:
     def build(self, prompt: str) -> str:
         """Return concatenated skill bodies relevant to *prompt*."""
         all_skills = self._loader.discover()
+        self._total = len(all_skills)
         if not all_skills:
+            self._selected_names: list[str] = []
             return ""
         selected = self._selector.select(prompt, all_skills) if prompt else all_skills
         if not selected:
             selected = all_skills  # safe fallback
+        self._selected_names = [s.name for s in selected]
         return "\n\n".join(s.body for s in selected)
+
+    @property
+    def selected_names(self) -> list[str]:
+        return getattr(self, "_selected_names", [])
+
+    @property
+    def total(self) -> int:
+        return getattr(self, "_total", 0)
 
 
 class FHIRGuidelinesBuilder:
@@ -196,6 +209,8 @@ class TwoStagePipeline:
             resources=resources,
             report=report,
             repair_report=repair_report,
+            selected_skills=self._skill_builder.selected_names,
+            total_skills=self._skill_builder.total,
         )
 
     @classmethod
