@@ -27,10 +27,10 @@ GEMINI_API_KEY=...
 
 ```bash
 # OpenAI GPT-4 (default)
-fhir-synth generate "10 patients" -o output.json
+fhir-synth generate "10 patients"
 
 # Anthropic Claude
-fhir-synth generate "10 patients" -p claude-3-opus-20240229 -o output.json
+fhir-synth generate "10 patients" -p claude-3-opus-20240229
 ```
 
 ## AWS Bedrock
@@ -52,8 +52,7 @@ Point to a named profile in `~/.aws/credentials`:
 fhir-synth generate "10 patients" \
   --provider bedrock/us.anthropic.claude-3-5-sonnet-20241022-v2:0 \
   --aws-profile my-profile \
-  --aws-region us-east-1 \
-  -o output.json
+  --aws-region us-east-1
 ```
 
 This reads the `[my-profile]` section from `~/.aws/credentials`:
@@ -76,8 +75,7 @@ export AWS_PROFILE=my-profile          # profile name
 export AWS_DEFAULT_REGION=us-east-1    # region
 
 fhir-synth generate "10 patients" \
-  --provider bedrock/us.anthropic.claude-3-5-sonnet-20241022-v2:0 \
-  -o output.json
+  --provider bedrock/us.anthropic.claude-3-5-sonnet-20241022-v2:0
 ```
 
 Or with explicit keys:
@@ -88,8 +86,7 @@ export AWS_SECRET_ACCESS_KEY=...
 export AWS_REGION_NAME=us-east-1
 
 fhir-synth generate "10 patients" \
-  --provider bedrock/us.anthropic.claude-3-5-sonnet-20241022-v2:0 \
-  -o output.json
+  --provider bedrock/us.anthropic.claude-3-5-sonnet-20241022-v2:0
 ```
 
 ### Option 3 — `.env` file
@@ -109,8 +106,7 @@ aws sso login --profile my-sso-profile
 
 fhir-synth generate "10 patients" \
   --provider bedrock/us.anthropic.claude-3-5-sonnet-20241022-v2:0 \
-  --aws-profile my-sso-profile \
-  -o output.json
+  --aws-profile my-sso-profile
 ```
 
 ### Bedrock Model Names
@@ -176,7 +172,7 @@ your temporary credentials.
 The mock provider generates hardcoded sample resources without calling any API:
 
 ```bash
-fhir-synth generate "5 patients" --provider mock -o test.json
+fhir-synth generate "5 patients" --provider mock
 ```
 
 Useful for testing, CI/CD pipelines, and development.

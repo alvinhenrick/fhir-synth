@@ -126,3 +126,113 @@ executor = get_executor("blaxel")
 code_gen = CodeGenerator(llm, executor=executor)
 ```
 
+## Two-Stage DSPy Pipeline
+
+The optional DSPy pipeline splits generation into two stages for higher quality output:
+
+- **Stage 1 — Clinical Planning**: prompt + skills → structured `ClinicalPlan` (Pydantic model)
+- **Stage 1.5 — Dependency Enrichment**: auto-adds missing resource companions (Practitioner, Organization, etc.)
+- **Stage 2 — Code Synthesis**: `ClinicalPlan` + FHIR guidelines → Python code → FHIR resources
+
+```bash
+pip install 'fhir-synth[dspy]'
+```
+
+```python
+from fhir_synth.llm import get_provider
+from fhir_synth.pipeline.pipeline import TwoStagePipeline
+
+# Build and run the pipeline
+llm = get_provider("gpt-4")
+pipeline = TwoStagePipeline.default(llm_provider=llm)
+result = pipeline.run("5 diabetic patients with HbA1c observations")
+
+# Access results
+print(f"Plan: {len(result.plan.patients)} patient(s)")
+print(f"Resources: {len(result.resources)}")
+print(f"Quality: {result.report.overall_score:.2f} ({result.report.grade})")
+print(f"Code:\n{result.code[:200]}...")
+
+# Use a compiled (optimized) program
+pipeline = TwoStagePipeline.from_compiled(
+    compiled_path=Path("optimized_pipeline.json"),
+    llm_provider=llm,
+)
+result = pipeline.run("3 patients with hypertension")
+```
+
+### DSPy Optimization
+
+Optimize the pipeline's prompts using DSPy's BootstrapFewShot:
+
+```python
+import dspy
+from fhir_synth.pipeline.pipeline import TwoStagePipeline
+from fhir_synth.pipeline.evaluator import GenerationEvaluator
+from fhir_synth.pipeline.dspy_modules import FHIRSynthProgram, configure_dspy_lm
+
+# Configure DSPy
+configure_dspy_lm(model="gpt-4o")
+
+# Build composite program for optimization
+guidelines = TwoStagePipeline.default(llm).build_guidelines()  # or use FHIRGuidelinesBuilder
+program = FHIRSynthProgram(fhir_guidelines=guidelines)
+evaluator = GenerationEvaluator()
+
+# Create training examples (just prompts — no labels needed)
+trainset = [
+    dspy.Example(prompt="3 diabetic patients with HbA1c").with_inputs("prompt"),
+    dspy.Example(prompt="2 patients with hypertension on Lisinopril").with_inputs("prompt"),
+]
+
+# Optimize
+optimizer = dspy.BootstrapFewShot(metric=evaluator.dspy_metric, max_bootstrapped_demos=3)
+compiled = optimizer.compile(program, trainset=trainset)
+dspy.save(compiled, "optimized_pipeline.json")
+```
+
+See [`examples/optimize_pipeline.py`](https://github.com/alvinhenrick/fhir-synth/blob/main/examples/optimize_pipeline.py) for a complete example.
+
+## FHIR Validation
+
+Validate resources offline using `fhir.resources` Pydantic models:
+
+```python
+from fhir_synth.code_generator.fhir_validation import (
+    validate_resources, validate_references, repair_references
+)
+from fhir_synth.code_generator.us_core_validation import validate_us_core
+
+# Pydantic model validation (required fields, types, cardinality)
+vr = validate_resources(resources)
+print(f"{vr.valid}/{vr.total} valid ({vr.pass_rate:.0%})")
+
+# Reference integrity (cross-resource references)
+ref_errors = validate_references(resources)
+for err in ref_errors:
+    print(f"  {err['resourceType']}/{err['id']}: {err['errors']}")
+
+# Auto-repair broken references
+resources, repair_report = repair_references(resources)
+print(f"Repaired {repair_report['repaired']} reference(s)")
+
+# US Core compliance (must-support fields)
+ucr = validate_us_core(resources)
+print(f"US Core: {ucr.compliance_rate:.0%} compliant")
+```
+
+## Quality Evaluation
+
+Use the composable evaluator for weighted quality scoring:
+
+```python
+from fhir_synth.pipeline.evaluator import GenerationEvaluator
+
+evaluator = GenerationEvaluator()
+report = evaluator.evaluate(resources)
+
+print(f"Overall: {report.overall_score:.2f} ({report.grade})")
+for ms in report.metric_scores:
+    print(f"  {ms.name}: {ms.score:.2f} (weight: {ms.weight})")
+```
+

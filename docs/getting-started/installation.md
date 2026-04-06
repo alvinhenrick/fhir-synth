@@ -11,6 +11,25 @@
 pip install git+https://github.com/alvinhenrick/fhir-synth.git
 ```
 
+## Optional Extras
+
+```bash
+# AWS Bedrock support (requires boto3)
+pip install "fhir-synth[bedrock] @ git+https://github.com/alvinhenrick/fhir-synth.git@main"
+
+# DSPy two-stage pipeline (clinical planning → code synthesis)
+pip install "fhir-synth[dspy] @ git+https://github.com/alvinhenrick/fhir-synth.git@main"
+
+# FAISS semantic skill selection
+pip install "fhir-synth[semantic] @ git+https://github.com/alvinhenrick/fhir-synth.git@main"
+
+# Docker sandbox executor
+pip install "fhir-synth[docker] @ git+https://github.com/alvinhenrick/fhir-synth.git@main"
+
+# E2B cloud sandbox executor
+pip install "fhir-synth[e2b] @ git+https://github.com/alvinhenrick/fhir-synth.git@main"
+```
+
 ## Install from Source
 
 ```bash

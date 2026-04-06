@@ -215,17 +215,29 @@ if not metrics["passed"]:
     print(f"Warnings: {metrics['warnings']}")
 ```
 
-## Advanced: Collecting Training Data
+## Advanced: DSPy Optimization
 
-For future DSPy optimization, collect successful generations:
+FHIR Synth includes a [two-stage DSPy pipeline](pipeline.md) that can be optimized using DSPy's `BootstrapFewShot` or `MIPROv2`. The `GenerationEvaluator` serves as the optimization target — no labelled data is needed.
+
+```python
+# Quick start: use the two-stage pipeline
+fhir-synth generate "5 diabetic patients" --pipeline dspy
+
+# Optimize with BootstrapFewShot
+python examples/optimize_pipeline.py
+
+# Use the optimized program
+fhir-synth generate "5 diabetic patients" \
+  --pipeline dspy --compiled-program optimized_pipeline.json
+```
+
+You can also collect high-quality training examples for future optimization:
 
 ```python
 import json
-from pathlib import Path
 
 # After successful generation
 if metrics["score"] >= 0.9:
-    # Save high-quality examples
     example = {
         "prompt": prompt,
         "code": code,
@@ -237,7 +249,7 @@ if metrics["score"] >= 0.9:
         f.write(json.dumps(example) + "\n")
 ```
 
-After collecting 100+ examples, consider using DSPy for prompt optimization.
+See [DSPy Pipeline](pipeline.md) for the full guide.
 
 ## Performance Tips
 

@@ -41,6 +41,8 @@ runs/brave_phoenix/
 | `--selector` | `keyword` | Skill selection: `keyword` (fuzzy) or `faiss` (semantic) |
 | `--score-threshold` | `0.3` | Minimum similarity score 0.0–1.0 (FAISS only) |
 | `--context` | — | Path to NDJSON/JSON with existing resources for stateful generation |
+| `--pipeline` | `default` | Generation pipeline: `default` (single-stage) or `dspy` (two-stage clinical planning) |
+| `--compiled-program` | — | Path to compiled DSPy program JSON (from `dspy.save`). Only used with `--pipeline dspy`. |
 
 All executor backends are powered by [smolagents](https://huggingface.co/docs/smolagents).
 
@@ -84,6 +86,13 @@ fhir-synth generate "5 patients" --selector faiss --score-threshold 0.5
 fhir-synth generate "5 patients" \
   --provider bedrock/us.anthropic.claude-3-5-sonnet-20241022-v2:0 \
   --aws-profile my-profile --aws-region us-east-1
+
+# DSPy two-stage pipeline: clinical planning → code synthesis
+fhir-synth generate "5 diabetic patients with labs" --pipeline dspy
+
+# DSPy with a pre-optimized compiled program
+fhir-synth generate "5 diabetic patients" \
+  --pipeline dspy --compiled-program optimized_pipeline.json
 ```
 
 ### Environment Variables

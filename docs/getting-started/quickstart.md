@@ -21,13 +21,18 @@ fhir-synth generate "10 patients with diabetes" --fhir-version stu3
 
 ## What Happens Under the Hood
 
-1. Your prompt goes to the LLM (with FHIR spec, import guide, and sandbox constraints)
-2. LLM generates Python code using `fhir.resources` (Pydantic FHIR models)
-3. Code is safety-checked (import whitelist + dangerous builtins scan) and auto-fixed (naive datetimes → UTC)
-4. Code executes in an isolated subprocess with a timeout
-5. Output is smoke-tested (non-empty, every resource has `resourceType`)
-6. If anything fails, the error is sent back to the LLM for self-healing (up to 2 retries)
-7. Resources are grouped by patient and saved as NDJSON
+1. **Skills selection**: Your prompt is matched against 16 built-in skills using fuzzy keyword matching with typo tolerance
+2. Your prompt + selected skills go to the LLM (via [LiteLLM](https://docs.litellm.ai/) — 100+ providers)
+3. LLM generates Python code using `fhir.resources` (Pydantic FHIR models)
+4. Code is safety-checked (import whitelist + dangerous builtins scan) and auto-fixed (naive datetimes → UTC)
+5. Code executes via a pluggable executor backend powered by [smolagents](https://huggingface.co/docs/smolagents) (local AST interpreter, Docker, E2B, or Blaxel)
+6. **Enhanced FHIR validation** — offline validation using `fhir.resources`:
+    - Pydantic model validation (required fields, types, cardinality)
+    - Choice-type [x] mutual exclusion checks
+    - Reference integrity checks (cross-resource references)
+    - US Core compliance checks (must-support field coverage)
+7. If anything fails, the error is sent back to the LLM for self-healing (up to 2 retries)
+8. Resources are split by patient and saved as NDJSON
 
 ## Output Structure
 
@@ -51,6 +56,21 @@ Generate Person → Patient linkages across EMR systems:
 ```bash
 fhir-synth generate "EMPI dataset" --empi --persons 3
 ```
+
+## Two-Stage DSPy Pipeline
+
+Use the optional DSPy pipeline for structured clinical planning before code generation:
+
+```bash
+# Two-stage: clinical planning → code synthesis
+pip install 'fhir-synth[dspy]'
+fhir-synth generate "5 diabetic patients with labs" --pipeline dspy
+
+# Use a pre-optimized DSPy program
+fhir-synth generate "5 diabetic patients" --pipeline dspy --compiled-program optimized.json
+```
+
+See [DSPy Pipeline](../guide/pipeline.md) for details.
 
 ## Use the Python API
 

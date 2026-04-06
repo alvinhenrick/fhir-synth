@@ -22,6 +22,11 @@ FHIR Bundles (JSON + NDJSON) — R4B or STU3
 
 ```bash
 pip install git+https://github.com/alvinhenrick/fhir-synth.git
+
+# Optional extras
+pip install "fhir-synth[bedrock] @ git+https://github.com/alvinhenrick/fhir-synth.git@main"  # AWS Bedrock
+pip install "fhir-synth[dspy] @ git+https://github.com/alvinhenrick/fhir-synth.git@main"     # DSPy pipeline
+pip install "fhir-synth[semantic] @ git+https://github.com/alvinhenrick/fhir-synth.git@main"  # FAISS selector
 ```
 
 ## Quick Start
@@ -79,8 +84,25 @@ fhir-synth generate "10 patients with diabetes" --fhir-version stu3
    - Pydantic model validation (required fields, types, cardinality)
    - Choice-type [x] mutual exclusion checks
    - Reference integrity checks (cross-resource references)
+   - US Core compliance checks (must-support field coverage)
 7. If anything fails, the error is sent back to the LLM for self-healing (up to 2 retries)
 8. Resources are split by patient and saved as FHIR Bundle (JSON) or NDJSON (R4B or STU3 depending on `--fhir-version`)
+
+### Two-Stage DSPy Pipeline (Optional)
+
+For higher quality output, use the two-stage pipeline powered by [DSPy](https://dspy.ai/):
+
+```bash
+pip install 'fhir-synth[dspy]'
+
+# Two-stage: clinical planning → code synthesis
+fhir-synth generate "5 diabetic patients with HbA1c observations" --pipeline dspy
+
+# With a pre-optimized compiled program
+fhir-synth generate "5 patients" --pipeline dspy --compiled-program optimized.json
+```
+
+The pipeline separates clinical reasoning (disease codes, demographics, care settings) from code generation (FHIR imports, references, validation). A `PlanEnricher` auto-detects missing resource dependencies (Practitioner, Organization) from the FHIR spec. See [`examples/optimize_pipeline.py`](examples/optimize_pipeline.py) for DSPy optimization.
 
 ### Output Structure
 
@@ -123,6 +145,8 @@ End-to-end: prompt → LLM → code → execute → FHIR Bundle.
 | `--selector` | `keyword` | Skill selection: `keyword` (fuzzy) or `faiss` (semantic) |
 | `--score-threshold` | `0.3` | Min similarity score 0.0-1.0 (FAISS only) |
 | `--context` | — | Path to NDJSON/JSON with existing resources for stateful generation |
+| `--pipeline` | `default` | Generation pipeline: `default` (single-stage) or `dspy` (two-stage) |
+| `--compiled-program` | — | Path to compiled DSPy program JSON (from `dspy.save`). Only used with `--pipeline dspy`. |
 
 ### `fhir-synth codegen`
 Generate executable Python code from prompts (without bundling).
@@ -322,7 +346,9 @@ FHIR Synth is organized into focused packages:
 - **`bundle/`** — Bundle creation and management (`BundleBuilder`, `BundleManager`, `BundleFactory`, `split_resources_by_patient`, `write_ndjson`, `write_split_bundles`)
 - **`code_generator/`** — LLM-powered code generation with self-healing execution (`CodeGenerator`)
     - **`code_generator/executor/`** — Pluggable executor backends powered by [smolagents](https://huggingface.co/docs/smolagents) (`LocalSmolagentsExecutor`, `DockerSandboxExecutor`, `E2BExecutor`, `BlaxelExecutor`)
-    - **`code_generator/fhir_validation.py`** — FHIR validation via Pydantic models (choice-type [x] checks, reference integrity)
+    - **`code_generator/fhir_validation.py`** — FHIR validation via Pydantic models (choice-type [x] checks, reference integrity, auto-repair)
+    - **`code_generator/us_core_validation.py`** — US Core R4 must-support field compliance checks
+- **`pipeline/`** — Two-stage DSPy pipeline (`TwoStagePipeline`, `DSPyClinicalPlanner`, `DSPyCodeSynthesizer`, `PlanEnricher`, `GenerationEvaluator`)
 - **`fhir_utils/`** — FHIR resource factory and lazy resource class map (`FHIRResourceFactory`)
 - **`llm.py`** — Unified LLM provider interface via LiteLLM (`LLMProvider`, `get_provider`)
 - **`naming.py`** — Docker-style run name generator (`coolname`)
