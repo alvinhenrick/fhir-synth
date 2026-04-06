@@ -214,6 +214,55 @@ class TwoStagePipeline:
         )
 
     @classmethod
+    def from_compiled(
+        cls,
+        compiled_path: Path,
+        llm_provider: Any,
+        executor: Executor | None = None,
+        user_skill_dirs: list[Path] | None = None,
+    ) -> Self:
+        """Load a compiled (optimized) DSPy program and wire it into the pipeline.
+
+        After running the optimization loop and saving with ``dspy.save(program, path)``,
+        pass that path here to load the compiled few-shot prompts / weights.
+
+        Args:
+            compiled_path: Path to a JSON file produced by ``dspy.save``.
+            llm_provider: An :class:`~fhir_synth.llm.LLMProvider` instance.
+                Its `.model` string is used to configure DSPy.
+            executor: Optional custom executor backend.
+            user_skill_dirs: Additional skill directories.
+
+        Returns:
+            A fully-configured TwoStagePipeline backed by the compiled program.
+        """
+
+        from fhir_synth.pipeline.dspy_modules import (
+            FHIRSynthProgram,
+            _CompiledPlannerAdapter,
+            _CompiledSynthesizerAdapter,
+            configure_dspy_lm,
+        )
+
+        configure_dspy_lm(model=llm_provider.model)
+        guidelines = FHIRGuidelinesBuilder().build()
+
+        # Instantiate a fresh program (defines the architecture), then load
+        # the compiled state (few-shot examples / optimized instructions) into it.
+        # Typed as Any because __new__ returns a dspy.Module subclass at runtime.
+        program: Any = FHIRSynthProgram(fhir_guidelines=guidelines)
+        program.load(str(compiled_path))
+        logger.info("Loaded compiled DSPy program from %s", compiled_path)
+
+        return cls(
+            planner=_CompiledPlannerAdapter(program),
+            synthesizer=_CompiledSynthesizerAdapter(program, guidelines),
+            evaluator=GenerationEvaluator(),
+            executor=executor,
+            skill_context_builder=SkillContextBuilder(user_dirs=user_skill_dirs),
+        )
+
+    @classmethod
     def default(
         cls,
         llm_provider: Any,
@@ -240,9 +289,12 @@ class TwoStagePipeline:
         configure_dspy_lm(model=llm_provider.model)
         guidelines = FHIRGuidelinesBuilder().build()
 
+        # __new__ returns a dspy.Module subclass at runtime — cast to satisfy mypy.
+        planner: ClinicalPlanner = DSPyClinicalPlanner()  # type: ignore[assignment]
+        synthesizer: CodeSynthesizer = DSPyCodeSynthesizer(fhir_guidelines=guidelines)  # type: ignore[assignment]
         return cls(
-            planner=DSPyClinicalPlanner(),
-            synthesizer=DSPyCodeSynthesizer(fhir_guidelines=guidelines),
+            planner=planner,
+            synthesizer=synthesizer,
             evaluator=GenerationEvaluator(),
             executor=executor,
             skill_context_builder=SkillContextBuilder(user_dirs=user_skill_dirs),

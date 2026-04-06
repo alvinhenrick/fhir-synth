@@ -100,6 +100,11 @@ def generate(
         "--pipeline",
         help="Generation pipeline: 'default' (single-stage) or 'dspy' (two-stage clinical planning, requires fhir-synth[dspy])",
     ),
+    compiled_program: str | None = typer.Option(
+        None,
+        "--compiled-program",
+        help="Path to a compiled DSPy program JSON (from dspy.save). Only used with --pipeline dspy.",
+    ),
 ) -> None:
     """Generate synthetic FHIR data end-to-end: prompt → LLM → code → execute → NDJSON.
 
@@ -311,14 +316,23 @@ def generate(
 
         if pipeline == "dspy":
             # ── Two-stage DSPy pipeline ──────────────────────────────────
-            typer.echo("⚙  Two-stage pipeline: clinical planning → code synthesis …")
             from fhir_synth.pipeline.pipeline import TwoStagePipeline
 
-            two_stage = TwoStagePipeline.default(
-                llm_provider=llm,
-                executor=executor,
-                user_skill_dirs=[Path(skills_dir)] if skills_dir else None,
-            )
+            if compiled_program:
+                typer.echo(f"⚙  Two-stage pipeline (compiled): loading {compiled_program} …")
+                two_stage = TwoStagePipeline.from_compiled(
+                    compiled_path=Path(compiled_program),
+                    llm_provider=llm,
+                    executor=executor,
+                    user_skill_dirs=[Path(skills_dir)] if skills_dir else None,
+                )
+            else:
+                typer.echo("⚙  Two-stage pipeline: clinical planning → code synthesis …")
+                two_stage = TwoStagePipeline.default(
+                    llm_provider=llm,
+                    executor=executor,
+                    user_skill_dirs=[Path(skills_dir)] if skills_dir else None,
+                )
             pipeline_result = two_stage.run(dspy_prompt)
             resources = pipeline_result.resources
             code = pipeline_result.code

@@ -47,5 +47,19 @@ HARD RULES — every response MUST follow these:
     This applies to ALL [x] groups: deceased[x], value[x], effective[x], onset[x],
     medication[x], born[x], age[x], multipleBirth[x], reported[x], performed[x], etc.
     When in doubt, pick the most specific type (e.g. deceasedAge over deceasedBoolean).
+16. **LIST-TYPED CodeableConcept FIELDS**: Several FHIR fields that hold `CodeableConcept` are
+    defined as `list[CodeableConcept]` — always wrap them in a Python list, even when there is
+    only one value.  Passing a bare `CodeableConcept(...)` causes a Pydantic validation error
+    ("Value is expected from the instance of CodeableConcept, but got type tuple") because
+    Pydantic iterates over the model's fields instead of accepting it as a single item.
+    Common list-typed CodeableConcept fields:
+    - ✓ Condition:         category=[CodeableConcept(...)]          ✗ category=CodeableConcept(...)
+    - ✓ Observation:       category=[CodeableConcept(...)]          ✗ category=CodeableConcept(...)
+    - ✓ Procedure:         category=[CodeableConcept(...)]          ✗ category=CodeableConcept(...)
+    - ✓ ServiceRequest:    category=[CodeableConcept(...)]          ✗ category=CodeableConcept(...)
+    - ✓ DiagnosticReport:  category=[CodeableConcept(...)]          ✗ category=CodeableConcept(...)
+    - ✓ MedicationRequest: category=[CodeableConcept(...)]          ✗ category=CodeableConcept(...)
+    - ✓ Encounter:         type=[CodeableConcept(...)]              ✗ type=CodeableConcept(...)
+    Rule of thumb: if the FHIR spec says `0..*` or `1..*` for a CodeableConcept field, use a list.
 
 
