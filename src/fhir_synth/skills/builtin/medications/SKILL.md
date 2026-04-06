@@ -23,6 +23,9 @@ Generate prescriptions reflecting real clinical practice:
 - STATUS: active, on-hold, cancelled, completed, entered-in-error, stopped, draft.
 - INTENT: order, plan, original-order, reflex-order, filler-order, instance-order.
 - PRN medications: Set asNeededBoolean=True or asNeededCodeableConcept with indication.
+- REQUESTER (US Core must-support): Always include `requester` on every MedicationRequest,
+  referencing the prescribing Practitioner resource. Create a Practitioner if one does not
+  already exist in the bundle.
 - DRUG ALLERGIES in AllergyIntolerance: Include medication allergies (Penicillin, Sulfa,
   NSAIDs) with reaction severity (mild, moderate, severe) and manifestation codes.
 
