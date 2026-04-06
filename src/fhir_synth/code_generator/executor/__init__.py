@@ -28,6 +28,7 @@ from fhir_synth.code_generator.executor.local import LocalSmolagentsExecutor
 # ── Shared validation (importable from here for convenience) ────
 from fhir_synth.code_generator.executor.validation import (
     fix_common_imports,
+    strip_future_imports,
     validate_code,
     validate_imports,
 )
@@ -45,6 +46,7 @@ __all__ = [
     "BlaxelExecutor",
     # Validation
     "fix_common_imports",
+    "strip_future_imports",
     "validate_code",
     "validate_imports",
 ]

@@ -15,6 +15,7 @@ from fhir_synth.code_generator.executor import (
     Executor,
     LocalSmolagentsExecutor,
     fix_common_imports,
+    strip_future_imports,
     validate_imports,
 )
 from fhir_synth.code_generator.fhir_validation import repair_references
@@ -305,6 +306,7 @@ class TwoStagePipeline:
     @staticmethod
     def _preprocess_code(code: str) -> str:
         """Apply import fixes before execution."""
+        code = strip_future_imports(code)
         import_errors = validate_imports(code)
         if import_errors:
             fixed = fix_common_imports(code)

@@ -87,6 +87,35 @@ _PROFILES: dict[str, list[tuple[str, str]]] = {
     ],
 }
 
+# ---------------------------------------------------------------------------
+# Code-example hints for fields LLMs commonly omit or get wrong
+# ---------------------------------------------------------------------------
+
+# Maps (resource_type, field) → short code snippet shown in the prompt guide.
+# Only add entries for fields that are non-obvious or frequently missed.
+_CODE_HINTS: dict[tuple[str, str], str] = {
+    ("MedicationRequest", "requester"): (
+        "# Create ONE shared Practitioner, reference it on EVERY MedicationRequest\n"
+        "practitioner = Practitioner(id=str(uuid4()), name=[HumanName(family='Smith', given=['Jane'])])\n"
+        "MedicationRequest(..., requester=Reference(reference=f'Practitioner/{practitioner.id}'))"
+    ),
+    ("Condition", "clinicalStatus"): (
+        "clinicalStatus=CodeableConcept(coding=[Coding(\n"
+        "    system='http://terminology.hl7.org/CodeSystem/condition-clinical',\n"
+        "    code='active')])"
+    ),
+    ("Observation", "category"): (
+        "# category is a list — always wrap in []\n"
+        "category=[CodeableConcept(coding=[Coding(\n"
+        "    system='http://terminology.hl7.org/CodeSystem/observation-category',\n"
+        "    code='laboratory')])]"
+    ),
+    ("Encounter", "class"): (
+        "# class_ (note underscore — 'class' is a Python keyword)\n"
+        "class_=Coding(system='http://terminology.hl7.org/CodeSystem/v3-ActCode', code='AMB')"
+    ),
+}
+
 # Choice-type alternatives: if any of these keys is present the requirement
 # is satisfied.  Key = canonical field name used in _PROFILES.
 _CHOICE_ALTERNATIVES: dict[str, list[str]] = {
@@ -120,11 +149,11 @@ _CHOICE_ALTERNATIVES: dict[str, list[str]] = {
 
 
 def us_core_must_support_guide() -> str:
-    """Compact US Core must-support field reference for LLM prompts.
+    """US Core must-support field reference with code examples for LLM prompts.
 
-    Lists every profile's must-support fields so Stage 2 knows which
-    *optional* FHIR fields are required by the US Core profile.  Suitable
-    for embedding in a system prompt or FHIR guidelines section.
+    For each profile lists the required fields and, for fields that LLMs
+    commonly omit or get wrong, includes a concrete Python code snippet.
+    This is the single source of truth — no duplication in hard-rules files.
     """
     lines: list[str] = [
         "US CORE R4 MUST-SUPPORT FIELDS",
@@ -133,8 +162,19 @@ def us_core_must_support_guide() -> str:
     for resource_type, checks in _PROFILES.items():
         field_labels = ", ".join(label for _, label in checks)
         lines.append(f"  {resource_type}: {field_labels}")
+
+        # Append code hints for any tricky fields in this profile
+        for field_path, _label in checks:
+            hint = _CODE_HINTS.get((resource_type, field_path))
+            if hint:
+                indented = "\n".join(f"      {ln}" for ln in hint.splitlines())
+                lines.append(f"    ⚠ {field_path} — example:")
+                lines.append(indented)
+
+        lines.append("")  # blank line between profiles
+
     lines.append(
-        "\nNote: 'must-support' means the field MUST be populated if the data exists. "
+        "Note: 'must-support' means the field MUST be populated if the data exists.\n"
         "For synthetic data, always include all must-support fields."
     )
     return "\n".join(lines)
