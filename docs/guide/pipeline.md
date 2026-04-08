@@ -189,31 +189,49 @@ print(f"Score: {report.overall_score:.2f} ({report.grade})")
 
 ## DSPy Optimization
 
-The pipeline is designed for DSPy optimization. After collecting training examples, use `BootstrapFewShot` or `MIPROv2` to automatically improve prompts:
+`fhir-synth` ships with a **pre-optimized compiled program** (`optimized_pipeline.json`) bundled inside the package.  Using `--pipeline dspy` automatically loads it — no extra setup needed:
 
 ```bash
-python examples/optimize_pipeline.py
+# Uses the bundled compiled program automatically
+fhir-synth generate "5 diabetic patients with HbA1c labs" --pipeline dspy
+```
+
+### Custom Optimization
+
+To optimize for your own domain or training data, use the `optimize` command:
+
+```bash
+fhir-synth optimize --provider gpt-4o --max-demos 5
 ```
 
 This will:
 
-1. Define training prompts (just natural language — no labels needed)
+1. Load training prompts from `runs/training_examples_diverse/` (or `runs/training_examples/`)
 2. Run `BootstrapFewShot` to find few-shot examples that maximize quality
-3. Save the optimized module to `optimized_pipeline.json`
-4. Load and reuse via `--compiled-program` flag
+3. Save the compiled program to `runs/optimized_pipeline.json`
 
-```python
-# After optimization, use the compiled program
-fhir-synth generate "5 patients" --pipeline dspy --compiled-program optimized_pipeline.json
+Then use your custom compiled program:
+
+```bash
+fhir-synth generate "5 patients" --pipeline dspy --compiled-program runs/optimized_pipeline.json
 ```
+
+### Optimize Options
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `--provider` | `gpt-4o-mini` | LLM for optimization (use a capable model — `gpt-4o`, `deepseek/deepseek-chat`) |
+| `--max-demos` | `3` | Max bootstrapped few-shot demos per predictor |
+| `--training-dir` | auto-detected | Directory with `*_prompt.txt` training pairs |
+| `--output` | `runs/optimized_pipeline.json` | Path to save the compiled program |
 
 ### When to Optimize
 
-| Scenario | Optimizer | Training Examples |
-|----------|-----------|-------------------|
-| Quick start | `BootstrapFewShot` | 3–10 prompts |
-| Production | `MIPROv2` | 20+ prompts |
-| Domain-specific | `BootstrapFewShot` + custom skills | 5–15 domain prompts |
+| Scenario | Recommendation |
+|----------|----------------|
+| General use | Use the bundled default — works out of the box |
+| Domain-specific (oncology, cardiology, etc.) | Run `fhir-synth optimize` with domain prompts |
+| Custom skills | Optimize after adding your `SKILL.md` files |
 
 ## Architecture
 
