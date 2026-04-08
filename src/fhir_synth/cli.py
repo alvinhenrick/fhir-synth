@@ -316,12 +316,29 @@ def generate(
 
         if pipeline == "dspy":
             # ── Two-stage DSPy pipeline ──────────────────────────────────
+            from importlib.resources import files
+
             from fhir_synth.pipeline.pipeline import TwoStagePipeline
 
+            # Resolve compiled program: explicit flag → bundled default → uncompiled
+            _compiled_path: Path | None = None
             if compiled_program:
-                typer.echo(f"⚙  Two-stage pipeline (compiled): loading {compiled_program} …")
+                _compiled_path = Path(compiled_program)
+            else:
+                _bundled = files("fhir_synth.pipeline").joinpath("optimized_pipeline.json")
+                try:
+                    # importlib.resources gives a Traversable; resolve to real Path
+                    import importlib.resources as _ir
+                    _bundled_path = Path(str(_bundled))
+                    if _bundled_path.exists():
+                        _compiled_path = _bundled_path
+                except Exception:
+                    pass
+
+            if _compiled_path:
+                typer.echo(f"⚙  Two-stage pipeline (compiled): loading {_compiled_path} …")
                 two_stage = TwoStagePipeline.from_compiled(
-                    compiled_path=Path(compiled_program),
+                    compiled_path=_compiled_path,
                     llm_provider=llm,
                     executor=executor,
                     user_skill_dirs=[Path(skills_dir)] if skills_dir else None,
@@ -568,6 +585,111 @@ def codegen(
     except Exception as exc:
         typer.echo(f"Error: {exc}", err=True)
         sys.exit(1)
+
+
+@app.command()
+def optimize(
+    training_dir: str = typer.Option(
+        "",
+        "--training-dir",
+        "-t",
+        help="Directory with *_prompt.txt training pairs (default: runs/training_examples_diverse if exists, else runs/training_examples)",
+    ),
+    output: str = typer.Option(
+        "runs/optimized_pipeline.json",
+        "--output",
+        "-o",
+        help="Path to save the compiled DSPy program",
+    ),
+    provider: str = typer.Option(
+        "gpt-4o-mini", "--provider", "-p", help="LLM model for optimization"
+    ),
+    max_demos: int = typer.Option(3, "--max-demos", help="Max bootstrapped demos per predictor"),
+) -> None:
+    """Optimize the two-stage DSPy pipeline using BootstrapFewShot.
+
+    Loads training prompts, runs BootstrapFewShot to find the best few-shot
+    examples, and saves the compiled program for use with:
+
+        fhir-synth generate "..." --pipeline dspy --compiled-program runs/optimized_pipeline.json
+
+    Requires: pip install 'fhir-synth[dspy]'
+
+    Example:
+
+        fhir-synth optimize --provider gpt-4o-mini --max-demos 3
+    """
+    try:
+        import dspy
+    except ImportError:
+        typer.echo("❌ DSPy not installed: pip install 'fhir-synth[dspy]'", err=True)
+        raise typer.Exit(1)
+
+    from fhir_synth.pipeline.evaluator import GenerationEvaluator
+    from fhir_synth.pipeline.pipeline import TwoStagePipeline
+
+    # Resolve training dir
+    t_dir = Path(training_dir) if training_dir else None
+    if t_dir is None:
+        diverse = Path("runs/training_examples_diverse")
+        t_dir = diverse if diverse.exists() else Path("runs/training_examples")
+    typer.echo(f"📂 Training dir: {t_dir}")
+
+    prompt_files = sorted(t_dir.glob("*_prompt.txt"))
+    if not prompt_files:
+        typer.echo(f"❌ No *_prompt.txt files found in {t_dir}", err=True)
+        raise typer.Exit(1)
+
+    prompts = [f.read_text().strip() for f in prompt_files]
+    typer.echo(f"📚 Loaded {len(prompts)} training prompts")
+
+    from fhir_synth.code_generator.executor import LocalSmolagentsExecutor
+    from fhir_synth.code_generator.fhir_validation import repair_references
+    from fhir_synth.pipeline.dspy_modules import FHIRSynthProgram as _FHIRSynthProgram
+    from fhir_synth.pipeline.dspy_modules import configure_dspy_lm
+    from fhir_synth.pipeline.pipeline import FHIRGuidelinesBuilder, SkillContextBuilder
+
+    configure_dspy_lm(model=provider)
+    guidelines = FHIRGuidelinesBuilder().build()
+    skill_builder = SkillContextBuilder()
+    evaluator = GenerationEvaluator()
+
+    # FHIRSynthProgram is the composite module with _plan_predict + _code_predict —
+    # exactly the structure from_compiled expects.
+    fhir_program: Any = _FHIRSynthProgram(fhir_guidelines=guidelines)
+
+    # Wrapper adds skill context, executes code, and returns resources for the metric.
+    class _OptModule(dspy.Module):  # type: ignore[misc]
+        def __init__(self) -> None:
+            super().__init__()
+            self.fhir_program = fhir_program
+
+        def forward(self, prompt: str) -> dspy.Prediction:
+            clinical_context = skill_builder.build(prompt)
+            result = self.fhir_program(prompt=prompt, clinical_context=clinical_context)
+            code = TwoStagePipeline.preprocess_code(result.code)
+            ex = LocalSmolagentsExecutor().execute(code, timeout=30)
+            resources, _ = repair_references(ex.artifacts)
+            return dspy.Prediction(resources=resources, plan=result.plan, code=code)
+
+    module = _OptModule()
+    trainset = [dspy.Example(prompt=p).with_inputs("prompt") for p in prompts]
+
+    typer.echo(f"⚙  Running BootstrapFewShot (max_demos={max_demos})…")
+    optimizer = dspy.BootstrapFewShot(
+        metric=evaluator.dspy_metric,
+        max_bootstrapped_demos=max_demos,
+        max_labeled_demos=0,
+    )
+    optimized = optimizer.compile(module, trainset=trainset)
+
+    out_path = Path(output)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    # Save the inner FHIRSynthProgram — from_compiled loads this structure directly.
+    optimized.fhir_program.save(str(out_path))
+    typer.echo(f"✓ Compiled program saved → {out_path}")
+    typer.echo("\nTo use it:")
+    typer.echo(f'  fhir-synth generate "your prompt" --pipeline dspy --compiled-program {out_path}')
 
 
 @app.command()

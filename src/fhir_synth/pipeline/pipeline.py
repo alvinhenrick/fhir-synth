@@ -183,7 +183,7 @@ class TwoStagePipeline:
         # Stage 2: code synthesis
         logger.info("Stage 2 — Code synthesis from clinical plan")
         code = self._synthesizer.synthesize(plan)
-        code = self._preprocess_code(code)
+        code = self.preprocess_code(code)
 
         # Execution
         logger.info("Executing generated code")
@@ -304,7 +304,7 @@ class TwoStagePipeline:
     # ── Private helpers ───────────────────────────────────────────────────────
 
     @staticmethod
-    def _preprocess_code(code: str) -> str:
+    def preprocess_code(code: str) -> str:
         """Apply import fixes before execution."""
         code = strip_future_imports(code)
         import_errors = validate_imports(code)

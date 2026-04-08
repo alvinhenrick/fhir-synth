@@ -1,0 +1,14 @@
+# Normal confidentiality metadata — applied to ALL generated resources
+#
+# Usage:
+#   fhir-synth generate "10 diabetic patients" --meta-config examples/meta-normal.yaml -o output.json
+
+meta:
+  security:
+    - system: "https://www.icanbwell.com/access"
+      code: "acme"
+    - system: "https://www.icanbwell.com/owner"
+      code: "acme"
+  profile:
+    - "http://hl7.org/fhir/us/core/StructureDefinition/us-core-patient"
+  source: "https://github.com/alvinhenrick/fhir-synth.git"
