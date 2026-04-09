@@ -127,11 +127,17 @@ fhir-synth codegen "Create 50 patients" --out code.py --execute --executor docke
 Optimize the two-stage DSPy pipeline using `BootstrapFewShot`. Produces a compiled program with few-shot demos that improves generation quality for your specific domain.
 
 ```bash
-# Optimize with default settings (auto-detects training data in runs/)
+# Default — BootstrapFewShot (fast, ~$2 with gpt-4o)
 fhir-synth optimize --provider gpt-4o
 
 # More demos, custom training dir
 fhir-synth optimize --provider gpt-4o --max-demos 5 --training-dir runs/my_training
+
+# MIPROv2 — optimizes instructions, better for domain-specific use (~$0.80 with DeepSeek)
+fhir-synth optimize --optimizer miprov2 --provider deepseek/deepseek-chat --num-trials 10
+
+# MIPROv2 medium (more thorough)
+fhir-synth optimize --optimizer miprov2 --provider deepseek/deepseek-chat --num-trials 25
 
 # Save to a custom path
 fhir-synth optimize --provider deepseek/deepseek-chat --output runs/my_compiled.json
@@ -140,7 +146,9 @@ fhir-synth optimize --provider deepseek/deepseek-chat --output runs/my_compiled.
 | Option | Default | Description |
 |--------|---------|-------------|
 | `--provider` / `-p` | `gpt-4o-mini` | LLM for optimization |
+| `--optimizer` | `bootstrap` | `bootstrap` (BootstrapFewShot) or `miprov2` (optimizes instructions) |
 | `--max-demos` | `3` | Max bootstrapped few-shot demos |
+| `--num-trials` | `10` | Number of optimization trials (MIPROv2 only) |
 | `--training-dir` / `-t` | auto | Directory with `*_prompt.txt` training pairs |
 | `--output` / `-o` | `runs/optimized_pipeline.json` | Output path for compiled program |
 

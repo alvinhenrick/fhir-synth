@@ -588,19 +588,28 @@ def optimize(
         "gpt-4o-mini", "--provider", "-p", help="LLM model for optimization"
     ),
     max_demos: int = typer.Option(3, "--max-demos", help="Max bootstrapped demos per predictor"),
+    optimizer: str = typer.Option(
+        "bootstrap",
+        "--optimizer",
+        help="Optimizer: 'bootstrap' (BootstrapFewShot) or 'miprov2' (MIPROv2 — optimizes instructions)",
+    ),
+    num_trials: int = typer.Option(
+        10, "--num-trials", help="Number of optimization trials (MIPROv2 only)"
+    ),
 ) -> None:
-    """Optimize the two-stage DSPy pipeline using BootstrapFewShot.
+    """Optimize the two-stage DSPy pipeline using BootstrapFewShot or MIPROv2.
 
-    Loads training prompts, runs BootstrapFewShot to find the best few-shot
-    examples, and saves the compiled program for use with:
+    Loads training prompts, runs the selected optimizer, and saves the compiled
+    program for use with:
 
         fhir-synth generate "..." --pipeline dspy --compiled-program runs/optimized_pipeline.json
 
     Requires: pip install 'fhir-synth[dspy]'
 
-    Example:
+    Examples:
 
         fhir-synth optimize --provider gpt-4o-mini --max-demos 3
+        fhir-synth optimize --optimizer miprov2 --provider deepseek/deepseek-chat --num-trials 10
     """
     try:
         import dspy
@@ -658,13 +667,27 @@ def optimize(
     module = _OptModule()
     trainset = [dspy.Example(prompt=p).with_inputs("prompt") for p in prompts]
 
-    typer.echo(f"⚙  Running BootstrapFewShot (max_demos={max_demos})…")
-    optimizer = dspy.BootstrapFewShot(
-        metric=evaluator.dspy_metric,
-        max_bootstrapped_demos=max_demos,
-        max_labeled_demos=0,
-    )
-    optimized = optimizer.compile(module, trainset=trainset)
+    if optimizer == "miprov2":
+        typer.echo(f"⚙  Running MIPROv2 (num_trials={num_trials}, max_demos={max_demos})…")
+        dspy_optimizer = dspy.MIPROv2(
+            metric=evaluator.dspy_metric,
+            auto="light",
+            num_candidates=max_demos,
+        )
+        optimized = dspy_optimizer.compile(
+            module,
+            trainset=trainset,
+            num_trials=num_trials,
+            minibatch=True,
+        )
+    else:
+        typer.echo(f"⚙  Running BootstrapFewShot (max_demos={max_demos})…")
+        dspy_optimizer = dspy.BootstrapFewShot(
+            metric=evaluator.dspy_metric,
+            max_bootstrapped_demos=max_demos,
+            max_labeled_demos=0,
+        )
+        optimized = dspy_optimizer.compile(module, trainset=trainset)
 
     out_path = Path(output)
     out_path.parent.mkdir(parents=True, exist_ok=True)
