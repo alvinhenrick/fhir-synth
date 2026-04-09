@@ -87,10 +87,10 @@ fhir-synth generate "5 patients" \
   --provider bedrock/us.anthropic.claude-3-5-sonnet-20241022-v2:0 \
   --aws-profile my-profile --aws-region us-east-1
 
-# DSPy two-stage pipeline — uses bundled compiled program automatically
+# DSPy two-stage pipeline (uncompiled — works without optimization)
 fhir-synth generate "5 diabetic patients with labs" --pipeline dspy
 
-# DSPy with a custom compiled program (from fhir-synth optimize)
+# DSPy with a compiled program (from fhir-synth optimize)
 fhir-synth generate "5 diabetic patients" \
   --pipeline dspy --compiled-program runs/optimized_pipeline.json
 ```

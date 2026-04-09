@@ -316,29 +316,12 @@ def generate(
 
         if pipeline == "dspy":
             # ── Two-stage DSPy pipeline ──────────────────────────────────
-            from importlib.resources import files
-
             from fhir_synth.pipeline.pipeline import TwoStagePipeline
 
-            # Resolve compiled program: explicit flag → bundled default → uncompiled
-            _compiled_path: Path | None = None
             if compiled_program:
-                _compiled_path = Path(compiled_program)
-            else:
-                _bundled = files("fhir_synth.pipeline").joinpath("optimized_pipeline.json")
-                try:
-                    # importlib.resources gives a Traversable; resolve to real Path
-                    import importlib.resources as _ir
-                    _bundled_path = Path(str(_bundled))
-                    if _bundled_path.exists():
-                        _compiled_path = _bundled_path
-                except Exception:
-                    pass
-
-            if _compiled_path:
-                typer.echo(f"⚙  Two-stage pipeline (compiled): loading {_compiled_path} …")
+                typer.echo(f"⚙  Two-stage pipeline (compiled): loading {compiled_program} …")
                 two_stage = TwoStagePipeline.from_compiled(
-                    compiled_path=_compiled_path,
+                    compiled_path=Path(compiled_program),
                     llm_provider=llm,
                     executor=executor,
                     user_skill_dirs=[Path(skills_dir)] if skills_dir else None,

@@ -189,11 +189,15 @@ print(f"Score: {report.overall_score:.2f} ({report.grade})")
 
 ## DSPy Optimization
 
-`fhir-synth` ships with a **pre-optimized compiled program** (`optimized_pipeline.json`) bundled inside the package.  Using `--pipeline dspy` automatically loads it — no extra setup needed:
+Using `--pipeline dspy` without `--compiled-program` runs the uncompiled pipeline — fully functional, just without few-shot demos:
 
 ```bash
-# Uses the bundled compiled program automatically
+# Uncompiled — works out of the box
 fhir-synth generate "5 diabetic patients with HbA1c labs" --pipeline dspy
+
+# With a compiled program (from fhir-synth optimize)
+fhir-synth generate "5 diabetic patients with HbA1c labs" \
+  --pipeline dspy --compiled-program runs/optimized_pipeline.json
 ```
 
 ### Custom Optimization
