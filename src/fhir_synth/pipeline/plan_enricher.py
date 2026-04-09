@@ -24,7 +24,7 @@ This means:
 - New FHIR versions, new resource types, and changed reference constraints are
   automatically handled — no code changes needed.
 - The enricher never adds companions for truly optional, non-summary reference
-  fields, avoiding over-population of the plan.
+  fields, avoiding overpopulation of the plan.
 """
 
 import logging
@@ -51,7 +51,7 @@ class PlanEnricher:
     def enrich(self, plan: ClinicalPlan) -> ClinicalPlan:
         """Return an enriched copy of *plan* with missing companions added.
 
-        If no companions are missing the original plan object is returned
+        If no companions are missing, the original plan object is returned
         unchanged.  Idempotent: calling twice produces the same result.
         """
         needed_roles = self._compute_needed_roles(plan)
@@ -78,7 +78,7 @@ class PlanEnricher:
     def _compute_needed_roles(self, plan: ClinicalPlan) -> list[str]:
         """Return a deduplicated, stable list of role names that must be added."""
         # Only check resource types explicitly created from clinical entries.
-        # Patient is always present but we do NOT check its reference fields —
+        # Patient is always present, but we do NOT check its reference fields —
         # doing so would add Organization companions for bare-patient plans.
         clinical_types = _clinical_resource_types(plan)
 

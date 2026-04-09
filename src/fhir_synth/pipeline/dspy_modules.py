@@ -10,14 +10,14 @@ Design decisions
   `_parse_clinical_plan` is a fallback for models that return malformed JSON.
 - `CodeFromPlanSignature`: ChainOfThought lets the model reason step-by-step
   before emitting code — empirically better for structured code generation.
-- Both `DSPyClinicalPlanner` and `DSPyCodeSynthesizer` use a ``__new__``
-  factory to return genuine ``dspy.Module`` subclass instances.  This keeps
+- Both `DSPyClinicalPlanner` and `DSPyCodeSynthesizer` use a `__new__`
+  factory to return genuine `dspy.Module` subclass instances.  This keeps
   DSPy as an optional dependency while giving the optimizer full traceability
-  and enabling ``dspy.save`` / ``dspy.load`` round-trips.
+  and enabling `dspy.save` / `dspy.load` round-trips.
 - `FHIRSynthProgram` is the *composite* module used for optimization.  It
   wraps both stages so ``BootstrapFewShot`` / ``MIPROv2`` can optimize them
-  jointly.  After optimization, save with ``dspy.save(program, path)`` and
-  reload via ``TwoStagePipeline.from_compiled(path, ...)``.
+  jointly.  After optimization, save with `dspy.save(program, path)` and
+  reload via `TwoStagePipeline.from_compiled(path, ...)`.
 """
 
 import ast
@@ -113,7 +113,7 @@ def _make_code_signature(dspy: Any) -> Any:
 
 
 def _make_clinical_planner_class(dspy_lib: Any) -> type:
-    """Return a genuine ``dspy.Module`` subclass for Stage 1 (clinical planning)."""
+    """Return a genuine `dspy.Module` subclass for Stage 1 (clinical planning)."""
 
     class _DSPyClinicalPlanner(dspy_lib.Module):  # type: ignore[misc]
         def __init__(self) -> None:
@@ -137,7 +137,7 @@ def _make_clinical_planner_class(dspy_lib: Any) -> type:
 
 
 def _make_code_synthesizer_class(dspy_lib: Any) -> type:
-    """Return a genuine ``dspy.Module`` subclass for Stage 2 (code synthesis)."""
+    """Return a genuine `dspy.Module` subclass for Stage 2 (code synthesis)."""
 
     class _DSPyCodeSynthesizer(dspy_lib.Module):  # type: ignore[misc]
         def __init__(self, fhir_guidelines: str) -> None:
@@ -162,10 +162,10 @@ def _make_code_synthesizer_class(dspy_lib: Any) -> type:
 
 
 def _make_fhir_synth_program_class(dspy_lib: Any) -> type:
-    """Return a composite ``dspy.Module`` subclass wrapping both stages.
+    """Return a composite `dspy.Module` subclass wrapping both stages.
 
-    The optimizer traces through ``forward()`` and can optimize both
-    ``_plan_predict`` and ``_code_predict`` jointly.
+    The optimizer traces through `forward()` and can optimize both
+    `_plan_predict` and `_code_predict` jointly.
     """
 
     class _FHIRSynthProgram(dspy_lib.Module):  # type: ignore[misc]
@@ -203,8 +203,8 @@ class DSPyClinicalPlanner:
     Implements the `ClinicalPlanner` protocol.  Uses `dspy.Predict` with a
     typed Pydantic output field — DSPy 3.x enforces the schema natively.
 
-    Returns a genuine ``dspy.Module`` instance (via ``__new__``) so the
-    optimizer can trace through it and ``dspy.save`` / ``dspy.load`` work.
+    Returns a genuine `dspy.Module` instance (via `__new__`) so the
+    optimizer can trace through it and `dspy.save` / `dspy.load` work.
     """
 
     def __new__(cls) -> Any:
@@ -216,11 +216,11 @@ class DSPyClinicalPlanner:
 class DSPyCodeSynthesizer:
     """Stage 2: converts a `ClinicalPlan` into executable Python code.
 
-    Implements the `CodeSynthesizer` protocol.  Uses ``ChainOfThought`` so
+    Implements the `CodeSynthesizer` protocol.  Uses `ChainOfThought` so
     the model reasons about structure before emitting code.
 
-    Returns a genuine ``dspy.Module`` instance (via ``__new__``) so the
-    optimizer can trace through it and ``dspy.save`` / ``dspy.load`` work.
+    Returns a genuine `dspy.Module` instance (via `__new__`) so the
+    optimizer can trace through it and `dspy.save` / `dspy.load` work.
     """
 
     def __new__(cls, fhir_guidelines: str) -> Any:
@@ -232,16 +232,16 @@ class DSPyCodeSynthesizer:
 class FHIRSynthProgram:
     """Composite DSPy module wrapping Stage 1 and Stage 2 for optimization.
 
-    Use this as the target for ``dspy.BootstrapFewShot`` or ``MIPROv2``::
+    Use this as the target for `dspy.BootstrapFewShot` or `MIPROv2`::
 
         program = FHIRSynthProgram(fhir_guidelines=guidelines)
         optimizer = dspy.BootstrapFewShot(metric=evaluator.dspy_metric)
         compiled = optimizer.compile(program, trainset=examples)
         dspy.save(compiled, "compiled_program.json")
 
-    Then reload via ``TwoStagePipeline.from_compiled("compiled_program.json", ...)``.
+    Then reload via `TwoStagePipeline.from_compiled("compiled_program.json", ...)`.
 
-    Returns a genuine ``dspy.Module`` instance (via ``__new__``).
+    Returns a genuine `dspy.Module` instance (via `__new__`).
     """
 
     def __new__(cls, fhir_guidelines: str) -> Any:
@@ -254,9 +254,9 @@ class FHIRSynthProgram:
 
 
 class _CompiledPlannerAdapter:
-    """Delegates Stage 1 calls to a loaded ``FHIRSynthProgram``'s planner predictor.
+    """Delegates Stage 1 calls to a loaded `FHIRSynthProgram`'s planner predictor.
 
-    Used by ``TwoStagePipeline.from_compiled()`` to split the composite program
+    Used by `TwoStagePipeline.from_compiled()` to split the composite program
     back into the separate planner / synthesizer protocol objects.
     """
 
@@ -272,9 +272,9 @@ class _CompiledPlannerAdapter:
 
 
 class _CompiledSynthesizerAdapter:
-    """Delegates Stage 2 calls to a loaded ``FHIRSynthProgram``'s code predictor.
+    """Delegates Stage 2 calls to a loaded `FHIRSynthProgram`'s code predictor.
 
-    Used by ``TwoStagePipeline.from_compiled()`` to split the composite program
+    Used by `TwoStagePipeline.from_compiled()` to split the composite program
     back into the separate planner / synthesizer protocol objects.
     """
 
@@ -316,7 +316,7 @@ def _parse_clinical_plan(raw: str) -> ClinicalPlan:
     """Parse a ClinicalPlan from an LM response string.
 
     Some models return Python dict syntax (single quotes) instead of valid JSON.
-    Falls back to ``ast.literal_eval`` so the pipeline doesn't crash on those.
+    Falls back to `ast.literal_eval` so the pipeline doesn't crash on those.
     """
     raw = raw.strip()
     try:
