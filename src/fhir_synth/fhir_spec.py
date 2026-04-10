@@ -100,6 +100,9 @@ class FieldMeta:
     choice_required: bool = False
     is_summary: bool = False
     enum_reference_types: tuple[str, ...] = ()
+    alias: str | None = (
+        None  # JSON alias when it differs from the Python name (e.g. "class" for class_)
+    )
 
 
 @dataclass(frozen=True)
@@ -279,6 +282,9 @@ def _introspect(name: str) -> ResourceMeta:
         enum_ref: tuple[str, ...] = (
             tuple(str(v) for v in raw_enum_ref) if isinstance(raw_enum_ref, list) else ()
         )
+        # Detect JSON alias mismatches (e.g. class_ → "class") so spec_summary can warn the LLM
+        raw_alias = finfo.alias
+        json_alias = str(raw_alias) if raw_alias and str(raw_alias) != fname else None
         fields.append(
             FieldMeta(
                 name=fname,
@@ -290,6 +296,7 @@ def _introspect(name: str) -> ResourceMeta:
                 choice_required=choice_required,
                 is_summary=is_summary,
                 enum_reference_types=enum_ref,
+                alias=json_alias,
             )
         )
         if is_req:
@@ -459,7 +466,10 @@ def spec_summary(resource_types: list[str] | None = None) -> str:
         req_parts = []
         for f in meta.all_fields:
             if f.required:
-                req_parts.append(f"    {f.name}: {_short_type(f.type_annotation)}  [REQUIRED]")
+                alias_note = f'  [JSON key: "{f.alias}"]' if f.alias else ""
+                req_parts.append(
+                    f"    {f.name}: {_short_type(f.type_annotation)}  [REQUIRED]{alias_note}"
+                )
         if req_parts:
             lines.extend(req_parts)
 
@@ -479,7 +489,8 @@ def spec_summary(resource_types: list[str] | None = None) -> str:
             if not f.required and f.name not in _skip and f.name not in choice_field_names:
                 t = _short_type(f.type_annotation)
                 tag = " [ref]" if f.is_reference else ""
-                opt_parts.append(f"    {f.name}: {t}{tag}")
+                alias_note = f' [JSON key: "{f.alias}"]' if f.alias else ""
+                opt_parts.append(f"    {f.name}: {t}{tag}{alias_note}")
         if opt_parts:
             for line in opt_parts[:12]:
                 lines.append(line)
