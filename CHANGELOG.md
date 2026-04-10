@@ -2,6 +2,94 @@
 
 <!-- version list -->
 
+## v1.14.0 (2026-04-10)
+
+### Bug Fixes
+
+- Correct markdown formatting in docstrings for consistency
+  ([`205e0a9`](https://github.com/alvinhenrick/fhir-synth/commit/205e0a9fc3b345e79622ecb50d671c7eef69522d))
+
+### Features
+
+- Add guidelines for handling future imports and enhance US Core must-support field references
+  ([`730ec72`](https://github.com/alvinhenrick/fhir-synth/commit/730ec7232cdedd81f05055ebf45c271c4c5367f1))
+
+- Add MIPROv2 optimizer option to DSPy CLI for enhanced pipeline optimization
+  ([`2adc66d`](https://github.com/alvinhenrick/fhir-synth/commit/2adc66d613c330d0f55ba4f9788cc1e6ae392ac8))
+
+- Add PlannedResource model and enhance ClinicalPlan with additional FHIR resources
+  ([`ce0f0aa`](https://github.com/alvinhenrick/fhir-synth/commit/ce0f0aa898609e457215ae2f41335477db597622))
+
+- Add requirement for requester in MedicationRequest to reference prescribing Practitioner
+  ([`5b4b9b7`](https://github.com/alvinhenrick/fhir-synth/commit/5b4b9b7074aed77759f3706e2e66c1e695cd59e9))
+
+- Add two-stage DSPy pipeline with quality evaluation
+  ([`debf853`](https://github.com/alvinhenrick/fhir-synth/commit/debf853baeec6594ec827c89c183b40f764fefb7))
+
+- Enhance DSPy CLI options and improve plan serialization in dspy_modules
+  ([`e4cb9ef`](https://github.com/alvinhenrick/fhir-synth/commit/e4cb9ef108997821c11751c70b5740d7d341ad46))
+
+- Enhance DSPy documentation with optimization commands and usage examples
+  ([`0fcd12a`](https://github.com/alvinhenrick/fhir-synth/commit/0fcd12ac2144bef70653f062a9e8ba36de34c5c9))
+
+- Enhance pipeline output with selected skills summary
+  ([`f27d1de`](https://github.com/alvinhenrick/fhir-synth/commit/f27d1de97a3a7188d5870828c7c77b23fc35f735))
+
+- Enhance pipeline output with selected skills summary
+  ([`30f7a29`](https://github.com/alvinhenrick/fhir-synth/commit/30f7a29ebfeb8949fb7a8095a4e217da5b30ae6e))
+
+- Format max_demos option for improved readability in DSPy CLI
+  ([`269e4d5`](https://github.com/alvinhenrick/fhir-synth/commit/269e4d53de8e490546f8a209f295132b857ab368))
+
+- Implement dynamic output path for optimized pipeline in DSPy CLI
+  ([`6c526e8`](https://github.com/alvinhenrick/fhir-synth/commit/6c526e8f62674ad526f3abe8ef9e56d719fbe458))
+
+- Implement PlanEnricher for FHIR resource dependency enrichment in ClinicalPlan
+  ([`000773c`](https://github.com/alvinhenrick/fhir-synth/commit/000773cb1ec9288951d2bcd8f6ed4e4d0071bad0))
+
+- Implement PlanEnricher for FHIR resource dependency enrichment in ClinicalPlan
+  ([`6dac15a`](https://github.com/alvinhenrick/fhir-synth/commit/6dac15ac04c6f303bf6d4fe2592a2905dd1c165e))
+
+- Implement two-stage DSPy pipeline for enhanced clinical planning and code synthesis
+  ([`3c8724e`](https://github.com/alvinhenrick/fhir-synth/commit/3c8724e0cba044139a2d51670132dac988981712))
+
+- Implement two-stage DSPy pipeline for enhanced clinical planning and code synthesis
+  ([`5d5c38c`](https://github.com/alvinhenrick/fhir-synth/commit/5d5c38c84c066de54a4baa5b8bfa44cf4d575fe4))
+
+- Implement two-stage DSPy pipeline with enhanced ClinicalPlan parsing
+  ([`c2f47d8`](https://github.com/alvinhenrick/fhir-synth/commit/c2f47d8047645adf134dc2cc6d573c9ee69ba827))
+
+- Improve code formatting and consistency across multiple files
+  ([`b8e96ab`](https://github.com/alvinhenrick/fhir-synth/commit/b8e96abcf8e1f3c4e259bc40fa5d522d26533eb4))
+
+- Improve code formatting and consistency across multiple files
+  ([`c3959e9`](https://github.com/alvinhenrick/fhir-synth/commit/c3959e95e20e4f9a5423c23bfd901195b689a4a5))
+
+- Integrate CodeGenerator for applying metadata from YAML config
+  ([`2d94f19`](https://github.com/alvinhenrick/fhir-synth/commit/2d94f1930958428cc281626a01291c14090e178a))
+
+- Refactor imports and clean up code formatting across multiple files
+  ([`035dcca`](https://github.com/alvinhenrick/fhir-synth/commit/035dcca5496fcecb191e34e4320b7adabe3665f3))
+
+- Remove unnecessary future annotations imports across multiple files
+  ([`fe50a47`](https://github.com/alvinhenrick/fhir-synth/commit/fe50a470f8b1e49d17b686734ae1cb99d7a838aa))
+
+- Update .gitignore to exclude skills directory and example metadata file
+  ([`a206b41`](https://github.com/alvinhenrick/fhir-synth/commit/a206b418aef014543a2118eb2ac525e920dbe6c6))
+
+- Update docstring formatting to use backticks for inline code references
+  ([`6e275cc`](https://github.com/alvinhenrick/fhir-synth/commit/6e275cc70040f84e46b5dfb4b82eb94e08221abd))
+
+- Update docstring formatting to use backticks for inline code references
+  ([`3754476`](https://github.com/alvinhenrick/fhir-synth/commit/37544760663a56f70081106876cff2a0b79572c1))
+
+- Update DSPy CLI documentation and implementation for uncompiled pipeline usage
+  ([`087f87b`](https://github.com/alvinhenrick/fhir-synth/commit/087f87b275c01bc0de07631ef8233d846f5d7848))
+
+- Update MIPROv2 optimizer options to include intensity levels in DSPy CLI
+  ([`78ba26d`](https://github.com/alvinhenrick/fhir-synth/commit/78ba26df55239b1c9c1f25744411082d3586be28))
+
+
 ## v1.13.0 (2026-04-04)
 
 ### Bug Fixes
