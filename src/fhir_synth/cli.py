@@ -689,8 +689,14 @@ def optimize(
         )
         optimized = dspy_optimizer.compile(module, trainset=trainset)
 
-    out_path = Path(output)
-    out_path.parent.mkdir(parents=True, exist_ok=True)
+    from fhir_synth.naming import create_run_dir
+
+    if output and output != "runs/optimized_pipeline.json":
+        out_path = Path(output)
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+    else:
+        run_dir = create_run_dir()
+        out_path = run_dir / "optimized_pipeline.json"
     # Save the inner FHIRSynthProgram — from_compiled loads this structure directly.
     optimized.fhir_program.save(str(out_path))
     typer.echo(f"✓ Compiled program saved → {out_path}")
