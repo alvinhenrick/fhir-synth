@@ -148,7 +148,7 @@ def _make_code_synthesizer_class(dspy_lib: Any) -> type:
 
         def synthesize(self, plan: ClinicalPlan) -> str:
             result = self._predict(
-                plan_json=plan.model_dump_json(indent=2),
+                plan_json=plan.model_dump_json(),
                 fhir_guidelines=self._fhir_guidelines,
             )
             return _extract_code(result.code)
@@ -184,7 +184,7 @@ def _make_fhir_synth_program_class(dspy_lib: Any) -> type:
                 plan = _parse_clinical_plan(str(plan))
 
             code_result = self._code_predict(
-                plan_json=plan.model_dump_json(indent=2),
+                plan_json=plan.model_dump_json(),
                 fhir_guidelines=self._fhir_guidelines,
             )
             return dspy_lib.Prediction(plan=plan, code=_extract_code(code_result.code))
@@ -284,7 +284,7 @@ class _CompiledSynthesizerAdapter:
 
     def synthesize(self, plan: ClinicalPlan) -> str:
         result = self._program._code_predict(
-            plan_json=plan.model_dump_json(indent=2),
+            plan_json=plan.model_dump_json(),
             fhir_guidelines=self._fhir_guidelines,
         )
         return _extract_code(result.code)
@@ -304,6 +304,8 @@ def configure_dspy_lm(model: str, **kwargs: Any) -> None:
         **kwargs: Extra kwargs forwarded to `dspy.LM` (api_key, api_base, etc.).
     """
     dspy = _require_dspy()
+    if "deepseek-chat" in model:
+        kwargs.setdefault("max_tokens", 8192)
     lm = dspy.LM(model=model, **kwargs)
     dspy.configure(lm=lm)
     logger.debug("DSPy configured with model: %s", model)

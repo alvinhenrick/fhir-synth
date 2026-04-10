@@ -587,7 +587,7 @@ def optimize(
     provider: str = typer.Option(
         "gpt-4o-mini", "--provider", "-p", help="LLM model for optimization"
     ),
-    max_demos: int = typer.Option(3, "--max-demos", help="Max bootstrapped demos per predictor"),
+    max_demos: int = typer.Option(3, "--max-demos", help="Max bootstrapped demos per predictor (bootstrap only — MIPROv2 uses --auto preset)"),
     optimizer: str = typer.Option(
         "bootstrap",
         "--optimizer",
@@ -672,6 +672,7 @@ def optimize(
         dspy_optimizer = dspy.MIPROv2(
             metric=evaluator.dspy_metric,
             auto=auto,
+            max_errors=100,
         )
         optimized = dspy_optimizer.compile(module, trainset=trainset)
     else:
