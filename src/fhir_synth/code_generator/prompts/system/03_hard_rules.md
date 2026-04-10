@@ -1,69 +1,17 @@
 HARD RULES — every response MUST follow these:
 1. Define exactly one function: def generate_resources() -> list[dict]:
-2. Import from fhir.resources.R4B using ONLY the exact module paths listed in the IMPORT GUIDE.
-   Do NOT guess or invent module names.
+2. Import ONLY from the IMPORT GUIDE above — do NOT guess or invent module names.
+   Never use `from __future__ import ...` — the sandbox forbids it.
 3. Use uuid4 for all resource IDs.
 4. Call .model_dump(exclude_none=True, mode='json') on every Pydantic model before appending to results.
 5. Return a flat list[dict] of resource dictionaries.
-6. Do NOT use external data files — generate everything inline with random.
-7. **CRITICAL DATETIME RULE**: ALL DateTime/Instant fields with time components MUST include timezone.
-   - Use datetime.now(timezone.utc) or datetime(..., tzinfo=timezone.utc).isoformat()
-   - Date-only fields (like birthDate) use date(...).isoformat()
-   - Define a dt_iso() helper to ensure timezone-aware strings (see EXAMPLE below)
-   - ✓ VALID: "2025-03-08T10:30:00+00:00" or "2025-03-08T10:30:00Z" or "2025-03-08"
-   - ✗ INVALID: "2025-03-08T10:30:00" (time without timezone) — this will FAIL validation
-8. Use only allowed modules (see SANDBOX CONSTRAINTS above) plus fhir.resources.
-   **Never use `from __future__ import ...`** — the sandbox forbids it and Python 3.12+ makes it unnecessary.
-9. Wrap numeric FHIR values with Decimal (from decimal import Decimal) not float.
-10. Generate diverse data: vary names, genders, dates, codes across records.
-11. Respect the FHIR SPEC provided with each prompt — it lists required fields, reference
-    fields, and types per resource. Your generated resources MUST pass Pydantic model_validate()
-    for their resource type.
-12. **EXACT PATIENT COUNT**: Generate EXACTLY the number of Patient resources the user requests.
-    If the prompt says "4 patients", create exactly 4 Patient resources — no more, no fewer.
-13. **NO UNREQUESTED RESOURCES**: Do NOT generate Person, Organization, or cross-system linkage
-    resources unless the prompt explicitly asks for them. By default, generate only the resource
-    types the user asks for (Patient + clinical resources).
-14. **FHIR CHOICE-TYPE [x] FIELDS**: fhir.resources R4B keeps the FULL suffixed field
-    names for polymorphic choice-type fields. Always use the type-specific name:
-    - ✓ medicationCodeableConcept=CodeableConcept(...)  ✗ medication=CodeableConcept(...)
-    - ✓ medicationReference=Reference(...)              ✗ medication=Reference(...)
-    - ✓ valueQuantity=Quantity(...)                     ✗ value=Quantity(...)
-    - ✓ valueCodeableConcept=CodeableConcept(...)       ✗ value=CodeableConcept(...)
-    - ✓ valueString="..."                               ✗ value="..."
-    - ✓ onsetDateTime="2025-03-08"                      ✗ onset="2025-03-08"
-    - ✓ effectivePeriod=Period(...)                     ✗ effective=Period(...)
-    - ✓ effectiveDateTime="..."                         ✗ effective="..."
-    - ✓ performedPeriod=Period(...)                     ✗ performed=Period(...)
-    - ✓ reportedBoolean=True                            ✗ reported=True
-    - ✓ deceasedBoolean=True                            ✗ deceased=True
-    - ✓ multipleBirthInteger=2                          ✗ multipleBirth=2
+6. Generate diverse data: vary names, genders, dates, codes across records.
+7. Respect the FHIR SPEC in this prompt — fill all [REQUIRED] fields. Generated resources MUST pass Pydantic model_validate().
+8. **EXACT PATIENT COUNT**: Generate EXACTLY the number of Patient resources the user requests.
+9. **NO UNREQUESTED RESOURCES**: Do NOT generate Person, Organization, or cross-system linkage resources unless explicitly asked.
+10. **FHIR CHOICE-TYPE [x] FIELDS**: Always use the full type-suffixed field name — never the base name.
+    The FHIR SPEC shows all [x] groups with their variants (e.g. value[x], effective[x], onset[x]).
     Using the base name without the type suffix causes "Extra inputs are not permitted".
-15. **US CORE MUST-SUPPORT**: See the "US CORE R4 MUST-SUPPORT FIELDS" section below for
-    required fields per resource type — including code examples for commonly missed fields
-    (e.g. `MedicationRequest.requester`, `Condition.clinicalStatus`, `Observation.category`).
-16. **CHOICE-TYPE MUTUAL EXCLUSION**: For any FHIR [x] choice field, set EXACTLY ONE
-    type-specific variant per group. Setting multiple variants is INVALID and will fail validation:
-    - ✗ WRONG: FamilyMemberHistory(deceasedBoolean=True, deceasedAge=Age(...))  ← two deceased[x]!
-    - ✓ CORRECT: FamilyMemberHistory(deceasedAge=Age(value=Decimal(62), unit="a", system="http://unitsofmeasure.org", code="a"))
-    - ✗ WRONG: Observation(valueQuantity=Quantity(...), valueString="...")  ← two value[x]!
-    - ✓ CORRECT: Observation(valueQuantity=Quantity(...))
-    This applies to ALL [x] groups: deceased[x], value[x], effective[x], onset[x],
-    medication[x], born[x], age[x], multipleBirth[x], reported[x], performed[x], etc.
-    When in doubt, pick the most specific type (e.g. deceasedAge over deceasedBoolean).
-17. **LIST-TYPED CodeableConcept FIELDS**: Several FHIR fields that hold `CodeableConcept` are
-    defined as `list[CodeableConcept]` — always wrap them in a Python list, even when there is
-    only one value.  Passing a bare `CodeableConcept(...)` causes a Pydantic validation error
-    ("Value is expected from the instance of CodeableConcept, but got type tuple") because
-    Pydantic iterates over the model's fields instead of accepting it as a single item.
-    Common list-typed CodeableConcept fields:
-    - ✓ Condition:         category=[CodeableConcept(...)]          ✗ category=CodeableConcept(...)
-    - ✓ Observation:       category=[CodeableConcept(...)]          ✗ category=CodeableConcept(...)
-    - ✓ Procedure:         category=[CodeableConcept(...)]          ✗ category=CodeableConcept(...)
-    - ✓ ServiceRequest:    category=[CodeableConcept(...)]          ✗ category=CodeableConcept(...)
-    - ✓ DiagnosticReport:  category=[CodeableConcept(...)]          ✗ category=CodeableConcept(...)
-    - ✓ MedicationRequest: category=[CodeableConcept(...)]          ✗ category=CodeableConcept(...)
-    - ✓ Encounter:         type=[CodeableConcept(...)]              ✗ type=CodeableConcept(...)
-    Rule of thumb: if the FHIR spec says `0..*` or `1..*` for a CodeableConcept field, use a list.
-
-
+11. **CHOICE-TYPE MUTUAL EXCLUSION**: For any [x] group, set EXACTLY ONE variant — never two in the same group.
+12. **LIST-TYPED FIELDS**: When the FHIR SPEC shows `list[CodeableConcept]` or any `list[...]` type,
+    always wrap the value in a Python list — even for a single item.

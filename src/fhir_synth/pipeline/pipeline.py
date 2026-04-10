@@ -22,6 +22,9 @@ from fhir_synth.code_generator.fhir_validation import repair_references
 from fhir_synth.code_generator.prompts.loader import load_section, render
 from fhir_synth.code_generator.us_core_validation import us_core_must_support_guide
 from fhir_synth.fhir_spec import get_fhir_version, import_guide, spec_summary
+
+# us_core_must_support_guide now emits only behavioral hints — US Core field tags
+# are embedded directly in spec_summary output via fhir_spec introspection.
 from fhir_synth.pipeline.evaluator import EvaluationReport, GenerationEvaluator
 from fhir_synth.pipeline.models import ClinicalPlan
 from fhir_synth.pipeline.plan_enricher import PlanEnricher

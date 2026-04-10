@@ -25,6 +25,14 @@ from functools import cache
 
 from pydantic import BaseModel
 
+
+# Lazy import to avoid circular dependency — us_core_validation does not import fhir_spec
+def _us_core_must_support() -> dict[str, frozenset[str]]:
+    from fhir_synth.code_generator.us_core_validation import must_support_by_resource
+
+    return must_support_by_resource()
+
+
 # Global state for FHIR version
 _FHIR_VERSION = "R4B"  # Default version
 
@@ -100,6 +108,9 @@ class FieldMeta:
     choice_required: bool = False
     is_summary: bool = False
     enum_reference_types: tuple[str, ...] = ()
+    alias: str | None = (
+        None  # JSON alias when it differs from the Python name (e.g. "class" for class_)
+    )
 
 
 @dataclass(frozen=True)
@@ -279,6 +290,9 @@ def _introspect(name: str) -> ResourceMeta:
         enum_ref: tuple[str, ...] = (
             tuple(str(v) for v in raw_enum_ref) if isinstance(raw_enum_ref, list) else ()
         )
+        # Detect JSON alias mismatches (e.g. class_ → "class") so spec_summary can warn the LLM
+        raw_alias = finfo.alias
+        json_alias = str(raw_alias) if raw_alias and str(raw_alias) != fname else None
         fields.append(
             FieldMeta(
                 name=fname,
@@ -290,6 +304,7 @@ def _introspect(name: str) -> ResourceMeta:
                 choice_required=choice_required,
                 is_summary=is_summary,
                 enum_reference_types=enum_ref,
+                alias=json_alias,
             )
         )
         if is_req:
@@ -447,19 +462,27 @@ def spec_summary(resource_types: list[str] | None = None) -> str:
         }
     )
 
+    us_core = _us_core_must_support()
+
     for rt in types:
         try:
             meta = _introspect(rt)
         except ValueError:
             continue
 
+        us_core_fields = us_core.get(rt, frozenset())
         lines.append(f"{rt}:")
 
         # Required fields with types
         req_parts = []
         for f in meta.all_fields:
             if f.required:
-                req_parts.append(f"    {f.name}: {_short_type(f.type_annotation)}  [REQUIRED]")
+                field_json_name = f.alias or f.name
+                us_core_tag = "  [US CORE]" if field_json_name in us_core_fields else ""
+                alias_note = f'  [JSON key: "{f.alias}"]' if f.alias else ""
+                req_parts.append(
+                    f"    {f.name}: {_short_type(f.type_annotation)}  [REQUIRED]{us_core_tag}{alias_note}"
+                )
         if req_parts:
             lines.extend(req_parts)
 
@@ -474,17 +497,26 @@ def spec_summary(resource_types: list[str] | None = None) -> str:
             lines.append(f"    {group_name}[x] {tag}: {variants}")
 
         # Key optional fields with types (skip noise fields AND choice fields, cap at 12)
-        opt_parts = []
+        # US Core must-support optional fields are always shown (exempt from cap)
+        opt_us_core: list[str] = []
+        opt_regular: list[str] = []
         for f in meta.all_fields:
             if not f.required and f.name not in _skip and f.name not in choice_field_names:
                 t = _short_type(f.type_annotation)
-                tag = " [ref]" if f.is_reference else ""
-                opt_parts.append(f"    {f.name}: {t}{tag}")
-        if opt_parts:
-            for line in opt_parts[:12]:
-                lines.append(line)
-            if len(opt_parts) > 12:
-                lines.append(f"    … and {len(opt_parts) - 12} more fields")
+                ref_tag = " [ref]" if f.is_reference else ""
+                alias_note = f' [JSON key: "{f.alias}"]' if f.alias else ""
+                field_json_name = f.alias or f.name
+                if field_json_name in us_core_fields:
+                    opt_us_core.append(f"    {f.name}: {t}{ref_tag}  [US CORE]{alias_note}")
+                else:
+                    opt_regular.append(f"    {f.name}: {t}{ref_tag}{alias_note}")
+
+        lines.extend(opt_us_core)  # always show US Core optional fields
+        for line in opt_regular[:12]:
+            lines.append(line)
+        remaining = len(opt_regular) - 12
+        if remaining > 0:
+            lines.append(f"    … and {remaining} more fields")
         lines.append("")
 
     return "\n".join(lines)
