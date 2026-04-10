@@ -1,7 +1,5 @@
 """Tests for the skills system — loader, selector, and prompt integration."""
 
-from __future__ import annotations
-
 import textwrap
 from pathlib import Path
 

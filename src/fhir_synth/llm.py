@@ -116,13 +116,13 @@ class LLMProvider:
         text = self.generate_text(prompt, system, schema)
 
         # Try to extract JSON from Markdown code blocks if present
-        if "```json" in text:
-            start = text.find("```json") + 7
-            end = text.find("```", start)
+        if "``json" in text:
+            start = text.find("``json") + 7
+            end = text.find("``", start)
             text = text[start:end].strip()
-        elif "```" in text:
-            start = text.find("```") + 3
-            end = text.find("```", start)
+        elif "``" in text:
+            start = text.find("``") + 3
+            end = text.find("``", start)
             text = text[start:end].strip()
 
         return json.loads(text)  # type: ignore[no-any-return]
@@ -193,10 +193,10 @@ def get_provider(
             - And 100+ more providers via LiteLLM
         api_key: API key (optional, will use environment variables from .env or system)
         aws_profile: AWS profile name for Bedrock (reads ~/.aws/credentials).
-            Falls back to ``AWS_PROFILE`` env var.
+            Falls back to `AWS_PROFILE` env var.
         aws_region: AWS region for Bedrock (e.g. "us-east-1").
-            Falls back to ``AWS_REGION_NAME`` / ``AWS_DEFAULT_REGION`` env vars.
-        **kwargs: Additional arguments passed to ``litellm.completion()``
+            Falls back to `AWS_REGION_NAME` / `AWS_DEFAULT_REGION` env vars.
+        **kwargs: Additional arguments passed to `litellm.completion()`
 
     Returns:
         LLMProvider instance

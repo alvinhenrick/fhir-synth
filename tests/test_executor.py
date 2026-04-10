@@ -1,7 +1,5 @@
 """Tests for the executor package — protocol, factory, and backends (smolagents)."""
 
-from __future__ import annotations
-
 import pytest
 
 from fhir_synth.code_generator.executor import (

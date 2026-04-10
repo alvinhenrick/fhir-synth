@@ -17,8 +17,8 @@ _EXECUTION_PACKAGE_NAMES = frozenset({"fhir.resources", "pydantic", "python-date
 def get_execution_packages() -> list[str]:
     """Read execution-relevant dependencies from installed fhir-synth metadata.
 
-    Returns pinned specs like ``["fhir-resources>=7.0", "pydantic>=2.0", ...]``
-    by filtering the project's declared dependencies (from ``pyproject.toml``)
+    Returns pinned specs like `["fhir-resources>=7.0", "pydantic>=2.0", ...]`
+    by filtering the project's declared dependencies (from `pyproject.toml`)
     to only those needed for running generated code inside a container or
     sandbox.  CLI, LLM, and dev packages are excluded.
     """
@@ -47,13 +47,13 @@ def get_execution_packages() -> list[str]:
 
 
 def get_smolagents_logger() -> Any:
-    """Return a smolagents-compatible ``AgentLogger``.
+    """Return a smolagents-compatible `AgentLogger`.
 
     smolagents' remote executors (Docker, E2B, Blaxel) call
-    ``self.logger.log(msg, level=LogLevel.INFO)`` — a signature that is
-    **incompatible** with Python's ``logging.Logger.log(level, msg)``.
+    `self.logger.log(msg, level=LogLevel.INFO)` — a signature that is
+    **incompatible** with Python's `logging.Logger.log(level, msg)`.
 
-    This helper lazily imports and returns a ``smolagents.AgentLogger``
+    This helper lazily imports and returns a `smolagents.AgentLogger`
     so that all remote executor backends get the correct logger type.
     """
     from smolagents.monitoring import AgentLogger, LogLevel
@@ -93,7 +93,7 @@ class Executor(Protocol):
         """Execute *code* and return an :class:`ExecutionResult`.
 
         Args:
-            code: Python source that defines ``generate_resources() -> list[dict]``.
+            code: Python source that defines `generate_resources() -> list[dict]`.
             timeout: Maximum wall-clock seconds before the process is killed.
 
         Returns:
@@ -114,10 +114,10 @@ def get_executor(
 
     All backends are powered by `smolagents <https://huggingface.co/docs/smolagents>`_.
     Each backend uses sensible defaults (Docker: auto-selected free port,
-    E2B: ``E2B_API_KEY`` env var, Blaxel: auto-provisioned sandbox).
+    E2B: `E2B_API_KEY` env var, Blaxel: auto-provisioned sandbox).
 
     Args:
-        backend: One of ``"local"``, ``"docker"``, ``"e2b"``, or ``"blaxel"``
+        backend: One of `"local"`, `"docker"`, `"e2b"`, or `"blaxel"`
             (or an :class:`ExecutorBackend` enum member).
 
     Returns:

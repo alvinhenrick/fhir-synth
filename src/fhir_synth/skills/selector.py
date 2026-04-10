@@ -3,16 +3,14 @@ Provides a: class:`SkillSelector` protocol and two concrete implementations:
 
 *: class:`KeywordSelector` — zero-dependency keyword + resource-type matching
   with fuzzy matching for typo tolerance (default).
-*: class:`FaissSelector` — semantic retrieval using ``faiss-cpu`` with
-  ``sentence-transformers`` for local embeddings (no API calls).  Embeddings
+*: class:`FaissSelector` — semantic retrieval using `faiss-cpu` with
+  `sentence-transformers` for local embeddings (no API calls).  Embeddings
   are pre-computed **once** and cached to disk, so later loads are
-  instant.  Install with ``pip install fhir-synth[semantic]``.
+  instant.  Install with `pip install fhir-synth[semantic]`.
 
 Both return the Markdown bodies of the selected skills, ready for injection
 into the LLM system prompt.
 """
-
-from __future__ import annotations
 
 import difflib
 import hashlib
@@ -81,9 +79,9 @@ class KeywordSelector:
 
     Selection logic:
 
-    1. Skills with ``always=True`` are always included.
+    1. Skills with `always=True` are always included.
     2. Each remaining skill is scored by counting how many of its
-       ``keywords``, ``resource_types``, and description tokens appear in
+       `keywords`, `resource_types`, and description tokens appear in
        the prompt (with fuzzy matching for typo tolerance).
     3. Skills with score > 0 are included.
     4. **Safe fallback**: if no skill scored > 0, *all* skills are included
@@ -197,13 +195,13 @@ class FaissSelector:
     """Select skills via semantic similarity with pre-computed embeddings.
 
     **Embeddings are generated once and cached to disk.**  Subsequent loads
-    read the FAISS index + metadata from ``~/.cache/fhir-synth/skills/``
+    read the FAISS index + metadata from `~/.cache/fhir-synth/skills/`
     in milliseconds — no model loading or API calls needed at query time
     after the first run.
 
     Uses `sentence-transformers <https://www.sbert.net/>`_ for local
-    embeddings (default model: ``all-MiniLM-L6-v2``, 384-dim, ~80 MB)
-    and raw ``faiss-cpu`` for the vector index.
+    embeddings (default model: `all-MiniLM-L6-v2`, 384-dim, ~80 MB)
+    and raw `faiss-cpu` for the vector index.
 
     Install with::
 
@@ -211,13 +209,13 @@ class FaissSelector:
 
     Args:
         model_name: sentence-transformers model name.
-            Default ``"all-MiniLM-L6-v2"`` — fast, 384-dim, great for
+            Default `"all-MiniLM-L6-v2"` — fast, 384-dim, great for
             short-text retrieval.  Alternatives:
-            ``"all-mpnet-base-v2"`` (768-dim, higher quality, slower).
+            `"all-mpnet-base-v2"` (768-dim, higher quality, slower).
         score_threshold: Minimum cosine similarity (0.0–1.0).
             Returns all skills above this threshold.
         cache_dir: Directory for the cached FAISS index and metadata.
-            Defaults to ``~/.cache/fhir-synth/skills/``.
+            Defaults to `~/.cache/fhir-synth/skills/`.
 
     Example::
 
@@ -255,7 +253,7 @@ class FaissSelector:
             return self._faiss, self._np
         try:
             import faiss  # type: ignore[import-not-found]
-            import numpy as np  # type: ignore[import-not-found]
+            import numpy as np
         except ImportError as exc:
             msg = (
                 "FaissSelector requires faiss-cpu and numpy. "
@@ -332,7 +330,7 @@ class FaissSelector:
         """Try to load a cached FAISS index from disk.
 
         Returns:
-            ``True`` if a valid cached index was loaded, ``False`` otherwise.
+            `True` if a valid cached index was loaded, `False` otherwise.
         """
         faiss, _np = self._ensure_deps()
         index_path, meta_path = self._cache_paths(fingerprint)

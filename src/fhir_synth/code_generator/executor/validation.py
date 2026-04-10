@@ -38,7 +38,7 @@ def validate_code(code: str) -> bool:
 
 
 def validate_imports(code: str) -> list[str]:
-    """Validate that ``fhir.resources`` imports reference real modules.
+    """Validate that `fhir.resources` imports reference real modules.
 
     Returns:
         List of error messages, empty if all imports are valid.
@@ -73,11 +73,26 @@ def validate_imports(code: str) -> list[str]:
 _IMPORT_RE = re.compile(r"^(from fhir\.resources\.R4B\.)(\w+)(\s+import\s+)(.+)$", re.MULTILINE)
 
 
+def strip_future_imports(code: str) -> str:
+    """Remove `from __future__ import ...` lines.
+
+    smolagents' AST executor does not allow ``__future__`` imports (they are
+    not in the authorized-imports list and cannot be added).  LLMs occasionally
+    emit them (e.g. ``from __future__ import annotations``), causing an
+    "Import from __future__ is not allowed" error at execution time.
+    Stripping them is safe because the generated code targets Python 3.10+
+    where all relevant ``__future__`` features are built-in.
+    """
+    lines = code.splitlines(keepends=True)
+    return "".join(line for line in lines if not line.lstrip().startswith("from __future__"))
+
+
 def fix_common_imports(code: str) -> str:
     """Auto-fix import mistakes using the introspected class→module map.
 
-    Rewrites ``from fhir.resources.R4B.{wrong} import {Cls}`` to the
-    correct module for each class.
+    Rewrites `from fhir.resources.R4B.{wrong} import {Cls}` to the
+    correct module for each class.  Also strips ``from __future__`` imports
+    which smolagents does not allow.
 
     Returns:
         Fixed code.
@@ -103,7 +118,7 @@ def fix_common_imports(code: str) -> str:
             lines.append(f"{prefix}{mod}{import_kw}{', '.join(classes)}")
         return "\n".join(lines)
 
-    return _IMPORT_RE.sub(_fix_line, code)
+    return strip_future_imports(_IMPORT_RE.sub(_fix_line, code))
 
 
 # ── Shared runner script ───────────────────────────────────────────────────
@@ -145,11 +160,11 @@ def build_runner_script(code: str) -> str:
 
     This is the single source of truth for the runner used by all remote
     executor backends (Docker, E2B, Blaxel).  It exec's the user code,
-    calls ``generate_resources()``, validates the output, and prints JSON
+    calls `generate_resources()`, validates the output, and prints JSON
     to stdout.
 
     Package installation is handled by smolagents during executor init
-    (via ``install_packages()``), so this function only wraps the code.
+    (via `install_packages()`), so this function only wraps the code.
 
     Args:
         code: The user-generated Python source code.

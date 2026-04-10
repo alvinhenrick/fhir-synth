@@ -198,6 +198,28 @@ The system prompt is assembled dynamically from:
 - **Reference field map** — exact field names for Patient/Encounter/etc. linkage
 - **Chain-of-thought** — step-by-step instructions for code generation
 
+### Two-Stage Pipeline (DSPy)
+
+The optional `--pipeline dspy` mode separates clinical reasoning from code generation:
+
+| Stage | Responsibility | DSPy Module |
+|-------|---------------|-------------|
+| **Stage 1** — Clinical Planning | Demographics, disease codes, care settings → `ClinicalPlan` (Pydantic) | `dspy.Predict` with typed output |
+| **Stage 1.5** — Dependency Enrichment | Walks FHIR spec → adds Practitioner/Organization stubs | `PlanEnricher` (spec-driven, no hardcoding) |
+| **Stage 2** — Code Synthesis | `ClinicalPlan` + FHIR guidelines → Python code | `dspy.ChainOfThought` |
+
+All collaborators are injected via constructor (Dependency Inversion) and expose runtime-checkable protocols (`ClinicalPlanner`, `CodeSynthesizer`, `ClinicalPlanEnricher`, `QualityMetric`). The composite `FHIRSynthProgram` module wraps both stages for DSPy optimization with `BootstrapFewShot` or `MIPROv2`.
+
+### Enhanced Validation
+
+Post-execution validation runs three checks and reports results in the CLI:
+
+1. **FHIR Validation** — round-trips each resource through `fhir.resources` Pydantic models (required fields, types, cardinality, choice-type [x] mutual exclusion)
+2. **Reference Integrity** — verifies all internal `Reference` fields point to resources present in the batch; `repair_references()` auto-fixes broken references
+3. **US Core Compliance** — checks must-support fields for common US Core 3.1.1 profiles (Patient, Condition, Observation, MedicationRequest, etc.)
+
+The `GenerationEvaluator` composes these into a weighted quality score (0.0–1.0) that serves as the DSPy optimization target.
+
 ### Custom Metadata
 
 Metadata (security labels, tags, profiles, source) is configured via YAML (`--meta-config`):

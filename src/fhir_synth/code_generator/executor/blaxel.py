@@ -1,15 +1,13 @@
 """Blaxel executor — powered by smolagents.
 
 Runs LLM-generated code in a `Blaxel <https://blaxel.ai>`_ cloud sandbox
-via smolagents' ``BlaxelExecutor``.  Blaxel provides managed serverless
+via smolagents' `BlaxelExecutor`.  Blaxel provides managed serverless
 sandboxes with Jupyter notebooks.
 
-Requires the ``blaxel-core`` package::
+Requires the `blaxel-core` package::
 
     pip install "fhir-synth[blaxel]"
 """
-
-from __future__ import annotations
 
 import json
 import logging
@@ -51,7 +49,7 @@ class BlaxelExecutor:
         """Run *code* in a Blaxel cloud sandbox via smolagents.
 
         Args:
-            code: Python source defining ``generate_resources() -> list[dict]``.
+            code: Python source defining `generate_resources() -> list[dict]`.
             timeout: Accepted for interface compatibility but not enforced —
                 Blaxel manages its own sandbox TTL.
 

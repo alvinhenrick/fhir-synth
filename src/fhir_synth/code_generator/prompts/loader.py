@@ -1,6 +1,6 @@
 """Prompt loader — reads Markdown templates from the prompts package.
 
-Uses ``importlib.resources`` so prompts are included in wheels and
+Uses `importlib.resources` so prompts are included in wheels and
 editable installations without any build configuration.
 """
 
@@ -20,7 +20,7 @@ def _read(subpath: str) -> str:
 
     Args:
         subpath: Relative path within the prompts package,
-            e.g. ``"system/01_role.md"``
+            e.g. `"system/01_role.md"`
 
     Returns:
         File contents as a string.
@@ -31,10 +31,10 @@ def _read(subpath: str) -> str:
 
 @lru_cache(maxsize=1)
 def _load_dir(subdir: str) -> str:
-    """Load and concatenate all ``.md`` files in *subdir*, sorted by name.
+    """Load and concatenate all `.md` files in *subdir*, sorted by name.
 
-    Files are expected to use a numeric prefix (e.g. ``01_role.md``,
-    ``02_sandbox.md``) so that ``sorted()`` gives the correct order.
+    Files are expected to use a numeric prefix (e.g. `01_role.md`,
+    `02_sandbox.md`) so that `sorted()` gives the correct order.
 
     The result is cached, so repeated calls are free.
     """
@@ -53,16 +53,16 @@ def load_prompt(path: str) -> str:
         path: Relative path inside the prompts package.
 
     Returns:
-        Raw template text (may contain ``$variable`` placeholders).
+        Raw template text (may contain `$variable` placeholders).
     """
     return _read(path)
 
 
 def load_section(subdir: str) -> str:
-    """Load and join every ``.md`` file in a subdirectory.
+    """Load and join every `.md` file in a subdirectory.
 
     Args:
-        subdir: ``"system"``, ``"clinical"``, or ``"templates"``.
+        subdir: `"system"`, `"clinical"`, or `"templates"`.
 
     Returns:
         Concatenated text of all files, separated by blank lines.
@@ -71,12 +71,12 @@ def load_section(subdir: str) -> str:
 
 
 def render(template_text: str, **kwargs: str) -> str:
-    """Render a ``string.Template`` with safe substitution.
+    """Render a `string.Template` with safe substitution.
 
-    Unknown ``$placeholders`` are left as-is rather than raising.
+    Unknown `$placeholders` are left as-is rather than raising.
 
     Args:
-        template_text: Raw template with ``$variable`` placeholders.
+        template_text: Raw template with `$variable` placeholders.
         **kwargs: Values to substitute.
 
     Returns:

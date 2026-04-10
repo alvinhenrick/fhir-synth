@@ -1,7 +1,5 @@
 """Split a flat list of FHIR resources into per-patient bundles."""
 
-from __future__ import annotations
-
 import json
 import re
 from pathlib import Path
@@ -11,8 +9,8 @@ from typing import Any
 def _extract_patient_id(resource: dict[str, Any]) -> str | None:
     """Extract the patient ID a resource belongs to.
 
-    Returns the ``id`` for Patient resources, or the referenced patient ID
-    from ``subject`` / ``patient`` / ``beneficiary`` fields for others.
+    Returns the `id` for Patient resources, or the referenced patient ID
+    from `subject` / `patient` / `beneficiary` fields for others.
     """
     if resource.get("resourceType") == "Patient":
         return resource.get("id")
@@ -39,7 +37,7 @@ def split_resources_by_patient(
     patient bundle, so each bundle is self-contained.
 
     Returns:
-        List of FHIR Bundle dicts (``type: collection``).
+        List of FHIR Bundle dicts (`type: collection`).
     """
     patient_ids: list[str] = []
     patient_resources: dict[str, list[dict[str, Any]]] = {}
@@ -97,7 +95,7 @@ def write_split_bundles(
 ) -> list[Path]:
     """Write each patient bundle to a separate JSON file.
 
-    Files are named ``patient_001.json``, ``patient_002.json``, etc.
+    Files are named `patient_001.json`, `patient_002.json`, etc.
     """
     output_dir.mkdir(parents=True, exist_ok=True)
     paths: list[Path] = []

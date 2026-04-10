@@ -117,7 +117,7 @@ class BundleBuilder:
     ) -> None:
         """Add resource and inject references where appropriate.
 
-        Uses ``fhir_spec.reference_targets`` to discover which fields on
+        Uses `fhir_spec.reference_targets` to discover which fields on
         *primary_type* accept references, then auto-links to Patient (or
         other available resources) if IDs exist.
         """

@@ -25,7 +25,7 @@ def _configure_skills(
 
     Args:
         skills_dir: Optional path to a user-provided skills directory.
-        selector: Selection strategy name (``"keyword"`` or ``"faiss"``).
+        selector: Selection strategy name (`"keyword"` or `"faiss"`).
         score_threshold: Minimum similarity score (FAISS only).
 
     Returns:
@@ -95,16 +95,26 @@ def generate(
         "--context",
         help="Path to NDJSON or JSON file with existing FHIR resources for stateful generation",
     ),
+    pipeline: str = typer.Option(
+        "default",
+        "--pipeline",
+        help="Generation pipeline: 'default' (single-stage) or 'dspy' (two-stage clinical planning, requires fhir-synth[dspy])",
+    ),
+    compiled_program: str | None = typer.Option(
+        None,
+        "--compiled-program",
+        help="Path to a compiled DSPy program JSON (from dspy.save). Only used with --pipeline dspy.",
+    ),
 ) -> None:
     """Generate synthetic FHIR data end-to-end: prompt → LLM → code → execute → NDJSON.
 
-    All outputs are saved to a ``runs/<name>/`` directory with an auto-generated
-    Docker-style name (e.g. ``brave_phoenix``).  Each run produces:
+    All outputs are saved to a `runs/<name>/` directory with an auto-generated
+    Docker-style name (e.g. `brave_phoenix`).  Each run produces:
 
-    - ``runs/<name>/prompt.txt``     — the user's prompt
-    - ``runs/<name>/<name>.py``      — the generated Python code
-    - ``runs/<name>/<name>.ndjson``  — NDJSON data (one patient bundle per line)
-    - ``runs/<name>/patient_*.json`` — (with --split) per-patient JSON files
+    - `runs/<name>/prompt.txt`     — the user's prompt
+    - `runs/<name>/<name>.py`      — the generated Python code
+    - `runs/<name>/<name>.ndjson`  — NDJSON data (one patient bundle per line)
+    - `runs/<name>/patient_*.json` — (with --split) per-patient JSON files
 
     Example prompts:
 
@@ -241,6 +251,10 @@ def generate(
 
         # Load metadata configuration from YAML if provided
         prompt_text = prompt
+        # dspy_prompt stays free of metadata instructions — Stage 1 is clinical
+        # planning only; metadata (security labels, profiles, tags) is applied
+        # as post-processing on the generated resources (step 2.5).
+        dspy_prompt = prompt
         metadata_config = None
 
         if meta_config:
@@ -279,6 +293,7 @@ def generate(
                     f"- {hint}" for hint in metadata_hints
                 )
                 prompt_text = f"{metadata_instructions}\n\n{prompt_text}"
+                # dspy_prompt deliberately not updated here
 
         # Augment prompt with EMPI hints if requested
         if empi:
@@ -291,31 +306,71 @@ def generate(
                 systems=system_list or None,
                 include_organizations=not no_orgs,
             )
+            # EMPI is clinical context — include it for DSPy too
+            dspy_prompt = build_empi_prompt(
+                user_prompt=dspy_prompt,
+                persons=persons,
+                systems=system_list or None,
+                include_organizations=not no_orgs,
+            )
 
-        # Step 1 — generate code
-        typer.echo("⚙  Generating code from prompt …")
+        if pipeline == "dspy":
+            # ── Two-stage DSPy pipeline ──────────────────────────────────
+            from fhir_synth.pipeline.pipeline import TwoStagePipeline
 
-        # Show which skills were selected for this prompt
-        from fhir_synth.code_generator.prompts import get_selected_skill_names
-
-        selected_names = get_selected_skill_names(prompt_text)
-        if selected_names:
+            if compiled_program:
+                typer.echo(f"⚙  Two-stage pipeline (compiled): loading {compiled_program} …")
+                two_stage = TwoStagePipeline.from_compiled(
+                    compiled_path=Path(compiled_program),
+                    llm_provider=llm,
+                    executor=executor,
+                    user_skill_dirs=[Path(skills_dir)] if skills_dir else None,
+                )
+            else:
+                typer.echo("⚙  Two-stage pipeline: clinical planning → code synthesis …")
+                two_stage = TwoStagePipeline.default(
+                    llm_provider=llm,
+                    executor=executor,
+                    user_skill_dirs=[Path(skills_dir)] if skills_dir else None,
+                )
+            pipeline_result = two_stage.run(dspy_prompt)
+            resources = pipeline_result.resources
+            code = pipeline_result.code
+            code_path.write_text(code)
+            if pipeline_result.selected_skills:
+                typer.echo(
+                    f"   🎯 Selected {len(pipeline_result.selected_skills)}/{pipeline_result.total_skills} skills: "
+                    f"{', '.join(pipeline_result.selected_skills)}"
+                )
+            typer.echo(f"   Stage 1 plan: {len(pipeline_result.plan.patients)} patient(s)")
+            typer.echo(f"   Saved code → {code_path}")
             typer.echo(
-                f"   🎯 Selected {len(selected_names)}/{total_n} skills: "
-                f"{', '.join(selected_names)}"
+                f"   Quality: {pipeline_result.report.overall_score:.2f} "
+                f"({pipeline_result.report.grade})"
             )
         else:
-            typer.echo("   ⚠️  No skills matched — using all available skills")
+            # ── Default single-stage pipeline ────────────────────────────
+            # Step 1 — generate code
+            typer.echo("⚙  Generating code from prompt …")
 
-        code = code_gen.generate_code_from_prompt(prompt_text)
+            from fhir_synth.code_generator.prompts import get_selected_skill_names
 
-        # Always save the generated code
-        code_path.write_text(code)
-        typer.echo(f"   Saved code → {code_path}")
+            selected_names = get_selected_skill_names(prompt_text)
+            if selected_names:
+                typer.echo(
+                    f"   🎯 Selected {len(selected_names)}/{total_n} skills: "
+                    f"{', '.join(selected_names)}"
+                )
+            else:
+                typer.echo("   ⚠️  No skills matched — using all available skills")
 
-        # Step 2 — execute code (self-healing retries built-in)
-        typer.echo("▶  Executing generated code …")
-        resources = code_gen.execute_generated_code(code)
+            code = code_gen.generate_code_from_prompt(prompt_text)
+            code_path.write_text(code)
+            typer.echo(f"   Saved code → {code_path}")
+
+            # Step 2 — execute code (self-healing retries built-in)
+            typer.echo("▶  Executing generated code …")
+            resources = code_gen.execute_generated_code(code)
 
         # Step 2.1 — report FHIR validation
         from fhir_synth.code_generator.fhir_validation import validate_resources
@@ -369,8 +424,10 @@ def generate(
 
         # Step 2.5 — apply metadata from YAML config if specified
         if metadata_config and "meta" in metadata_config:
+            from fhir_synth.code_generator import CodeGenerator
+
             meta = metadata_config["meta"]
-            code_gen.apply_metadata_to_resources(
+            CodeGenerator.apply_metadata_to_resources(
                 resources,
                 security=meta.get("security"),
                 tag=meta.get("tag"),
@@ -511,6 +568,139 @@ def codegen(
     except Exception as exc:
         typer.echo(f"Error: {exc}", err=True)
         sys.exit(1)
+
+
+@app.command()
+def optimize(
+    training_dir: str = typer.Option(
+        "",
+        "--training-dir",
+        "-t",
+        help="Directory with *_prompt.txt training pairs (default: runs/training_examples_diverse if exists, else runs/training_examples)",
+    ),
+    output: str = typer.Option(
+        "runs/optimized_pipeline.json",
+        "--output",
+        "-o",
+        help="Path to save the compiled DSPy program",
+    ),
+    provider: str = typer.Option(
+        "gpt-4o-mini", "--provider", "-p", help="LLM model for optimization"
+    ),
+    max_demos: int = typer.Option(
+        3,
+        "--max-demos",
+        help="Max bootstrapped demos per predictor (bootstrap only — MIPROv2 uses --auto preset)",
+    ),
+    optimizer: str = typer.Option(
+        "bootstrap",
+        "--optimizer",
+        help="Optimizer: 'bootstrap' (BootstrapFewShot) or 'miprov2' (MIPROv2 — optimizes instructions)",
+    ),
+    auto: str = typer.Option(
+        "light", "--auto", help="MIPROv2 intensity: 'light', 'medium', or 'heavy' (MIPROv2 only)"
+    ),
+) -> None:
+    """Optimize the two-stage DSPy pipeline using BootstrapFewShot or MIPROv2.
+
+    Loads training prompts, runs the selected optimizer, and saves the compiled
+    program for use with:
+
+        fhir-synth generate "..." --pipeline dspy --compiled-program runs/optimized_pipeline.json
+
+    Requires: pip install 'fhir-synth[dspy]'
+
+    Examples:
+
+        fhir-synth optimize --provider gpt-4o-mini --max-demos 3
+        fhir-synth optimize --optimizer miprov2 --provider deepseek/deepseek-chat --auto light
+    """
+    try:
+        import dspy
+    except ImportError:
+        typer.echo("❌ DSPy not installed: pip install 'fhir-synth[dspy]'", err=True)
+        raise typer.Exit(1)
+
+    from fhir_synth.pipeline.evaluator import GenerationEvaluator
+    from fhir_synth.pipeline.pipeline import TwoStagePipeline
+
+    # Resolve training dir
+    t_dir = Path(training_dir) if training_dir else None
+    if t_dir is None:
+        diverse = Path("runs/training_examples_diverse")
+        t_dir = diverse if diverse.exists() else Path("runs/training_examples")
+    typer.echo(f"📂 Training dir: {t_dir}")
+
+    prompt_files = sorted(t_dir.glob("*_prompt.txt"))
+    if not prompt_files:
+        typer.echo(f"❌ No *_prompt.txt files found in {t_dir}", err=True)
+        raise typer.Exit(1)
+
+    prompts = [f.read_text().strip() for f in prompt_files]
+    typer.echo(f"📚 Loaded {len(prompts)} training prompts")
+
+    from fhir_synth.code_generator.executor import LocalSmolagentsExecutor
+    from fhir_synth.code_generator.fhir_validation import repair_references
+    from fhir_synth.pipeline.dspy_modules import FHIRSynthProgram as _FHIRSynthProgram
+    from fhir_synth.pipeline.dspy_modules import configure_dspy_lm
+    from fhir_synth.pipeline.pipeline import FHIRGuidelinesBuilder, SkillContextBuilder
+
+    configure_dspy_lm(model=provider)
+    guidelines = FHIRGuidelinesBuilder().build()
+    skill_builder = SkillContextBuilder()
+    evaluator = GenerationEvaluator()
+
+    # FHIRSynthProgram is the composite module with _plan_predict + _code_predict —
+    # exactly the structure from_compiled expects.
+    fhir_program: Any = _FHIRSynthProgram(fhir_guidelines=guidelines)
+
+    # Wrapper adds skill context, executes code, and returns resources for the metric.
+    class _OptModule(dspy.Module):  # type: ignore[misc]
+        def __init__(self) -> None:
+            super().__init__()
+            self.fhir_program = fhir_program
+
+        def forward(self, prompt: str) -> dspy.Prediction:
+            clinical_context = skill_builder.build(prompt)
+            result = self.fhir_program(prompt=prompt, clinical_context=clinical_context)
+            code = TwoStagePipeline.preprocess_code(result.code)
+            ex = LocalSmolagentsExecutor().execute(code, timeout=30)
+            resources, _ = repair_references(ex.artifacts)
+            return dspy.Prediction(resources=resources, plan=result.plan, code=code)
+
+    module = _OptModule()
+    trainset = [dspy.Example(prompt=p).with_inputs("prompt") for p in prompts]
+
+    if optimizer == "miprov2":
+        typer.echo(f"⚙  Running MIPROv2 (auto={auto}, max_demos={max_demos})…")
+        dspy_optimizer = dspy.MIPROv2(
+            metric=evaluator.dspy_metric,
+            auto=auto,
+            max_errors=100,
+        )
+        optimized = dspy_optimizer.compile(module, trainset=trainset)
+    else:
+        typer.echo(f"⚙  Running BootstrapFewShot (max_demos={max_demos})…")
+        dspy_optimizer = dspy.BootstrapFewShot(
+            metric=evaluator.dspy_metric,
+            max_bootstrapped_demos=max_demos,
+            max_labeled_demos=0,
+        )
+        optimized = dspy_optimizer.compile(module, trainset=trainset)
+
+    from fhir_synth.naming import create_run_dir
+
+    if output and output != "runs/optimized_pipeline.json":
+        out_path = Path(output)
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+    else:
+        run_dir = create_run_dir()
+        out_path = run_dir / "optimized_pipeline.json"
+    # Save the inner FHIRSynthProgram — from_compiled loads this structure directly.
+    optimized.fhir_program.save(str(out_path))
+    typer.echo(f"✓ Compiled program saved → {out_path}")
+    typer.echo("\nTo use it:")
+    typer.echo(f'  fhir-synth generate "your prompt" --pipeline dspy --compiled-program {out_path}')
 
 
 @app.command()

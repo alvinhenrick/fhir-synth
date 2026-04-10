@@ -9,14 +9,12 @@ create a container running a Jupyter Kernel Gateway, and communicate
 with it over a WebSocket.  You do **not** need to manually create or start
 containers — just have the Docker daemon running.
 
-Requires the ``docker`` Python package::
+Requires the `docker` Python package::
 
     pip install "fhir-synth[docker]"
 
-A local Docker daemon must be running (``docker info`` should succeed).
+A local Docker daemon must be running (`docker info` should succeed).
 """
-
-from __future__ import annotations
 
 import json
 import logging
@@ -36,7 +34,7 @@ logger = logging.getLogger(__name__)
 class DockerSandboxExecutor:
     """Execute generated code in a Docker container via smolagents.
 
-    smolagents' ``DockerExecutor`` handles the full container lifecycle:
+    smolagents' `DockerExecutor` handles the full container lifecycle:
 
     1. **Builds** a Docker image with the required Python packages.
     2. **Creates & starts** a container running Jupyter Kernel Gateway.
@@ -44,7 +42,7 @@ class DockerSandboxExecutor:
     4. **Cleans up** the container on :meth:`cleanup`.
 
     The container is created once and **reused** for all subsequent
-    ``execute()`` calls (including retries).  Stale containers from
+    `execute()` calls (including retries).  Stale containers from
     previous runs are automatically cleaned up before starting.
 
     A free port is selected automatically by default so multiple
@@ -54,14 +52,14 @@ class DockerSandboxExecutor:
 
     Args:
         host: Host address to bind the Jupyter gateway.
-        port: Port for the Jupyter kernel gateway.  ``0`` (default)
+        port: Port for the Jupyter kernel gateway.  `0` (default)
             means *auto-select a free port*.
         image_name: Docker image name (built automatically if missing).
         build_new_image: Rebuild the image even if it already exists.
-            Defaults to ``False`` — the image is built only on first use.
+            Defaults to `False` — the image is built only on first use.
         timeout: Execution timeout in seconds.
-        container_run_kwargs: Extra kwargs passed to ``docker container run``.
-        dockerfile_content: Custom Dockerfile content (``None`` = smolagents default).
+        container_run_kwargs: Extra kwargs passed to `docker container run`.
+        dockerfile_content: Custom Dockerfile content (`None` = smolagents default).
     """
 
     def __init__(
@@ -93,7 +91,7 @@ class DockerSandboxExecutor:
         container — only :meth:`cleanup` does that.
 
         Args:
-            code: Python source defining ``generate_resources() -> list[dict]``.
+            code: Python source defining `generate_resources() -> list[dict]`.
             timeout: Maximum wall-clock seconds (0 = use default).
 
         Returns:
@@ -188,8 +186,8 @@ class DockerSandboxExecutor:
     def _cleanup_stale_containers(self) -> None:
         """Remove any leftover containers using our image that hold the port.
 
-        This prevents ``Bind for 127.0.0.1:8888 failed: port is already
-        allocated`` errors when a previous run crashed without cleanup.
+        This prevents `Bind for 127.0.0.1:8888 failed: port is already
+        allocated` errors when a previous run crashed without cleanup.
         """
         try:
             import docker as docker_sdk  # type: ignore[import-untyped]

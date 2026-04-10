@@ -1,21 +1,21 @@
 """Auto-discover the full FHIR specification from fhir.resources.
 
-This module introspects the ``fhir.resources`` package to build a complete
+This module introspects the `fhir.resources` package to build a complete
 catalogue of resource types, data types, and their fields. Supports multiple
 FHIR versions (R4B, STU3) through dynamic imports.
-Classification uses the class hierarchy (``Resource`` / ``DomainResource`` vs
-``Element``) — **nothing is hardcoded**.
+Classification uses the class hierarchy (`Resource` / `DomainResource` vs
+`Element`) — **nothing is hardcoded**.
 
 Public API
 ----------
-- ``set_fhir_version()`` – set the FHIR version (call before other functions)
-- ``resource_names()`` – sorted list of all resource type names
-- ``get_resource_class`` – import and return the Pydantic class for a name
-- ``required_fields`` – required field names for a resource type
-- ``reference_targets`` – which resource types a reference field can point to
-- ``spec_summary`` – compact text summary suitable for LLM prompts
-- ``class_to_module`` – look up the correct module for any Pydantic class
-- ``import_guide`` – compact import reference for LLM prompts
+- `set_fhir_version()` – set the FHIR version (call before other functions)
+- `resource_names()` – sorted list of all resource type names
+- `get_resource_class` – import and return the Pydantic class for a name
+- `required_fields` – required field names for a resource type
+- `reference_targets` – which resource types a reference field can point to
+- `spec_summary` – compact text summary suitable for LLM prompts
+- `class_to_module` – look up the correct module for any Pydantic class
+- `import_guide` – compact import reference for LLM prompts
 """
 
 import importlib
@@ -98,6 +98,8 @@ class FieldMeta:
     is_list: bool = False
     choice_group: str | None = None
     choice_required: bool = False
+    is_summary: bool = False
+    enum_reference_types: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -119,7 +121,7 @@ class ResourceMeta:
 
     @property
     def choice_groups(self) -> dict[str, tuple["FieldMeta", ...]]:
-        """Group fields by their choice-type base name (e.g. ``medication``)."""
+        """Group fields by their choice-type base name (e.g. `medication`)."""
         groups: dict[str, list[FieldMeta]] = {}
         for f in self.all_fields:
             if f.choice_group is not None:
@@ -147,14 +149,14 @@ def _discover_all() -> tuple[dict[str, str], dict[str, str], dict[str, str], dic
     """Scan the current FHIR version package and classify every module.
 
     Uses the class hierarchy to separate FHIR *resources*
-    (``issubclass(cls, Resource)``) from *data types* (everything else).
+    (`issubclass(cls, Resource)`) from *data types* (everything else).
 
     Returns:
         Tuple of:
-        - resource_map: ``{ClassName: module_name}`` for resource types
-        - data_type_map: ``{ClassName: module_name}`` for data types
-        - class_module_map: ``{ClassName: module_name}`` for ALL classes
-        - module_classes: ``{module_name: [ClassName, ...]}`` reverse lookup
+        - resource_map: `{ClassName: module_name}` for resource types
+        - data_type_map: `{ClassName: module_name}` for data types
+        - class_module_map: `{ClassName: module_name}` for ALL classes
+        - module_classes: `{module_name: [ClassName, ...]}` reverse lookup
     """
     version_mod = importlib.import_module(f"fhir.resources.{_FHIR_VERSION}")
     base_path = version_mod.__path__[0]
@@ -252,7 +254,7 @@ def get_resource_class(name: str) -> type[BaseModel]:
 
 @cache
 def _introspect(name: str) -> ResourceMeta:
-    """Introspect a resource class and build its ``ResourceMeta``."""
+    """Introspect a resource class and build its `ResourceMeta`."""
     cls = get_resource_class(name)
     modname = _MODULE_MAP[name]
     fields: list[FieldMeta] = []
@@ -272,6 +274,11 @@ def _introspect(name: str) -> ResourceMeta:
         is_list = "List" in ann or "list" in ann
         choice_group = extras.get("one_of_many")
         choice_required = bool(extras.get("one_of_many_required"))
+        is_summary = bool(extras.get("summary_element_property"))
+        raw_enum_ref = extras.get("enum_reference_types")
+        enum_ref: tuple[str, ...] = (
+            tuple(str(v) for v in raw_enum_ref) if isinstance(raw_enum_ref, list) else ()
+        )
         fields.append(
             FieldMeta(
                 name=fname,
@@ -281,6 +288,8 @@ def _introspect(name: str) -> ResourceMeta:
                 is_list=is_list,
                 choice_group=choice_group if isinstance(choice_group, str) else None,
                 choice_required=choice_required,
+                is_summary=is_summary,
+                enum_reference_types=enum_ref,
             )
         )
         if is_req:
@@ -313,6 +322,28 @@ def reference_targets(name: str) -> dict[str, str]:
     return {f.name: f.type_annotation for f in meta.all_fields if f.is_reference}
 
 
+def reference_allowed_types(name: str) -> dict[str, list[str]]:
+    """Mapping of reference field names → allowed target resource type names.
+
+    Derived from `FieldMeta.enum_reference_types` — populated at introspection
+    time from `enum_reference_types` in `json_schema_extra`.
+
+    Example::
+
+        reference_allowed_types("MedicationRequest")["requester"]
+        # → ['Practitioner', 'PractitionerRole', 'Organization', 'Patient', ...]
+
+    Args:
+        name: FHIR resource type name, e.g. `"MedicationRequest"`.
+
+    Returns:
+        Dict mapping field name → list of allowed resource type names.
+        Fields without explicit `enum_reference_types` (open references) are omitted.
+    """
+    meta = _introspect(name)
+    return {f.name: list(f.enum_reference_types) for f in meta.all_fields if f.enum_reference_types}
+
+
 # ── Clinical resources (derived by introspection) ─────────────────────────
 
 # Foundational resource types always included in the clinical subset
@@ -324,8 +355,8 @@ _FOUNDATIONAL_TYPES: frozenset[str] = frozenset(
 def _discover_clinical_resources() -> list[str]:
     """Derive clinical resource types by introspecting reference fields.
 
-    A resource is considered "clinical" if it has a ``subject``, ``patient``,
-    or ``encounter`` reference field, or if it is a foundational type
+    A resource is considered "clinical" if it has a `subject`, `patient`,
+    or `encounter` reference field, or if it is a foundational type
     (Patient, Practitioner, Organization, etc.).
     """
     clinical: set[str] = set(_FOUNDATIONAL_TYPES & set(_MODULE_MAP))
@@ -463,14 +494,14 @@ def spec_summary(resource_types: list[str] | None = None) -> str:
 
 
 def import_guide(resource_types: list[str] | None = None) -> str:
-    """Compact import guide showing exact ``from fhir.resources.{VERSION}.{mod} import {Cls}`` lines.
+    """Compact import guide showing exact `from fhir.resources.{VERSION}.{mod} import {Cls}` lines.
 
     Designed to be injected into LLM prompts so the model uses correct import
     paths and never guesses wrong module names.
 
     Args:
-        resource_types: Resource types being generated (e.g. ``["Patient", "Condition"]``).
-            Their modules are always included.  If *None*, ``CLINICAL_RESOURCES`` is used.
+        resource_types: Resource types being generated (e.g. `["Patient", "Condition"]`).
+            Their modules are always included.  If *None*, `CLINICAL_RESOURCES` is used.
 
     Returns:
         Multi-line string suitable for embedding in a prompt.

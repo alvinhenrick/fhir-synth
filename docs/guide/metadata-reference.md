@@ -22,7 +22,7 @@ meta:
 
 **Usage:**
 ```bash
-fhir-synth generate "10 diabetic patients" --meta-config examples/meta-normal.yaml -o output.json
+fhir-synth generate "10 diabetic patients" --meta-config examples/meta-normal.yaml
 ```
 
 !!! tip "LLM-Powered Metadata"
@@ -139,7 +139,7 @@ meta:
 
 **Usage:**
 ```bash
-fhir-synth generate "20 patients with diabetes" --meta-config examples/meta-normal.yaml -o output.json
+fhir-synth generate "20 patients with diabetes" --meta-config examples/meta-normal.yaml
 ```
 
 ### examples/meta-restricted.yaml (Sensitive Data)
@@ -163,7 +163,7 @@ meta:
 
 **Usage:**
 ```bash
-fhir-synth generate "10 HIV patients" --meta-config examples/meta-restricted.yaml -o hiv.json
+fhir-synth generate "10 HIV patients" --meta-config examples/meta-restricted.yaml
 ```
 
 ## Output Example
