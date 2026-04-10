@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Dynamic FHIR synthetic data generator using LLM-powered code generation (supports R4B, STU3)">
+        <meta name="description" content="Dynamic FHIR synthetic data generator using LLM-powered code generation and declarative rules (supports R4B, STU3)">
       
       
       
@@ -742,6 +742,34 @@
   
   
     <li class="md-nav__item">
+      <a href="guide/pipeline/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DSPy Pipeline
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="guide/api/" class="md-nav__link">
         
   
@@ -976,6 +1004,34 @@
     
   
     Code Generator
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="api/pipeline/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Pipeline
   
 
     
@@ -1237,7 +1293,7 @@
 
 
 <h1 id="fhir-synth">FHIR Synth<a class="headerlink" href="#fhir-synth" title="Permanent link">&para;</a></h1>
-<p>Dynamic FHIR synthetic data generator using LLM-powered code generation (supports R4B, STU3).</p>
+<p>Dynamic FHIR synthetic data generator using LLM-powered code generation and declarative rules (supports R4B, STU3).</p>
 <p>Generate realistic synthetic healthcare data from natural language prompts. Tell it what you want, and it generates the code to create it.</p>
 <blockquote>
 <p><em>Inspired by <a href="https://github.com/synthetichealth/synthea">Synthea</a>. Created and designed by human. Code guided by AI, for AI.</em></p>
@@ -1245,18 +1301,24 @@
 <h2 id="how-it-works">How It Works<a class="headerlink" href="#how-it-works" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>Your Prompt
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    ↓
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>Code Generation (LLM via LiteLLM)
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>Skills Selection (keyword fuzzy matching / FAISS semantic)
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    ↓
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>FHIR Resources (Patient, Condition, Observation, etc.)
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    ↓
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>FHIR Bundles (JSON + NDJSON) — R4B or STU3
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>Code Generation (LLM via LiteLLM)          ── or ── DSPy Two-Stage Pipeline
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    ↓                                                  Stage 1: Clinical Plan
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>FHIR Resources (Patient, Condition, etc.)              Stage 2: Code Synthesis
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    ↓
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>FHIR Validation + Reference Integrity + US Core
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>    ↓
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>FHIR Bundles (JSON + NDJSON) — R4B or STU3
 </code></pre></div>
 <h2 id="features">Features<a class="headerlink" href="#features" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong>Natural Language → FHIR</strong>: Describe what you need in plain English, get valid FHIR Bundles (R4B or STU3)</li>
+<li><strong>Two-Stage Pipeline (DSPy)</strong>: Optional clinical planning → code synthesis pipeline with <a href="https://dspy.ai/">DSPy</a> for structured output and prompt optimization</li>
 <li><strong>Skills System</strong>: 16 built-in domain skills with fuzzy keyword matching (typo-tolerant) for realistic data</li>
 <li><strong>LLM-Powered Code Generation</strong>: Uses GPT-4, Claude, Bedrock, or 100+ providers via <a href="https://docs.litellm.ai/">LiteLLM</a></li>
 <li><strong>Self-Healing Execution</strong>: If generated code fails, errors are sent back to the LLM for automatic retry (up to 2 retries)</li>
+<li><strong>Enhanced FHIR Validation</strong>: Offline validation using <code>fhir.resources</code> Pydantic models — required fields, choice-type [x] checks, reference integrity, and US Core compliance</li>
 <li><strong>Pluggable Executor Backends</strong>: Local interpreter (default), Docker, E2B, or Blaxel cloud sandboxes via <a href="https://huggingface.co/docs/smolagents">smolagents</a></li>
 <li><strong>Faker Integration</strong>: Uses <a href="https://faker.readthedocs.io/">Faker</a> for realistic demographic and clinical data</li>
 <li><strong>EMPI Support</strong>: Generate Person → Patient linkages across EMR systems</li>
@@ -1287,6 +1349,7 @@
 <li><a href="getting-started/quickstart/">Quick Start</a> — Generate your first data</li>
 <li><a href="guide/skills/">Skills System</a> — Learn about built-in skills and create custom ones</li>
 <li><a href="guide/cli/">CLI Reference</a> — All commands and flags</li>
+<li><a href="guide/pipeline/">DSPy Pipeline</a> — Two-stage clinical planning with DSPy optimization</li>
 <li><a href="architecture/">Architecture</a> — System design and data flows</li>
 </ul>
 

@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Dynamic FHIR synthetic data generator using LLM-powered code generation (supports R4B, STU3)">
+        <meta name="description" content="Dynamic FHIR synthetic data generator using LLM-powered code generation and declarative rules (supports R4B, STU3)">
       
       
       
@@ -642,6 +642,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../guide/pipeline/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DSPy Pipeline
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../guide/api/" class="md-nav__link">
         
   
@@ -944,6 +972,28 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#two-stage-pipeline-dspy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Two-Stage Pipeline (DSPy)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#enhanced-validation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Enhanced Validation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#custom-metadata" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1056,6 +1106,34 @@
     
   
     Code Generator
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/pipeline/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Pipeline
   
 
     
@@ -1337,6 +1415,28 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#two-stage-pipeline-dspy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Two-Stage Pipeline (DSPy)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#enhanced-validation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Enhanced Validation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#custom-metadata" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1604,6 +1704,43 @@ graph TB
 <li><strong>Reference field map</strong> — exact field names for Patient/Encounter/etc. linkage</li>
 <li><strong>Chain-of-thought</strong> — step-by-step instructions for code generation</li>
 </ul>
+<h3 id="two-stage-pipeline-dspy">Two-Stage Pipeline (DSPy)<a class="headerlink" href="#two-stage-pipeline-dspy" title="Permanent link">&para;</a></h3>
+<p>The optional <code>--pipeline dspy</code> mode separates clinical reasoning from code generation:</p>
+<table>
+<thead>
+<tr>
+<th>Stage</th>
+<th>Responsibility</th>
+<th>DSPy Module</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Stage 1</strong> — Clinical Planning</td>
+<td>Demographics, disease codes, care settings → <code>ClinicalPlan</code> (Pydantic)</td>
+<td><code>dspy.Predict</code> with typed output</td>
+</tr>
+<tr>
+<td><strong>Stage 1.5</strong> — Dependency Enrichment</td>
+<td>Walks FHIR spec → adds Practitioner/Organization stubs</td>
+<td><code>PlanEnricher</code> (spec-driven, no hardcoding)</td>
+</tr>
+<tr>
+<td><strong>Stage 2</strong> — Code Synthesis</td>
+<td><code>ClinicalPlan</code> + FHIR guidelines → Python code</td>
+<td><code>dspy.ChainOfThought</code></td>
+</tr>
+</tbody>
+</table>
+<p>All collaborators are injected via constructor (Dependency Inversion) and expose runtime-checkable protocols (<code>ClinicalPlanner</code>, <code>CodeSynthesizer</code>, <code>ClinicalPlanEnricher</code>, <code>QualityMetric</code>). The composite <code>FHIRSynthProgram</code> module wraps both stages for DSPy optimization with <code>BootstrapFewShot</code> or <code>MIPROv2</code>.</p>
+<h3 id="enhanced-validation">Enhanced Validation<a class="headerlink" href="#enhanced-validation" title="Permanent link">&para;</a></h3>
+<p>Post-execution validation runs three checks and reports results in the CLI:</p>
+<ol>
+<li><strong>FHIR Validation</strong> — round-trips each resource through <code>fhir.resources</code> Pydantic models (required fields, types, cardinality, choice-type [x] mutual exclusion)</li>
+<li><strong>Reference Integrity</strong> — verifies all internal <code>Reference</code> fields point to resources present in the batch; <code>repair_references()</code> auto-fixes broken references</li>
+<li><strong>US Core Compliance</strong> — checks must-support fields for common US Core 3.1.1 profiles (Patient, Condition, Observation, MedicationRequest, etc.)</li>
+</ol>
+<p>The <code>GenerationEvaluator</code> composes these into a weighted quality score (0.0–1.0) that serves as the DSPy optimization target.</p>
 <h3 id="custom-metadata">Custom Metadata<a class="headerlink" href="#custom-metadata" title="Permanent link">&para;</a></h3>
 <p>Metadata (security labels, tags, profiles, source) is configured via YAML (<code>--meta-config</code>):</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nt">meta</span><span class="p">:</span>

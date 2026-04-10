@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Dynamic FHIR synthetic data generator using LLM-powered code generation (supports R4B, STU3)">
+        <meta name="description" content="Dynamic FHIR synthetic data generator using LLM-powered code generation and declarative rules (supports R4B, STU3)">
       
       
       
@@ -647,6 +647,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../pipeline/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DSPy Pipeline
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../api/" class="md-nav__link">
         
   
@@ -1075,6 +1103,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../api/pipeline/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Pipeline
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../api/bundle/" class="md-nav__link">
         
   
@@ -1435,10 +1491,10 @@
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="nv">GEMINI_API_KEY</span><span class="o">=</span>...
 </code></pre></div>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1"># OpenAI GPT-4 (default)</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;10 patients&quot;</span><span class="w"> </span>-o<span class="w"> </span>output.json
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;10 patients&quot;</span>
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>
 <a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="c1"># Anthropic Claude</span>
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;10 patients&quot;</span><span class="w"> </span>-p<span class="w"> </span>claude-3-opus-20240229<span class="w"> </span>-o<span class="w"> </span>output.json
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;10 patients&quot;</span><span class="w"> </span>-p<span class="w"> </span>claude-3-opus-20240229
 </code></pre></div>
 <h2 id="aws-bedrock">AWS Bedrock<a class="headerlink" href="#aws-bedrock" title="Permanent link">&para;</a></h2>
 <p>Bedrock uses your existing AWS credentials instead of API keys.
@@ -1451,8 +1507,7 @@ Install the optional <code>bedrock</code> extra for <code>boto3</code> support:<
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;10 patients&quot;</span><span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span>--provider<span class="w"> </span>bedrock/us.anthropic.claude-3-5-sonnet-20241022-v2:0<span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">  </span>--aws-profile<span class="w"> </span>my-profile<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">  </span>--aws-region<span class="w"> </span>us-east-1<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">  </span>-o<span class="w"> </span>output.json
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">  </span>--aws-region<span class="w"> </span>us-east-1
 </code></pre></div>
 <p>This reads the <code>[my-profile]</code> section from <code>~/.aws/credentials</code>:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="c1"># ~/.aws/credentials</span>
@@ -1469,8 +1524,7 @@ Install the optional <code>bedrock</code> extra for <code>boto3</code> support:<
 <a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="nb">export</span><span class="w"> </span><span class="nv">AWS_DEFAULT_REGION</span><span class="o">=</span>us-east-1<span class="w">    </span><span class="c1"># region</span>
 <a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>
 <a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;10 patients&quot;</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="w">  </span>--provider<span class="w"> </span>bedrock/us.anthropic.claude-3-5-sonnet-20241022-v2:0<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="w">  </span>-o<span class="w"> </span>output.json
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="w">  </span>--provider<span class="w"> </span>bedrock/us.anthropic.claude-3-5-sonnet-20241022-v2:0
 </code></pre></div>
 <p>Or with explicit keys:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">AWS_ACCESS_KEY_ID</span><span class="o">=</span>AKIA...
@@ -1478,8 +1532,7 @@ Install the optional <code>bedrock</code> extra for <code>boto3</code> support:<
 <a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="nb">export</span><span class="w"> </span><span class="nv">AWS_REGION_NAME</span><span class="o">=</span>us-east-1
 <a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>
 <a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;10 patients&quot;</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="w">  </span>--provider<span class="w"> </span>bedrock/us.anthropic.claude-3-5-sonnet-20241022-v2:0<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="w">  </span>-o<span class="w"> </span>output.json
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="w">  </span>--provider<span class="w"> </span>bedrock/us.anthropic.claude-3-5-sonnet-20241022-v2:0
 </code></pre></div>
 <h3 id="option-3-env-file">Option 3 — <code>.env</code> file<a class="headerlink" href="#option-3-env-file" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="c1"># .env</span>
@@ -1492,8 +1545,7 @@ Install the optional <code>bedrock</code> extra for <code>boto3</code> support:<
 <a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>
 <a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;10 patients&quot;</span><span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="w">  </span>--provider<span class="w"> </span>bedrock/us.anthropic.claude-3-5-sonnet-20241022-v2:0<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="w">  </span>--aws-profile<span class="w"> </span>my-sso-profile<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="w">  </span>-o<span class="w"> </span>output.json
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="w">  </span>--aws-profile<span class="w"> </span>my-sso-profile
 </code></pre></div>
 <h3 id="bedrock-model-names">Bedrock Model Names<a class="headerlink" href="#bedrock-model-names" title="Permanent link">&para;</a></h3>
 <p>Use the <code>bedrock/</code> prefix followed by the model ID:</p>
@@ -1567,7 +1619,7 @@ Use <code>--aws-region</code> to set the correct one.</p>
 your temporary credentials.</p>
 <h2 id="mock-provider">Mock Provider<a class="headerlink" href="#mock-provider" title="Permanent link">&para;</a></h2>
 <p>The mock provider generates hardcoded sample resources without calling any API:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;5 patients&quot;</span><span class="w"> </span>--provider<span class="w"> </span>mock<span class="w"> </span>-o<span class="w"> </span>test.json
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;5 patients&quot;</span><span class="w"> </span>--provider<span class="w"> </span>mock
 </code></pre></div>
 <p>Useful for testing, CI/CD pipelines, and development.</p>
 

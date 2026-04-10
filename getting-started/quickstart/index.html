@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Dynamic FHIR synthetic data generator using LLM-powered code generation (supports R4B, STU3)">
+        <meta name="description" content="Dynamic FHIR synthetic data generator using LLM-powered code generation and declarative rules (supports R4B, STU3)">
       
       
       
@@ -608,6 +608,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#two-stage-dspy-pipeline" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Two-Stage DSPy Pipeline
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#use-the-python-api" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -751,6 +762,34 @@
     
   
     Skills System
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guide/pipeline/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DSPy Pipeline
   
 
     
@@ -1025,6 +1064,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../api/pipeline/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Pipeline
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../api/bundle/" class="md-nav__link">
         
   
@@ -1235,6 +1302,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#two-stage-dspy-pipeline" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Two-Stage DSPy Pipeline
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#use-the-python-api" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1305,13 +1383,20 @@ All outputs are auto-saved to <code>runs/</code> with a unique Docker-style name
 </code></pre></div>
 <h2 id="what-happens-under-the-hood">What Happens Under the Hood<a class="headerlink" href="#what-happens-under-the-hood" title="Permanent link">&para;</a></h2>
 <ol>
-<li>Your prompt goes to the LLM (with FHIR spec, import guide, and sandbox constraints)</li>
+<li><strong>Skills selection</strong>: Your prompt is matched against 16 built-in skills using fuzzy keyword matching with typo tolerance</li>
+<li>Your prompt + selected skills go to the LLM (via <a href="https://docs.litellm.ai/">LiteLLM</a> — 100+ providers)</li>
 <li>LLM generates Python code using <code>fhir.resources</code> (Pydantic FHIR models)</li>
 <li>Code is safety-checked (import whitelist + dangerous builtins scan) and auto-fixed (naive datetimes → UTC)</li>
-<li>Code executes in an isolated subprocess with a timeout</li>
-<li>Output is smoke-tested (non-empty, every resource has <code>resourceType</code>)</li>
+<li>Code executes via a pluggable executor backend powered by <a href="https://huggingface.co/docs/smolagents">smolagents</a> (local AST interpreter, Docker, E2B, or Blaxel)</li>
+<li><strong>Enhanced FHIR validation</strong> — offline validation using <code>fhir.resources</code>:<ul>
+<li>Pydantic model validation (required fields, types, cardinality)</li>
+<li>Choice-type [x] mutual exclusion checks</li>
+<li>Reference integrity checks (cross-resource references)</li>
+<li>US Core compliance checks (must-support field coverage)</li>
+</ul>
+</li>
 <li>If anything fails, the error is sent back to the LLM for self-healing (up to 2 retries)</li>
-<li>Resources are grouped by patient and saved as NDJSON</li>
+<li>Resources are split by patient and saved as NDJSON</li>
 </ol>
 <h2 id="output-structure">Output Structure<a class="headerlink" href="#output-structure" title="Permanent link">&para;</a></h2>
 <p>Each run auto-generates a unique name and saves all artifacts in a directory:</p>
@@ -1328,39 +1413,49 @@ All outputs are auto-saved to <code>runs/</code> with a unique Docker-style name
 <p>Generate Person → Patient linkages across EMR systems:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;EMPI dataset&quot;</span><span class="w"> </span>--empi<span class="w"> </span>--persons<span class="w"> </span><span class="m">3</span>
 </code></pre></div>
-<h2 id="use-the-python-api">Use the Python API<a class="headerlink" href="#use-the-python-api" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fhir_synth.llm</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_provider</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fhir_synth.code_generator</span><span class="w"> </span><span class="kn">import</span> <span class="n">CodeGenerator</span>
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fhir_synth.bundle</span><span class="w"> </span><span class="kn">import</span> <span class="n">BundleBuilder</span>
+<h2 id="two-stage-dspy-pipeline">Two-Stage DSPy Pipeline<a class="headerlink" href="#two-stage-dspy-pipeline" title="Permanent link">&para;</a></h2>
+<p>Use the optional DSPy pipeline for structured clinical planning before code generation:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1"># Two-stage: clinical planning → code synthesis</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>pip<span class="w"> </span>install<span class="w"> </span><span class="s1">&#39;fhir-synth[dspy]&#39;</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;5 diabetic patients with labs&quot;</span><span class="w"> </span>--pipeline<span class="w"> </span>dspy
 <a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>
-<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="c1"># Generate code from prompts</span>
-<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="n">llm</span> <span class="o">=</span> <span class="n">get_provider</span><span class="p">(</span><span class="s2">&quot;mock&quot;</span><span class="p">)</span>
-<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="n">code_gen</span> <span class="o">=</span> <span class="n">CodeGenerator</span><span class="p">(</span><span class="n">llm</span><span class="p">)</span>
-<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="n">code</span> <span class="o">=</span> <span class="n">code_gen</span><span class="o">.</span><span class="n">generate_code_from_prompt</span><span class="p">(</span><span class="s2">&quot;Create 20 patients&quot;</span><span class="p">)</span>
-<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="n">resources</span> <span class="o">=</span> <span class="n">code_gen</span><span class="o">.</span><span class="n">execute_generated_code</span><span class="p">(</span><span class="n">code</span><span class="p">)</span>
-<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>
-<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a><span class="c1"># Build a FHIR bundle</span>
-<a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a><span class="n">builder</span> <span class="o">=</span> <span class="n">BundleBuilder</span><span class="p">(</span><span class="n">bundle_type</span><span class="o">=</span><span class="s2">&quot;transaction&quot;</span><span class="p">)</span>
-<a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a><span class="n">builder</span><span class="o">.</span><span class="n">add_resources</span><span class="p">(</span><span class="n">resources</span><span class="p">)</span>
-<a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a><span class="n">bundle</span> <span class="o">=</span> <span class="n">builder</span><span class="o">.</span><span class="n">build</span><span class="p">()</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="c1"># Use a pre-optimized DSPy program</span>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;5 diabetic patients&quot;</span><span class="w"> </span>--pipeline<span class="w"> </span>dspy<span class="w"> </span>--compiled-program<span class="w"> </span>optimized.json
+</code></pre></div>
+<p>See <a href="../../guide/pipeline/">DSPy Pipeline</a> for details.</p>
+<h2 id="use-the-python-api">Use the Python API<a class="headerlink" href="#use-the-python-api" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fhir_synth.llm</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_provider</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fhir_synth.code_generator</span><span class="w"> </span><span class="kn">import</span> <span class="n">CodeGenerator</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fhir_synth.bundle</span><span class="w"> </span><span class="kn">import</span> <span class="n">BundleBuilder</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="c1"># Generate code from prompts</span>
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="n">llm</span> <span class="o">=</span> <span class="n">get_provider</span><span class="p">(</span><span class="s2">&quot;mock&quot;</span><span class="p">)</span>
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="n">code_gen</span> <span class="o">=</span> <span class="n">CodeGenerator</span><span class="p">(</span><span class="n">llm</span><span class="p">)</span>
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="n">code</span> <span class="o">=</span> <span class="n">code_gen</span><span class="o">.</span><span class="n">generate_code_from_prompt</span><span class="p">(</span><span class="s2">&quot;Create 20 patients&quot;</span><span class="p">)</span>
+<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="n">resources</span> <span class="o">=</span> <span class="n">code_gen</span><span class="o">.</span><span class="n">execute_generated_code</span><span class="p">(</span><span class="n">code</span><span class="p">)</span>
+<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a>
+<a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a><span class="c1"># Build a FHIR bundle</span>
+<a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a><span class="n">builder</span> <span class="o">=</span> <span class="n">BundleBuilder</span><span class="p">(</span><span class="n">bundle_type</span><span class="o">=</span><span class="s2">&quot;transaction&quot;</span><span class="p">)</span>
+<a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a><span class="n">builder</span><span class="o">.</span><span class="n">add_resources</span><span class="p">(</span><span class="n">resources</span><span class="p">)</span>
+<a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a><span class="n">bundle</span> <span class="o">=</span> <span class="n">builder</span><span class="o">.</span><span class="n">build</span><span class="p">()</span>
 </code></pre></div>
 <h2 id="add-custom-metadata">Add Custom Metadata<a class="headerlink" href="#add-custom-metadata" title="Permanent link">&para;</a></h2>
 <p>Apply security labels, tags, and profiles via YAML:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="c1"># meta-normal.yaml</span>
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="nt">meta</span><span class="p">:</span>
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">  </span><span class="nt">security</span><span class="p">:</span>
-<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">system</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;http://terminology.hl7.org/CodeSystem/v3-Confidentiality&quot;</span>
-<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">      </span><span class="nt">code</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;R&quot;</span>
-<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="w">      </span><span class="nt">display</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Restricted&quot;</span>
-<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="w">  </span><span class="nt">tag</span><span class="p">:</span>
-<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">system</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;http://example.org/tags&quot;</span>
-<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="w">      </span><span class="nt">code</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;synthetic-data&quot;</span>
-<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="w">  </span><span class="nt">source</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;http://example.org/fhir-synth&quot;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="c1"># meta-normal.yaml</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="nt">meta</span><span class="p">:</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">  </span><span class="nt">security</span><span class="p">:</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">system</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;http://terminology.hl7.org/CodeSystem/v3-Confidentiality&quot;</span>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="w">      </span><span class="nt">code</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;R&quot;</span>
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="w">      </span><span class="nt">display</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Restricted&quot;</span>
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="w">  </span><span class="nt">tag</span><span class="p">:</span>
+<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">system</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;http://example.org/tags&quot;</span>
+<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a><span class="w">      </span><span class="nt">code</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;synthetic-data&quot;</span>
+<a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a><span class="w">  </span><span class="nt">source</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;http://example.org/fhir-synth&quot;</span>
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;20 patients&quot;</span><span class="w"> </span>--meta-config<span class="w"> </span>examples/meta-normal.yaml
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;20 patients&quot;</span><span class="w"> </span>--meta-config<span class="w"> </span>examples/meta-normal.yaml
 </code></pre></div>
 <h2 id="test-without-an-api-key">Test Without an API Key<a class="headerlink" href="#test-without-an-api-key" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;5 patients&quot;</span><span class="w"> </span>--provider<span class="w"> </span>mock
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;5 patients&quot;</span><span class="w"> </span>--provider<span class="w"> </span>mock
 </code></pre></div>
 
 

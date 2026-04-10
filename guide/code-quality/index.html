@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Dynamic FHIR synthetic data generator using LLM-powered code generation (supports R4B, STU3)">
+        <meta name="description" content="Dynamic FHIR synthetic data generator using LLM-powered code generation and declarative rules (supports R4B, STU3)">
       
       
       
@@ -647,6 +647,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../pipeline/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DSPy Pipeline
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../api/" class="md-nav__link">
         
   
@@ -1063,10 +1091,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#advanced-collecting-training-data" class="md-nav__link">
+  <a href="#advanced-dspy-optimization" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Advanced: Collecting Training Data
+        Advanced: DSPy Optimization
       
     </span>
   </a>
@@ -1255,6 +1283,34 @@
     
   
     Code Generator
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/pipeline/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Pipeline
   
 
     
@@ -1685,10 +1741,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#advanced-collecting-training-data" class="md-nav__link">
+  <a href="#advanced-dspy-optimization" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Advanced: Collecting Training Data
+        Advanced: DSPy Optimization
       
     </span>
   </a>
@@ -1983,25 +2039,34 @@
 <a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Quality check failed: </span><span class="si">{</span><span class="n">metrics</span><span class="p">[</span><span class="s1">&#39;grade&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 <a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Warnings: </span><span class="si">{</span><span class="n">metrics</span><span class="p">[</span><span class="s1">&#39;warnings&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 </code></pre></div>
-<h2 id="advanced-collecting-training-data">Advanced: Collecting Training Data<a class="headerlink" href="#advanced-collecting-training-data" title="Permanent link">&para;</a></h2>
-<p>For future DSPy optimization, collect successful generations:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
-<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<h2 id="advanced-dspy-optimization">Advanced: DSPy Optimization<a class="headerlink" href="#advanced-dspy-optimization" title="Permanent link">&para;</a></h2>
+<p>FHIR Synth includes a <a href="../pipeline/">two-stage DSPy pipeline</a> that can be optimized using DSPy's <code>BootstrapFewShot</code> or <code>MIPROv2</code>. The <code>GenerationEvaluator</code> serves as the optimization target — no labelled data is needed.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="c1"># Quick start: use the two-stage pipeline</span>
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="n">fhir</span><span class="o">-</span><span class="n">synth</span> <span class="n">generate</span> <span class="s2">&quot;5 diabetic patients&quot;</span> <span class="o">--</span><span class="n">pipeline</span> <span class="n">dspy</span>
 <a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>
-<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="c1"># After successful generation</span>
-<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a><span class="k">if</span> <span class="n">metrics</span><span class="p">[</span><span class="s2">&quot;score&quot;</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="mf">0.9</span><span class="p">:</span>
-<a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a>    <span class="c1"># Save high-quality examples</span>
-<a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a>    <span class="n">example</span> <span class="o">=</span> <span class="p">{</span>
-<a id="__codelineno-13-8" name="__codelineno-13-8" href="#__codelineno-13-8"></a>        <span class="s2">&quot;prompt&quot;</span><span class="p">:</span> <span class="n">prompt</span><span class="p">,</span>
-<a id="__codelineno-13-9" name="__codelineno-13-9" href="#__codelineno-13-9"></a>        <span class="s2">&quot;code&quot;</span><span class="p">:</span> <span class="n">code</span><span class="p">,</span>
-<a id="__codelineno-13-10" name="__codelineno-13-10" href="#__codelineno-13-10"></a>        <span class="s2">&quot;score&quot;</span><span class="p">:</span> <span class="n">metrics</span><span class="p">[</span><span class="s2">&quot;score&quot;</span><span class="p">],</span>
-<a id="__codelineno-13-11" name="__codelineno-13-11" href="#__codelineno-13-11"></a>        <span class="s2">&quot;resource_count&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">resources</span><span class="p">),</span>
-<a id="__codelineno-13-12" name="__codelineno-13-12" href="#__codelineno-13-12"></a>    <span class="p">}</span>
-<a id="__codelineno-13-13" name="__codelineno-13-13" href="#__codelineno-13-13"></a>
-<a id="__codelineno-13-14" name="__codelineno-13-14" href="#__codelineno-13-14"></a>    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&quot;training_examples.jsonl&quot;</span><span class="p">,</span> <span class="s2">&quot;a&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
-<a id="__codelineno-13-15" name="__codelineno-13-15" href="#__codelineno-13-15"></a>        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">example</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="c1"># Optimize with BootstrapFewShot</span>
+<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a><span class="n">python</span> <span class="n">examples</span><span class="o">/</span><span class="n">optimize_pipeline</span><span class="o">.</span><span class="n">py</span>
+<a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a>
+<a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a><span class="c1"># Use the optimized program</span>
+<a id="__codelineno-13-8" name="__codelineno-13-8" href="#__codelineno-13-8"></a><span class="n">fhir</span><span class="o">-</span><span class="n">synth</span> <span class="n">generate</span> <span class="s2">&quot;5 diabetic patients&quot;</span> \
+<a id="__codelineno-13-9" name="__codelineno-13-9" href="#__codelineno-13-9"></a>  <span class="o">--</span><span class="n">pipeline</span> <span class="n">dspy</span> <span class="o">--</span><span class="n">compiled</span><span class="o">-</span><span class="n">program</span> <span class="n">optimized_pipeline</span><span class="o">.</span><span class="n">json</span>
 </code></pre></div>
-<p>After collecting 100+ examples, consider using DSPy for prompt optimization.</p>
+<p>You can also collect high-quality training examples for future optimization:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="c1"># After successful generation</span>
+<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="k">if</span> <span class="n">metrics</span><span class="p">[</span><span class="s2">&quot;score&quot;</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="mf">0.9</span><span class="p">:</span>
+<a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a>    <span class="n">example</span> <span class="o">=</span> <span class="p">{</span>
+<a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a>        <span class="s2">&quot;prompt&quot;</span><span class="p">:</span> <span class="n">prompt</span><span class="p">,</span>
+<a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a>        <span class="s2">&quot;code&quot;</span><span class="p">:</span> <span class="n">code</span><span class="p">,</span>
+<a id="__codelineno-14-8" name="__codelineno-14-8" href="#__codelineno-14-8"></a>        <span class="s2">&quot;score&quot;</span><span class="p">:</span> <span class="n">metrics</span><span class="p">[</span><span class="s2">&quot;score&quot;</span><span class="p">],</span>
+<a id="__codelineno-14-9" name="__codelineno-14-9" href="#__codelineno-14-9"></a>        <span class="s2">&quot;resource_count&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">resources</span><span class="p">),</span>
+<a id="__codelineno-14-10" name="__codelineno-14-10" href="#__codelineno-14-10"></a>    <span class="p">}</span>
+<a id="__codelineno-14-11" name="__codelineno-14-11" href="#__codelineno-14-11"></a>
+<a id="__codelineno-14-12" name="__codelineno-14-12" href="#__codelineno-14-12"></a>    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&quot;training_examples.jsonl&quot;</span><span class="p">,</span> <span class="s2">&quot;a&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+<a id="__codelineno-14-13" name="__codelineno-14-13" href="#__codelineno-14-13"></a>        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">example</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+</code></pre></div>
+<p>See <a href="../pipeline/">DSPy Pipeline</a> for the full guide.</p>
 <h2 id="performance-tips">Performance Tips<a class="headerlink" href="#performance-tips" title="Permanent link">&para;</a></h2>
 <ol>
 <li><strong>Specific Prompts</strong>: "10 patients with Type 2 diabetes and HbA1c observations"</li>
@@ -2023,7 +2088,7 @@
 </li>
 <li>
 <p><strong>Use Metadata Config</strong>: Instead of complex prompts
-   <div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>--meta-config<span class="w"> </span>config.yaml
+   <div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>--meta-config<span class="w"> </span>config.yaml
 </code></pre></div></p>
 </li>
 </ol>

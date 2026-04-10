@@ -6,14 +6,14 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Dynamic FHIR synthetic data generator using LLM-powered code generation (supports R4B, STU3)">
+        <meta name="description" content="Dynamic FHIR synthetic data generator using LLM-powered code generation and declarative rules (supports R4B, STU3)">
       
       
       
         <link rel="canonical" href="https://alvinhenrick.github.io/fhir-synth/guide/api/">
       
       
-        <link rel="prev" href="../skills/">
+        <link rel="prev" href="../pipeline/">
       
       
         <link rel="next" href="../metadata/">
@@ -644,6 +644,34 @@
                 
   
   
+  
+  
+    <li class="md-nav__item">
+      <a href="../pipeline/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DSPy Pipeline
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
     
   
   
@@ -766,6 +794,56 @@
     <span class="md-ellipsis">
       
         Executor Backends
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#two-stage-dspy-pipeline" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Two-Stage DSPy Pipeline
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Two-Stage DSPy Pipeline">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#dspy-optimization" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        DSPy Optimization
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fhir-validation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        FHIR Validation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#quality-evaluation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quality Evaluation
       
     </span>
   </a>
@@ -994,6 +1072,34 @@
     
   
     Code Generator
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/pipeline/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Pipeline
   
 
     
@@ -1245,6 +1351,56 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#two-stage-dspy-pipeline" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Two-Stage DSPy Pipeline
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Two-Stage DSPy Pipeline">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#dspy-optimization" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        DSPy Optimization
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fhir-validation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        FHIR Validation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#quality-evaluation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quality Evaluation
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1372,6 +1528,98 @@
 <a id="__codelineno-5-14" name="__codelineno-5-14" href="#__codelineno-5-14"></a>
 <a id="__codelineno-5-15" name="__codelineno-5-15" href="#__codelineno-5-15"></a><span class="c1"># Use with CodeGenerator</span>
 <a id="__codelineno-5-16" name="__codelineno-5-16" href="#__codelineno-5-16"></a><span class="n">code_gen</span> <span class="o">=</span> <span class="n">CodeGenerator</span><span class="p">(</span><span class="n">llm</span><span class="p">,</span> <span class="n">executor</span><span class="o">=</span><span class="n">executor</span><span class="p">)</span>
+</code></pre></div>
+<h2 id="two-stage-dspy-pipeline">Two-Stage DSPy Pipeline<a class="headerlink" href="#two-stage-dspy-pipeline" title="Permanent link">&para;</a></h2>
+<p>The optional DSPy pipeline splits generation into two stages for higher quality output:</p>
+<ul>
+<li><strong>Stage 1 — Clinical Planning</strong>: prompt + skills → structured <code>ClinicalPlan</code> (Pydantic model)</li>
+<li><strong>Stage 1.5 — Dependency Enrichment</strong>: auto-adds missing resource companions (Practitioner, Organization, etc.)</li>
+<li><strong>Stage 2 — Code Synthesis</strong>: <code>ClinicalPlan</code> + FHIR guidelines → Python code → FHIR resources</li>
+</ul>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>pip<span class="w"> </span>install<span class="w"> </span><span class="s1">&#39;fhir-synth[dspy]&#39;</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fhir_synth.llm</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_provider</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fhir_synth.pipeline.pipeline</span><span class="w"> </span><span class="kn">import</span> <span class="n">TwoStagePipeline</span>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="c1"># Build and run the pipeline</span>
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="n">llm</span> <span class="o">=</span> <span class="n">get_provider</span><span class="p">(</span><span class="s2">&quot;gpt-4&quot;</span><span class="p">)</span>
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="n">pipeline</span> <span class="o">=</span> <span class="n">TwoStagePipeline</span><span class="o">.</span><span class="n">default</span><span class="p">(</span><span class="n">llm_provider</span><span class="o">=</span><span class="n">llm</span><span class="p">)</span>
+<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="n">result</span> <span class="o">=</span> <span class="n">pipeline</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s2">&quot;5 diabetic patients with HbA1c observations&quot;</span><span class="p">)</span>
+<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a>
+<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a><span class="c1"># Access results</span>
+<a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Plan: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">plan</span><span class="o">.</span><span class="n">patients</span><span class="p">)</span><span class="si">}</span><span class="s2"> patient(s)&quot;</span><span class="p">)</span>
+<a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Resources: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">resources</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Quality: </span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">report</span><span class="o">.</span><span class="n">overall_score</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">report</span><span class="o">.</span><span class="n">grade</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+<a id="__codelineno-7-13" name="__codelineno-7-13" href="#__codelineno-7-13"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Code:</span><span class="se">\n</span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">code</span><span class="p">[:</span><span class="mi">200</span><span class="p">]</span><span class="si">}</span><span class="s2">...&quot;</span><span class="p">)</span>
+<a id="__codelineno-7-14" name="__codelineno-7-14" href="#__codelineno-7-14"></a>
+<a id="__codelineno-7-15" name="__codelineno-7-15" href="#__codelineno-7-15"></a><span class="c1"># Use a compiled (optimized) program</span>
+<a id="__codelineno-7-16" name="__codelineno-7-16" href="#__codelineno-7-16"></a><span class="n">pipeline</span> <span class="o">=</span> <span class="n">TwoStagePipeline</span><span class="o">.</span><span class="n">from_compiled</span><span class="p">(</span>
+<a id="__codelineno-7-17" name="__codelineno-7-17" href="#__codelineno-7-17"></a>    <span class="n">compiled_path</span><span class="o">=</span><span class="n">Path</span><span class="p">(</span><span class="s2">&quot;optimized_pipeline.json&quot;</span><span class="p">),</span>
+<a id="__codelineno-7-18" name="__codelineno-7-18" href="#__codelineno-7-18"></a>    <span class="n">llm_provider</span><span class="o">=</span><span class="n">llm</span><span class="p">,</span>
+<a id="__codelineno-7-19" name="__codelineno-7-19" href="#__codelineno-7-19"></a><span class="p">)</span>
+<a id="__codelineno-7-20" name="__codelineno-7-20" href="#__codelineno-7-20"></a><span class="n">result</span> <span class="o">=</span> <span class="n">pipeline</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s2">&quot;3 patients with hypertension&quot;</span><span class="p">)</span>
+</code></pre></div>
+<h3 id="dspy-optimization">DSPy Optimization<a class="headerlink" href="#dspy-optimization" title="Permanent link">&para;</a></h3>
+<p>Optimize the pipeline's prompts using DSPy's BootstrapFewShot:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">dspy</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fhir_synth.pipeline.pipeline</span><span class="w"> </span><span class="kn">import</span> <span class="n">TwoStagePipeline</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fhir_synth.pipeline.evaluator</span><span class="w"> </span><span class="kn">import</span> <span class="n">GenerationEvaluator</span>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fhir_synth.pipeline.dspy_modules</span><span class="w"> </span><span class="kn">import</span> <span class="n">FHIRSynthProgram</span><span class="p">,</span> <span class="n">configure_dspy_lm</span>
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="c1"># Configure DSPy</span>
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="n">configure_dspy_lm</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s2">&quot;gpt-4o&quot;</span><span class="p">)</span>
+<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a>
+<a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a><span class="c1"># Build composite program for optimization</span>
+<a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a><span class="n">guidelines</span> <span class="o">=</span> <span class="n">TwoStagePipeline</span><span class="o">.</span><span class="n">default</span><span class="p">(</span><span class="n">llm</span><span class="p">)</span><span class="o">.</span><span class="n">build_guidelines</span><span class="p">()</span>  <span class="c1"># or use FHIRGuidelinesBuilder</span>
+<a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a><span class="n">program</span> <span class="o">=</span> <span class="n">FHIRSynthProgram</span><span class="p">(</span><span class="n">fhir_guidelines</span><span class="o">=</span><span class="n">guidelines</span><span class="p">)</span>
+<a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a><span class="n">evaluator</span> <span class="o">=</span> <span class="n">GenerationEvaluator</span><span class="p">()</span>
+<a id="__codelineno-8-13" name="__codelineno-8-13" href="#__codelineno-8-13"></a>
+<a id="__codelineno-8-14" name="__codelineno-8-14" href="#__codelineno-8-14"></a><span class="c1"># Create training examples (just prompts — no labels needed)</span>
+<a id="__codelineno-8-15" name="__codelineno-8-15" href="#__codelineno-8-15"></a><span class="n">trainset</span> <span class="o">=</span> <span class="p">[</span>
+<a id="__codelineno-8-16" name="__codelineno-8-16" href="#__codelineno-8-16"></a>    <span class="n">dspy</span><span class="o">.</span><span class="n">Example</span><span class="p">(</span><span class="n">prompt</span><span class="o">=</span><span class="s2">&quot;3 diabetic patients with HbA1c&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">with_inputs</span><span class="p">(</span><span class="s2">&quot;prompt&quot;</span><span class="p">),</span>
+<a id="__codelineno-8-17" name="__codelineno-8-17" href="#__codelineno-8-17"></a>    <span class="n">dspy</span><span class="o">.</span><span class="n">Example</span><span class="p">(</span><span class="n">prompt</span><span class="o">=</span><span class="s2">&quot;2 patients with hypertension on Lisinopril&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">with_inputs</span><span class="p">(</span><span class="s2">&quot;prompt&quot;</span><span class="p">),</span>
+<a id="__codelineno-8-18" name="__codelineno-8-18" href="#__codelineno-8-18"></a><span class="p">]</span>
+<a id="__codelineno-8-19" name="__codelineno-8-19" href="#__codelineno-8-19"></a>
+<a id="__codelineno-8-20" name="__codelineno-8-20" href="#__codelineno-8-20"></a><span class="c1"># Optimize</span>
+<a id="__codelineno-8-21" name="__codelineno-8-21" href="#__codelineno-8-21"></a><span class="n">optimizer</span> <span class="o">=</span> <span class="n">dspy</span><span class="o">.</span><span class="n">BootstrapFewShot</span><span class="p">(</span><span class="n">metric</span><span class="o">=</span><span class="n">evaluator</span><span class="o">.</span><span class="n">dspy_metric</span><span class="p">,</span> <span class="n">max_bootstrapped_demos</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+<a id="__codelineno-8-22" name="__codelineno-8-22" href="#__codelineno-8-22"></a><span class="n">compiled</span> <span class="o">=</span> <span class="n">optimizer</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">program</span><span class="p">,</span> <span class="n">trainset</span><span class="o">=</span><span class="n">trainset</span><span class="p">)</span>
+<a id="__codelineno-8-23" name="__codelineno-8-23" href="#__codelineno-8-23"></a><span class="n">dspy</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">compiled</span><span class="p">,</span> <span class="s2">&quot;optimized_pipeline.json&quot;</span><span class="p">)</span>
+</code></pre></div>
+<p>See <a href="https://github.com/alvinhenrick/fhir-synth/blob/main/examples/optimize_pipeline.py"><code>examples/optimize_pipeline.py</code></a> for a complete example.</p>
+<h2 id="fhir-validation">FHIR Validation<a class="headerlink" href="#fhir-validation" title="Permanent link">&para;</a></h2>
+<p>Validate resources offline using <code>fhir.resources</code> Pydantic models:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fhir_synth.code_generator.fhir_validation</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>    <span class="n">validate_resources</span><span class="p">,</span> <span class="n">validate_references</span><span class="p">,</span> <span class="n">repair_references</span>
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="p">)</span>
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fhir_synth.code_generator.us_core_validation</span><span class="w"> </span><span class="kn">import</span> <span class="n">validate_us_core</span>
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>
+<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="c1"># Pydantic model validation (required fields, types, cardinality)</span>
+<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a><span class="n">vr</span> <span class="o">=</span> <span class="n">validate_resources</span><span class="p">(</span><span class="n">resources</span><span class="p">)</span>
+<a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">vr</span><span class="o">.</span><span class="n">valid</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">vr</span><span class="o">.</span><span class="n">total</span><span class="si">}</span><span class="s2"> valid (</span><span class="si">{</span><span class="n">vr</span><span class="o">.</span><span class="n">pass_rate</span><span class="si">:</span><span class="s2">.0%</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+<a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a>
+<a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a><span class="c1"># Reference integrity (cross-resource references)</span>
+<a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a><span class="n">ref_errors</span> <span class="o">=</span> <span class="n">validate_references</span><span class="p">(</span><span class="n">resources</span><span class="p">)</span>
+<a id="__codelineno-9-12" name="__codelineno-9-12" href="#__codelineno-9-12"></a><span class="k">for</span> <span class="n">err</span> <span class="ow">in</span> <span class="n">ref_errors</span><span class="p">:</span>
+<a id="__codelineno-9-13" name="__codelineno-9-13" href="#__codelineno-9-13"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  </span><span class="si">{</span><span class="n">err</span><span class="p">[</span><span class="s1">&#39;resourceType&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">err</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">err</span><span class="p">[</span><span class="s1">&#39;errors&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="__codelineno-9-14" name="__codelineno-9-14" href="#__codelineno-9-14"></a>
+<a id="__codelineno-9-15" name="__codelineno-9-15" href="#__codelineno-9-15"></a><span class="c1"># Auto-repair broken references</span>
+<a id="__codelineno-9-16" name="__codelineno-9-16" href="#__codelineno-9-16"></a><span class="n">resources</span><span class="p">,</span> <span class="n">repair_report</span> <span class="o">=</span> <span class="n">repair_references</span><span class="p">(</span><span class="n">resources</span><span class="p">)</span>
+<a id="__codelineno-9-17" name="__codelineno-9-17" href="#__codelineno-9-17"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Repaired </span><span class="si">{</span><span class="n">repair_report</span><span class="p">[</span><span class="s1">&#39;repaired&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> reference(s)&quot;</span><span class="p">)</span>
+<a id="__codelineno-9-18" name="__codelineno-9-18" href="#__codelineno-9-18"></a>
+<a id="__codelineno-9-19" name="__codelineno-9-19" href="#__codelineno-9-19"></a><span class="c1"># US Core compliance (must-support fields)</span>
+<a id="__codelineno-9-20" name="__codelineno-9-20" href="#__codelineno-9-20"></a><span class="n">ucr</span> <span class="o">=</span> <span class="n">validate_us_core</span><span class="p">(</span><span class="n">resources</span><span class="p">)</span>
+<a id="__codelineno-9-21" name="__codelineno-9-21" href="#__codelineno-9-21"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;US Core: </span><span class="si">{</span><span class="n">ucr</span><span class="o">.</span><span class="n">compliance_rate</span><span class="si">:</span><span class="s2">.0%</span><span class="si">}</span><span class="s2"> compliant&quot;</span><span class="p">)</span>
+</code></pre></div>
+<h2 id="quality-evaluation">Quality Evaluation<a class="headerlink" href="#quality-evaluation" title="Permanent link">&para;</a></h2>
+<p>Use the composable evaluator for weighted quality scoring:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fhir_synth.pipeline.evaluator</span><span class="w"> </span><span class="kn">import</span> <span class="n">GenerationEvaluator</span>
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="n">evaluator</span> <span class="o">=</span> <span class="n">GenerationEvaluator</span><span class="p">()</span>
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="n">report</span> <span class="o">=</span> <span class="n">evaluator</span><span class="o">.</span><span class="n">evaluate</span><span class="p">(</span><span class="n">resources</span><span class="p">)</span>
+<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>
+<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Overall: </span><span class="si">{</span><span class="n">report</span><span class="o">.</span><span class="n">overall_score</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">report</span><span class="o">.</span><span class="n">grade</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a><span class="k">for</span> <span class="n">ms</span> <span class="ow">in</span> <span class="n">report</span><span class="o">.</span><span class="n">metric_scores</span><span class="p">:</span>
+<a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  </span><span class="si">{</span><span class="n">ms</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">ms</span><span class="o">.</span><span class="n">score</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> (weight: </span><span class="si">{</span><span class="n">ms</span><span class="o">.</span><span class="n">weight</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
 </code></pre></div>
 
 

@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Dynamic FHIR synthetic data generator using LLM-powered code generation (supports R4B, STU3)">
+        <meta name="description" content="Dynamic FHIR synthetic data generator using LLM-powered code generation and declarative rules (supports R4B, STU3)">
       
       
       
@@ -647,6 +647,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../pipeline/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DSPy Pipeline
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../api/" class="md-nav__link">
         
   
@@ -1092,6 +1120,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../api/pipeline/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Pipeline
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../api/bundle/" class="md-nav__link">
         
   
@@ -1439,7 +1495,7 @@
 <a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="w">  </span><span class="nt">source</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;http://example.org/fhir-synth&quot;</span>
 </code></pre></div></p>
 <p><strong>Usage:</strong>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;10 diabetic patients&quot;</span><span class="w"> </span>--meta-config<span class="w"> </span>examples/meta-normal.yaml<span class="w"> </span>-o<span class="w"> </span>output.json
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;10 diabetic patients&quot;</span><span class="w"> </span>--meta-config<span class="w"> </span>examples/meta-normal.yaml
 </code></pre></div></p>
 <div class="admonition tip">
 <p class="admonition-title">LLM-Powered Metadata</p>
@@ -1535,7 +1591,7 @@
 <a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a><span class="w">  </span><span class="nt">source</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;http://example.org/fhir-synth&quot;</span>
 </code></pre></div>
 <p><strong>Usage:</strong>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;20 patients with diabetes&quot;</span><span class="w"> </span>--meta-config<span class="w"> </span>examples/meta-normal.yaml<span class="w"> </span>-o<span class="w"> </span>output.json
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;20 patients with diabetes&quot;</span><span class="w"> </span>--meta-config<span class="w"> </span>examples/meta-normal.yaml
 </code></pre></div></p>
 <h3 id="examplesmeta-restrictedyaml-sensitive-data">examples/meta-restricted.yaml (Sensitive Data)<a class="headerlink" href="#examplesmeta-restrictedyaml-sensitive-data" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="nt">meta</span><span class="p">:</span>
@@ -1555,7 +1611,7 @@
 <a id="__codelineno-9-15" name="__codelineno-9-15" href="#__codelineno-9-15"></a><span class="w">  </span><span class="nt">source</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;http://hospital-ehr.example.org/fhir&quot;</span>
 </code></pre></div>
 <p><strong>Usage:</strong>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;10 HIV patients&quot;</span><span class="w"> </span>--meta-config<span class="w"> </span>examples/meta-restricted.yaml<span class="w"> </span>-o<span class="w"> </span>hiv.json
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;10 HIV patients&quot;</span><span class="w"> </span>--meta-config<span class="w"> </span>examples/meta-restricted.yaml
 </code></pre></div></p>
 <h2 id="output-example">Output Example<a class="headerlink" href="#output-example" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="p">{</span>
