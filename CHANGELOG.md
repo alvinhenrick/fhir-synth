@@ -2,6 +2,17 @@
 
 <!-- version list -->
 
+## v1.15.0 (2026-04-10)
+
+### Features
+
+- Format max_demos option for improved readability in DSPy CLI
+  ([`e4896b8`](https://github.com/alvinhenrick/fhir-synth/commit/e4896b813ee89603589c0f3428ccc2c98d45abf4))
+
+- Format max_demos option for improved readability in DSPy CLI
+  ([`ebbbb1f`](https://github.com/alvinhenrick/fhir-synth/commit/ebbbb1f4c1a9f2c7795ecc3af0943e4d102a1a87))
+
+
 ## v1.14.0 (2026-04-10)
 
 ### Bug Fixes
