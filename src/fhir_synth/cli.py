@@ -593,8 +593,8 @@ def optimize(
         "--optimizer",
         help="Optimizer: 'bootstrap' (BootstrapFewShot) or 'miprov2' (MIPROv2 — optimizes instructions)",
     ),
-    num_trials: int = typer.Option(
-        10, "--num-trials", help="Number of optimization trials (MIPROv2 only)"
+    auto: str = typer.Option(
+        "light", "--auto", help="MIPROv2 intensity: 'light', 'medium', or 'heavy' (MIPROv2 only)"
     ),
 ) -> None:
     """Optimize the two-stage DSPy pipeline using BootstrapFewShot or MIPROv2.
@@ -609,7 +609,7 @@ def optimize(
     Examples:
 
         fhir-synth optimize --provider gpt-4o-mini --max-demos 3
-        fhir-synth optimize --optimizer miprov2 --provider deepseek/deepseek-chat --num-trials 10
+        fhir-synth optimize --optimizer miprov2 --provider deepseek/deepseek-chat --auto light
     """
     try:
         import dspy
@@ -668,18 +668,12 @@ def optimize(
     trainset = [dspy.Example(prompt=p).with_inputs("prompt") for p in prompts]
 
     if optimizer == "miprov2":
-        typer.echo(f"⚙  Running MIPROv2 (num_trials={num_trials}, max_demos={max_demos})…")
+        typer.echo(f"⚙  Running MIPROv2 (auto={auto}, max_demos={max_demos})…")
         dspy_optimizer = dspy.MIPROv2(
             metric=evaluator.dspy_metric,
-            auto="light",
-            num_candidates=max_demos,
+            auto=auto,
         )
-        optimized = dspy_optimizer.compile(
-            module,
-            trainset=trainset,
-            num_trials=num_trials,
-            minibatch=True,
-        )
+        optimized = dspy_optimizer.compile(module, trainset=trainset)
     else:
         typer.echo(f"⚙  Running BootstrapFewShot (max_demos={max_demos})…")
         dspy_optimizer = dspy.BootstrapFewShot(
