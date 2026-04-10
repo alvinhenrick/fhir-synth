@@ -88,31 +88,17 @@ _PROFILES: dict[str, list[tuple[str, str]]] = {
 }
 
 # ---------------------------------------------------------------------------
-# Code-example hints for fields LLMs commonly omit or get wrong
+# Code-example hints for fields that require non-obvious data modelling
+# (field construction hints live in spec_summary via fhir_spec introspection)
 # ---------------------------------------------------------------------------
 
 # Maps (resource_type, field) → short code snippet shown in the prompt guide.
-# Only add entries for fields that are non-obvious or frequently missed.
+# Only for behavioral patterns that introspection cannot derive.
 _CODE_HINTS: dict[tuple[str, str], str] = {
     ("MedicationRequest", "requester"): (
         "# Create ONE shared Practitioner, reference it on EVERY MedicationRequest\n"
         "practitioner = Practitioner(id=str(uuid4()), name=[HumanName(family='Smith', given=['Jane'])])\n"
         "MedicationRequest(..., requester=Reference(reference=f'Practitioner/{practitioner.id}'))"
-    ),
-    ("Condition", "clinicalStatus"): (
-        "clinicalStatus=CodeableConcept(coding=[Coding(\n"
-        "    system='http://terminology.hl7.org/CodeSystem/condition-clinical',\n"
-        "    code='active')])"
-    ),
-    ("Observation", "category"): (
-        "# category is a list — always wrap in []\n"
-        "category=[CodeableConcept(coding=[Coding(\n"
-        "    system='http://terminology.hl7.org/CodeSystem/observation-category',\n"
-        "    code='laboratory')])]"
-    ),
-    ("Encounter", "class"): (
-        "# class_ (note underscore — 'class' is a Python keyword)\n"
-        "class_=Coding(system='http://terminology.hl7.org/CodeSystem/v3-ActCode', code='AMB')"
     ),
 }
 
@@ -148,35 +134,39 @@ _CHOICE_ALTERNATIVES: dict[str, list[str]] = {
 # ---------------------------------------------------------------------------
 
 
-def us_core_must_support_guide() -> str:
-    """US Core must-support field reference with code examples for LLM prompts.
+def must_support_by_resource() -> dict[str, frozenset[str]]:
+    """Return {resource_type: frozenset[top-level JSON field name]} for US Core must-support.
 
-    For each profile lists the required fields and, for fields that LLMs
-    commonly omit or get wrong, includes a concrete Python code snippet.
-    This is the single source of truth — no duplication in hard-rules files.
+    Used by fhir_spec.spec_summary() to tag fields directly in the FHIR spec
+    output rather than maintaining a separate guide.
+    """
+    return {
+        resource_type: frozenset(path.split(".")[0] for path, _ in checks)
+        for resource_type, checks in _PROFILES.items()
+    }
+
+
+def us_core_must_support_guide() -> str:
+    """US Core must-support reminder for LLM prompts.
+
+    Fields marked [US CORE] in the FHIR SPEC above must always be populated.
+    Field construction details (types, aliases, list vs scalar) are shown in the
+    FHIR SPEC — this note only covers behavioral patterns not derivable from introspection.
     """
     lines: list[str] = [
-        "US CORE R4 MUST-SUPPORT FIELDS",
-        "(Include ALL of these fields in every resource of that type)\n",
+        "US CORE R4 MUST-SUPPORT — always populate fields marked [US CORE] in the FHIR SPEC.\n",
     ]
-    for resource_type, checks in _PROFILES.items():
-        field_labels = ", ".join(label for _, label in checks)
-        lines.append(f"  {resource_type}: {field_labels}")
 
-        # Append code hints for any tricky fields in this profile
+    # Only emit hints for behavioral patterns introspection cannot derive
+    for resource_type, checks in _PROFILES.items():
         for field_path, _label in checks:
             hint = _CODE_HINTS.get((resource_type, field_path))
             if hint:
-                indented = "\n".join(f"      {ln}" for ln in hint.splitlines())
-                lines.append(f"    ⚠ {field_path} — example:")
+                indented = "\n".join(f"    {ln}" for ln in hint.splitlines())
+                lines.append(f"  {resource_type}.{field_path}:")
                 lines.append(indented)
+                lines.append("")
 
-        lines.append("")  # blank line between profiles
-
-    lines.append(
-        "Note: 'must-support' means the field MUST be populated if the data exists.\n"
-        "For synthetic data, always include all must-support fields."
-    )
     return "\n".join(lines)
 
 
