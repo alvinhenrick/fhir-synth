@@ -2,6 +2,20 @@
 
 <!-- version list -->
 
+## v1.17.0 (2026-04-11)
+
+### Features
+
+- Add /runs/ directory to .gitignore to exclude run artifacts
+  ([`66e7979`](https://github.com/alvinhenrick/fhir-synth/commit/66e79795aa94c362df28d2b767a30b587ce0a02e))
+
+- Add examples of compiled programs in pipeline documentation
+  ([`77a1db5`](https://github.com/alvinhenrick/fhir-synth/commit/77a1db5ffa80d60fe87f92f785aaba699662a327))
+
+- Rename optimized_pipeline.json to bootstrap_few_shot.json for clarity
+  ([`9e50fc9`](https://github.com/alvinhenrick/fhir-synth/commit/9e50fc97fc4adfb82f47a36c3c3b9718a80428bc))
+
+
 ## v1.16.0 (2026-04-11)
 
 ### Features
