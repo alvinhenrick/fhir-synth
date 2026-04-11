@@ -146,8 +146,8 @@ fhir-synth optimize --provider deepseek/deepseek-chat --output runs/my_compiled.
 |--------|---------|-------------|
 | `-p` / `--provider` | `gpt-4o-mini` | LLM for optimization |
 | `--optimizer` | `bootstrap` | `bootstrap` (BootstrapFewShot) or `miprov2` (optimizes instructions) |
-| `--max-demos` | `3` | Max bootstrapped few-shot demos (bootstrap only) |
-| `--auto` | `light` | MIPROv2 intensity: `light`, `medium`, or `heavy` (miprov2 only) |
+| `--max-demos` | `3` | Max bootstrapped few-shot demos (**bootstrap only**) |
+| `--auto` | `light` | MIPROv2 intensity: `light`, `medium`, or `heavy` (**miprov2 only**) |
 | `-t` / `--training-dir` | auto | Directory with `*_prompt.txt` training pairs |
 | `-o` / `--output` | `runs/optimized_pipeline.json` | Output path for compiled program |
 

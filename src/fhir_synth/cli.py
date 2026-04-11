@@ -317,7 +317,6 @@ def generate(
         # Auto-select dspy pipeline when compiled program is provided
         if compiled_program and pipeline == "default":
             pipeline = "dspy"
-            typer.echo("   ℹ️  Auto-selecting dspy pipeline (compiled program provided)")
 
         if pipeline == "dspy":
             # ── Two-stage DSPy pipeline ──────────────────────────────────
@@ -677,7 +676,7 @@ def optimize(
     trainset = [dspy.Example(prompt=p).with_inputs("prompt") for p in prompts]
 
     if optimizer == "miprov2":
-        typer.echo(f"⚙  Running MIPROv2 (auto={auto}, max_demos={max_demos})…")
+        typer.echo(f"⚙  Running MIPROv2 (auto={auto})…")
         dspy_optimizer = dspy.MIPROv2(
             metric=evaluator.dspy_metric,
             auto=auto,
