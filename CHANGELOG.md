@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.16.0 (2026-04-11)
+
+### Features
+
+- Add FHIR type enforcement and backbone introspection for improved data validation in fhir_spec
+  ([`7ca94e7`](https://github.com/alvinhenrick/fhir-synth/commit/7ca94e702ef701a9584d70f181e3dbab6a0b788c))
+
+
 ## v1.15.0 (2026-04-10)
 
 ### Features
