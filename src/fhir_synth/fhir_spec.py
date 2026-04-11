@@ -318,6 +318,101 @@ def _introspect(name: str) -> ResourceMeta:
     )
 
 
+@cache
+def _introspect_backbone(class_name: str) -> tuple[FieldMeta, ...] | None:
+    """Introspect any Pydantic class by name (backbone elements, data types, etc.).
+
+    Unlike `_introspect`, works for any class in `_CLASS_MODULE_MAP`, not just
+    top-level resources.  Returns None if the class cannot be found or imported.
+    Used by `spec_summary` to expand backbone element fields inline.
+    """
+    modname = _CLASS_MODULE_MAP.get(class_name)
+    if modname is None:
+        return None
+    try:
+        mod = importlib.import_module(f"fhir.resources.{_FHIR_VERSION}.{modname}")
+        cls = getattr(mod, class_name, None)
+        if cls is None or not hasattr(cls, "model_fields"):
+            return None
+    except Exception:
+        return None
+
+    fields: list[FieldMeta] = []
+    for fname, finfo in cls.model_fields.items():
+        if fname.endswith("__ext"):
+            continue
+        ann = str(finfo.annotation) if finfo.annotation else "Any"
+        extras = finfo.json_schema_extra if isinstance(finfo.json_schema_extra, dict) else {}
+        is_req = finfo.is_required() or bool(extras.get("element_required"))
+        raw_alias = finfo.alias
+        json_alias = str(raw_alias) if raw_alias and str(raw_alias) != fname else None
+        choice_group = extras.get("one_of_many")
+        fields.append(
+            FieldMeta(
+                name=fname,
+                required=is_req,
+                type_annotation=ann,
+                is_reference="ReferenceType" in ann,
+                is_list="List" in ann or "list" in ann,
+                choice_group=choice_group if isinstance(choice_group, str) else None,
+                choice_required=bool(extras.get("one_of_many_required")),
+                alias=json_alias,
+            )
+        )
+    return tuple(fields) if fields else None
+
+
+# Types that are well-known to LLMs and don't need inline expansion.
+# Backbone elements NOT in this set will have their sub-fields shown in spec_summary.
+_WELL_KNOWN_FHIR_TYPES: frozenset[str] = frozenset(
+    {
+        "Reference",
+        "CodeableConcept",
+        "Coding",
+        "Period",
+        "Quantity",
+        "Age",
+        "Duration",
+        "Count",
+        "Distance",
+        "Money",
+        "SimpleQuantity",
+        "Identifier",
+        "HumanName",
+        "Address",
+        "ContactPoint",
+        "Attachment",
+        "Narrative",
+        "Meta",
+        "Annotation",
+        "Range",
+        "Ratio",
+        "Timing",
+        "Dosage",
+        "SampledData",
+        "Signature",
+    }
+)
+
+# Primitive-like labels — sub-fields of this type are not worth showing
+_PRIMITIVES: frozenset[str] = frozenset(
+    {
+        "str",
+        "boolean",
+        "object",
+        "DateTime",
+        "Instant",
+        "Date",
+        "Code",
+        "Id",
+        "Uri",
+        "Markdown",
+        "int",
+        "float",
+    }
+)
+
+
 # ── Public helpers ────────────────────────────────────────────────────────
 
 
@@ -410,6 +505,12 @@ def _short_type(annotation: str) -> str:
         ("CodingType", "Coding"),
         ("PeriodType", "Period"),
         ("QuantityType", "Quantity"),
+        ("AgeType", "Age"),
+        ("DurationType", "Duration"),
+        ("CountType", "Count"),
+        ("DistanceType", "Distance"),
+        ("MoneyType", "Money"),
+        ("SimpleQuantityType", "SimpleQuantity"),
         ("IdentifierType", "Identifier"),
         ("HumanNameType", "HumanName"),
         ("AddressType", "Address"),
@@ -417,12 +518,56 @@ def _short_type(annotation: str) -> str:
         ("AttachmentType", "Attachment"),
         ("NarrativeType", "Narrative"),
         ("MetaType", "Meta"),
-        ("DurationType", "Duration"),
         ("bool", "boolean"),
     ]:
         if pattern in annotation:
             return label
+    # Generic fallback: resolve any XxxType → Xxx via the class module map.
+    # This covers all backbone elements and named FHIR types not listed above.
+    import re as _re
+
+    for m in _re.finditer(r"\b(\w+?)Type\b", annotation):
+        candidate = m.group(1)
+        if candidate in _CLASS_MODULE_MAP:
+            return candidate
     return "str" if "str" in annotation else "object"
+
+
+def _backbone_expansion(field_name: str, type_label: str, indent: int = 6) -> list[str]:
+    """Return indented sub-field lines for a backbone element type.
+
+    Only expands types that are not well-known (e.g. MedicationRequestDispenseRequest)
+    so the LLM sees the exact sub-field types without guessing.  Never recurses.
+    """
+    if type_label in _WELL_KNOWN_FHIR_TYPES or type_label in _PRIMITIVES:
+        return []
+    sub_fields = _introspect_backbone(type_label)
+    if not sub_fields:
+        return []
+    pad = " " * indent
+    lines: list[str] = []
+    shown = 0
+    for sf in sub_fields:
+        if sf.name in ("fhir_comments", "id", "extension", "modifierExtension"):
+            continue
+        st = _short_type(sf.type_annotation)
+        req_tag = " [REQUIRED]" if sf.required else ""
+        alias_note = f' [JSON key: "{sf.alias}"]' if sf.alias else ""
+        lines.append(f"{pad}{sf.name}: {st}{req_tag}{alias_note}")
+        shown += 1
+        if shown >= 8:
+            remaining = (
+                sum(
+                    1
+                    for s in sub_fields
+                    if s.name not in ("fhir_comments", "id", "extension", "modifierExtension")
+                )
+                - shown
+            )
+            if remaining > 0:
+                lines.append(f"{pad}… and {remaining} more")
+            break
+    return lines
 
 
 def spec_summary(resource_types: list[str] | None = None) -> str:
@@ -480,9 +625,9 @@ def spec_summary(resource_types: list[str] | None = None) -> str:
                 field_json_name = f.alias or f.name
                 us_core_tag = "  [US CORE]" if field_json_name in us_core_fields else ""
                 alias_note = f'  [JSON key: "{f.alias}"]' if f.alias else ""
-                req_parts.append(
-                    f"    {f.name}: {_short_type(f.type_annotation)}  [REQUIRED]{us_core_tag}{alias_note}"
-                )
+                t = _short_type(f.type_annotation)
+                req_parts.append(f"    {f.name}: {t}  [REQUIRED]{us_core_tag}{alias_note}")
+                req_parts.extend(_backbone_expansion(f.name, t, indent=6))
         if req_parts:
             lines.extend(req_parts)
 
@@ -506,10 +651,15 @@ def spec_summary(resource_types: list[str] | None = None) -> str:
                 ref_tag = " [ref]" if f.is_reference else ""
                 alias_note = f' [JSON key: "{f.alias}"]' if f.alias else ""
                 field_json_name = f.alias or f.name
+                entry_lines = [f"    {f.name}: {t}{ref_tag}{alias_note}"]
+                entry_lines.extend(_backbone_expansion(f.name, t, indent=6))
                 if field_json_name in us_core_fields:
-                    opt_us_core.append(f"    {f.name}: {t}{ref_tag}  [US CORE]{alias_note}")
+                    opt_us_core.extend(
+                        [f"    {f.name}: {t}{ref_tag}  [US CORE]{alias_note}"]
+                        + _backbone_expansion(f.name, t, indent=6)
+                    )
                 else:
-                    opt_regular.append(f"    {f.name}: {t}{ref_tag}{alias_note}")
+                    opt_regular.extend(entry_lines)
 
         lines.extend(opt_us_core)  # always show US Core optional fields
         for line in opt_regular[:12]:

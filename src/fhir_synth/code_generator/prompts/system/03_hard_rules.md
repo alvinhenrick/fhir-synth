@@ -15,3 +15,6 @@ HARD RULES — every response MUST follow these:
 11. **CHOICE-TYPE MUTUAL EXCLUSION**: For any [x] group, set EXACTLY ONE variant — never two in the same group.
 12. **LIST-TYPED FIELDS**: When the FHIR SPEC shows `list[CodeableConcept]` or any `list[...]` type,
     always wrap the value in a Python list — even for a single item.
+13. **USE EXACT TYPES FROM FHIR SPEC**: When the FHIR SPEC shows a named type (Age, Duration, Count,
+    Distance, Money, etc.), use that exact class — never substitute the base Quantity.
+    fhir.resources enforces strict type checking and will reject Quantity where Age or Duration is expected.
