@@ -98,11 +98,14 @@ pip install 'fhir-synth[dspy]'
 # Two-stage: clinical planning → code synthesis
 fhir-synth generate "5 diabetic patients with HbA1c observations" --pipeline dspy
 
-# With a pre-optimized compiled program
-fhir-synth generate "5 patients" --pipeline dspy --compiled-program optimized.json
+# Optimize with MIPROv2
+fhir-synth optimize --optimizer miprov2 --provider deepseek/deepseek-chat --auto medium
+
+# With a pre-optimized compiled program (auto-selects dspy pipeline)
+fhir-synth generate "5 patients" --compiled-program optimized.json
 ```
 
-The pipeline separates clinical reasoning (disease codes, demographics, care settings) from code generation (FHIR imports, references, validation). A `PlanEnricher` auto-detects missing resource dependencies (Practitioner, Organization) from the FHIR spec. See [`examples/optimize_pipeline.py`](examples/optimize_pipeline.py) for DSPy optimization.
+The pipeline separates clinical reasoning (disease codes, demographics, care settings) from code generation (FHIR imports, references, validation). A `PlanEnricher` auto-detects missing resource dependencies (Practitioner, Organization) from the FHIR spec.
 
 ### Output Structure
 
@@ -146,7 +149,7 @@ End-to-end: prompt → LLM → code → execute → FHIR Bundle.
 | `--score-threshold` | `0.3` | Min similarity score 0.0-1.0 (FAISS only) |
 | `--context` | — | Path to NDJSON/JSON with existing resources for stateful generation |
 | `--pipeline` | `default` | Generation pipeline: `default` (single-stage) or `dspy` (two-stage) |
-| `--compiled-program` | — | Path to compiled DSPy program JSON (from `dspy.save`). Only used with `--pipeline dspy`. |
+| `--compiled-program` | — | Path to compiled DSPy program JSON (from `dspy.save`). Auto-selects dspy pipeline. |
 
 ### `fhir-synth codegen`
 Generate executable Python code from prompts (without bundling).

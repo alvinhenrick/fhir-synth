@@ -103,7 +103,7 @@ def generate(
     compiled_program: str | None = typer.Option(
         None,
         "--compiled-program",
-        help="Path to a compiled DSPy program JSON (from dspy.save). Only used with --pipeline dspy.",
+        help="Path to a compiled DSPy program JSON (from dspy.save). Auto-selects dspy pipeline.",
     ),
 ) -> None:
     """Generate synthetic FHIR data end-to-end: prompt → LLM → code → execute → NDJSON.
@@ -295,8 +295,8 @@ def generate(
                 prompt_text = f"{metadata_instructions}\n\n{prompt_text}"
                 # dspy_prompt deliberately not updated here
 
-        # Augment prompt with EMPI hints if requested
         if empi:
+
             from fhir_synth.code_generator.prompts import build_empi_prompt
 
             system_list = [s.strip() for s in systems.split(",") if s.strip()]
@@ -313,6 +313,11 @@ def generate(
                 systems=system_list or None,
                 include_organizations=not no_orgs,
             )
+
+        # Auto-select dspy pipeline when compiled program is provided
+        if compiled_program and pipeline == "default":
+            pipeline = "dspy"
+            typer.echo("   ℹ️  Auto-selecting dspy pipeline (compiled program provided)")
 
         if pipeline == "dspy":
             # ── Two-stage DSPy pipeline ──────────────────────────────────
@@ -606,7 +611,7 @@ def optimize(
     Loads training prompts, runs the selected optimizer, and saves the compiled
     program for use with:
 
-        fhir-synth generate "..." --pipeline dspy --compiled-program runs/optimized_pipeline.json
+        fhir-synth generate "..." --compiled-program runs/optimized_pipeline.json
 
     Requires: pip install 'fhir-synth[dspy]'
 
@@ -700,7 +705,7 @@ def optimize(
     optimized.fhir_program.save(str(out_path))
     typer.echo(f"✓ Compiled program saved → {out_path}")
     typer.echo("\nTo use it:")
-    typer.echo(f'  fhir-synth generate "your prompt" --pipeline dspy --compiled-program {out_path}')
+    typer.echo(f'  fhir-synth generate "your prompt" --compiled-program {out_path}')
 
 
 @app.command()

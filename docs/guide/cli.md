@@ -42,7 +42,7 @@ runs/brave_phoenix/
 | `--score-threshold` | `0.3` | Minimum similarity score 0.0–1.0 (FAISS only) |
 | `--context` | — | Path to NDJSON/JSON with existing resources for stateful generation |
 | `--pipeline` | `default` | Generation pipeline: `default` (single-stage) or `dspy` (two-stage clinical planning) |
-| `--compiled-program` | — | Path to compiled DSPy program JSON (from `dspy.save`). Only used with `--pipeline dspy`. |
+| `--compiled-program` | — | Path to compiled DSPy program JSON (from `dspy.save`). Auto-selects dspy pipeline. |
 
 All executor backends are powered by [smolagents](https://huggingface.co/docs/smolagents).
 
@@ -90,9 +90,8 @@ fhir-synth generate "5 patients" \
 # DSPy two-stage pipeline (uncompiled — works without optimization)
 fhir-synth generate "5 diabetic patients with labs" --pipeline dspy
 
-# DSPy with a compiled program (from fhir-synth optimize)
-fhir-synth generate "5 diabetic patients" \
-  --pipeline dspy --compiled-program runs/optimized_pipeline.json
+# DSPy with a compiled program (auto-selects dspy pipeline)
+fhir-synth generate "5 diabetic patients" --compiled-program runs/optimized_pipeline.json
 ```
 
 ### Environment Variables
@@ -124,7 +123,7 @@ fhir-synth codegen "Create 50 patients" --out code.py --execute --executor docke
 
 ## `fhir-synth optimize`
 
-Optimize the two-stage DSPy pipeline using `BootstrapFewShot`. Produces a compiled program with few-shot demos that improves generation quality for your specific domain.
+Optimize the two-stage DSPy pipeline using `BootstrapFewShot` or `MIPROv2`. Produces a compiled program with few-shot demos that improves generation quality for your specific domain.
 
 ```bash
 # Default — BootstrapFewShot (fast, ~$2 with gpt-4o)
@@ -133,11 +132,11 @@ fhir-synth optimize --provider gpt-4o
 # More demos, custom training dir
 fhir-synth optimize --provider gpt-4o --max-demos 5 --training-dir runs/my_training
 
-# MIPROv2 — optimizes instructions, better for domain-specific use (~$0.80 with DeepSeek)
-fhir-synth optimize --optimizer miprov2 --provider deepseek/deepseek-chat --num-trials 10
+# MIPROv2 light — optimizes instructions, better for domain-specific use (~$0.80 with DeepSeek)
+fhir-synth optimize --optimizer miprov2 --provider deepseek/deepseek-chat --auto light
 
 # MIPROv2 medium (more thorough)
-fhir-synth optimize --optimizer miprov2 --provider deepseek/deepseek-chat --num-trials 25
+fhir-synth optimize --optimizer miprov2 --provider deepseek/deepseek-chat --auto medium
 
 # Save to a custom path
 fhir-synth optimize --provider deepseek/deepseek-chat --output runs/my_compiled.json
@@ -145,12 +144,12 @@ fhir-synth optimize --provider deepseek/deepseek-chat --output runs/my_compiled.
 
 | Option | Default | Description |
 |--------|---------|-------------|
-| `--provider` / `-p` | `gpt-4o-mini` | LLM for optimization |
+| `-p` / `--provider` | `gpt-4o-mini` | LLM for optimization |
 | `--optimizer` | `bootstrap` | `bootstrap` (BootstrapFewShot) or `miprov2` (optimizes instructions) |
-| `--max-demos` | `3` | Max bootstrapped few-shot demos |
-| `--num-trials` | `10` | Number of optimization trials (MIPROv2 only) |
-| `--training-dir` / `-t` | auto | Directory with `*_prompt.txt` training pairs |
-| `--output` / `-o` | `runs/optimized_pipeline.json` | Output path for compiled program |
+| `--max-demos` | `3` | Max bootstrapped few-shot demos (bootstrap only) |
+| `--auto` | `light` | MIPROv2 intensity: `light`, `medium`, or `heavy` (miprov2 only) |
+| `-t` / `--training-dir` | auto | Directory with `*_prompt.txt` training pairs |
+| `-o` / `--output` | `runs/optimized_pipeline.json` | Output path for compiled program |
 
 Requires: `pip install 'fhir-synth[dspy]'`
 

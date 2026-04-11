@@ -219,16 +219,15 @@ if not metrics["passed"]:
 
 FHIR Synth includes a [two-stage DSPy pipeline](pipeline.md) that can be optimized using DSPy's `BootstrapFewShot` or `MIPROv2`. The `GenerationEvaluator` serves as the optimization target — no labelled data is needed.
 
-```python
+```bash
 # Quick start: use the two-stage pipeline
 fhir-synth generate "5 diabetic patients" --pipeline dspy
 
-# Optimize with BootstrapFewShot
-python examples/optimize_pipeline.py
+# Optimize with MIPROv2
+fhir-synth optimize --optimizer miprov2 --provider deepseek/deepseek-chat --auto medium
 
-# Use the optimized program
-fhir-synth generate "5 diabetic patients" \
-  --pipeline dspy --compiled-program optimized_pipeline.json
+# Use the optimized program (auto-selects dspy pipeline)
+fhir-synth generate "5 diabetic patients" --compiled-program optimized_pipeline.json
 ```
 
 You can also collect high-quality training examples for future optimization:

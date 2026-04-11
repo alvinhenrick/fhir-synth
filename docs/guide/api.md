@@ -191,7 +191,11 @@ compiled = optimizer.compile(program, trainset=trainset)
 dspy.save(compiled, "optimized_pipeline.json")
 ```
 
-See [`examples/optimize_pipeline.py`](https://github.com/alvinhenrick/fhir-synth/blob/main/examples/optimize_pipeline.py) for a complete example.
+Or use the CLI:
+
+```bash
+fhir-synth optimize --optimizer miprov2 --provider deepseek/deepseek-chat --auto medium
+```
 
 ## FHIR Validation
 

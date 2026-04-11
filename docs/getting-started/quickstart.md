@@ -66,8 +66,8 @@ Use the optional DSPy pipeline for structured clinical planning before code gene
 pip install 'fhir-synth[dspy]'
 fhir-synth generate "5 diabetic patients with labs" --pipeline dspy
 
-# Use a pre-optimized DSPy program
-fhir-synth generate "5 diabetic patients" --pipeline dspy --compiled-program optimized.json
+# Use a pre-optimized DSPy program (auto-selects dspy pipeline)
+fhir-synth generate "5 diabetic patients" --compiled-program optimized.json
 ```
 
 See [DSPy Pipeline](../guide/pipeline.md) for details.
