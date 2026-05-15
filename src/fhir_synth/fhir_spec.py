@@ -533,6 +533,19 @@ def _short_type(annotation: str) -> str:
     return "str" if "str" in annotation else "object"
 
 
+def _render_field_type(field: FieldMeta) -> str:
+    """Render a field's type for the LLM, wrapping list-typed fields in ``list[...]``.
+
+    Pydantic v2 (fhir.resources >= 8.x) is strict about list-typed fields — passing
+    a single value where a ``list[...]`` is expected fails validation. Surfacing
+    the wrapper in the LLM-facing spec stops the model from generating
+    ``Encounter(type=CodeableConcept(...))`` instead of
+    ``Encounter(type=[CodeableConcept(...)])``.
+    """
+    base = _short_type(field.type_annotation)
+    return f"list[{base}]" if field.is_list else base
+
+
 def _backbone_expansion(field_name: str, type_label: str, indent: int = 6) -> list[str]:
     """Return indented sub-field lines for a backbone element type.
 
@@ -550,7 +563,7 @@ def _backbone_expansion(field_name: str, type_label: str, indent: int = 6) -> li
     for sf in sub_fields:
         if sf.name in ("fhir_comments", "id", "extension", "modifierExtension"):
             continue
-        st = _short_type(sf.type_annotation)
+        st = _render_field_type(sf)
         req_tag = " [REQUIRED]" if sf.required else ""
         alias_note = f' [JSON key: "{sf.alias}"]' if sf.alias else ""
         lines.append(f"{pad}{sf.name}: {st}{req_tag}{alias_note}")
@@ -588,9 +601,15 @@ def spec_summary(resource_types: list[str] | None = None) -> str:
         '    ✓ "2025-03-08T10:30:00+00:00"  ✓ "2025-03-08T10:30:00Z"',
         '    ✗ "2025-03-08"  ✗ "2025-03-08T10:30:00"',
         "  In code: always construct with timezone when time is needed:",
-        "    datetime(2025, 3, 8, 10, 30, tzinfo=timezone.utc).isoformat()",
+        "    ✓ datetime(2025, 3, 8, 10, 30, tzinfo=timezone.utc).isoformat()",
+        "    ✓ datetime.now(tz=timezone.utc).isoformat()",
+        "    ✗ datetime.now().isoformat()      ← NO timezone — v2 strict validation rejects this",
+        "    ✗ datetime.utcnow().isoformat()   ← NO timezone — same problem",
         "    For date-only DateTime fields: date(2025, 3, 8).isoformat()",
         "  Decimal: use Decimal (from decimal import Decimal), not float.",
+        "  list[X]: STRICT — wrap a single value in a list, e.g. type=[CodeableConcept(...)]",
+        "    ✓ Encounter(type=[CodeableConcept(...)], identifier=[Identifier(...)])",
+        "    ✗ Encounter(type=CodeableConcept(...))   ← v2 strict validation rejects this",
         "",
     ]
 
@@ -625,9 +644,9 @@ def spec_summary(resource_types: list[str] | None = None) -> str:
                 field_json_name = f.alias or f.name
                 us_core_tag = "  [US CORE]" if field_json_name in us_core_fields else ""
                 alias_note = f'  [JSON key: "{f.alias}"]' if f.alias else ""
-                t = _short_type(f.type_annotation)
+                t = _render_field_type(f)
                 req_parts.append(f"    {f.name}: {t}  [REQUIRED]{us_core_tag}{alias_note}")
-                req_parts.extend(_backbone_expansion(f.name, t, indent=6))
+                req_parts.extend(_backbone_expansion(f.name, _short_type(f.type_annotation), indent=6))
         if req_parts:
             lines.extend(req_parts)
 
@@ -637,7 +656,7 @@ def spec_summary(resource_types: list[str] | None = None) -> str:
             choice_field_names.update(f.name for f in group_fields)
             tag = "[ONE REQUIRED]" if group_fields[0].choice_required else "[pick one]"
             variants = ", ".join(
-                f"{f.name} ({_short_type(f.type_annotation)})" for f in group_fields
+                f"{f.name} ({_render_field_type(f)})" for f in group_fields
             )
             lines.append(f"    {group_name}[x] {tag}: {variants}")
 
@@ -647,16 +666,17 @@ def spec_summary(resource_types: list[str] | None = None) -> str:
         opt_regular: list[str] = []
         for f in meta.all_fields:
             if not f.required and f.name not in _skip and f.name not in choice_field_names:
-                t = _short_type(f.type_annotation)
+                t = _render_field_type(f)
+                base_t = _short_type(f.type_annotation)
                 ref_tag = " [ref]" if f.is_reference else ""
                 alias_note = f' [JSON key: "{f.alias}"]' if f.alias else ""
                 field_json_name = f.alias or f.name
                 entry_lines = [f"    {f.name}: {t}{ref_tag}{alias_note}"]
-                entry_lines.extend(_backbone_expansion(f.name, t, indent=6))
+                entry_lines.extend(_backbone_expansion(f.name, base_t, indent=6))
                 if field_json_name in us_core_fields:
                     opt_us_core.extend(
                         [f"    {f.name}: {t}{ref_tag}  [US CORE]{alias_note}"]
-                        + _backbone_expansion(f.name, t, indent=6)
+                        + _backbone_expansion(f.name, base_t, indent=6)
                     )
                 else:
                     opt_regular.extend(entry_lines)
