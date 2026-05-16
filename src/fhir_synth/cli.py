@@ -320,9 +320,8 @@ def generate(
 
         if pipeline == "dspy":
             # ── Two-stage DSPy pipeline ──────────────────────────────────
-            from fhir_synth.pipeline.pipeline import TwoStagePipeline
-
             from fhir_synth.compiled_programs import resolve_compiled_program
+            from fhir_synth.pipeline.pipeline import TwoStagePipeline
 
             compiled_path = resolve_compiled_program(compiled_program)
             if compiled_path is not None:

@@ -1,7 +1,6 @@
 ---
 name: allergies-immunizations
 description: Generate allergy intolerances with SNOMED codes, reactions, severity, and criticality; plus immunization records with CVX codes, pediatric vaccine schedules. Use when user mentions allergies, immunizations, vaccines, allergy intolerance, penicillin allergy, anaphylaxis, or vaccination.
-keywords: [allergy, intolerance, immunization, vaccine, vaccination, penicillin, anaphylaxis, allergic, reaction, CVX, NKDA, influenza, COVID vaccine, Tdap, MMR, hepatitis, pneumococcal, HPV, pediatric vaccine]
 resource_types: [AllergyIntolerance, Immunization]
 always: false
 ---

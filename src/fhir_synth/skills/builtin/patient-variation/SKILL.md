@@ -1,7 +1,6 @@
 ---
 name: patient-variation
 description: Generate patient demographics reflecting real-world population diversity including age distribution, gender, race, ethnicity, language, marital status, identifiers, contacts, and deceased status. Use for any request involving Patient resources.
-keywords: [patient, demographic, age, gender, race, ethnicity, language, birth, name, address, identifier, contact, diversity, neonatal, pediatric, geriatric, elderly, deceased, twins]
 resource_types: [Patient]
 always: true
 ---

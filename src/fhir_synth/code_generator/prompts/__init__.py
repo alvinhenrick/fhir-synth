@@ -156,7 +156,7 @@ def get_skill_discovery_summary() -> dict[str, Any]:
 
     Returns:
         Dict with `total`, `builtin`, `user`, and `skills` (list of
-        dicts with `name`, `source`, `keywords_count`).
+        dicts with `name`, `source`, `description_len`).
     """
     loader = _state.get_loader()
     all_skills = loader.discover()
@@ -165,7 +165,7 @@ def get_skill_discovery_summary() -> dict[str, Any]:
         "builtin": sum(1 for s in all_skills if s.source == "builtin"),
         "user": sum(1 for s in all_skills if s.source == "user"),
         "skills": [
-            {"name": s.name, "source": s.source, "keywords_count": len(s.keywords)}
+            {"name": s.name, "source": s.source, "description_len": len(s.description)}
             for s in all_skills
         ],
     }

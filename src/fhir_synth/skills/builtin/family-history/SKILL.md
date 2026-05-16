@@ -1,7 +1,6 @@
 ---
 name: family-history
 description: Generate FamilyMemberHistory resources with family relationships, heritable conditions, age of onset, and deceased status. Use when user mentions family history, hereditary, genetic risk, family member, parent, sibling, cancer history, heart disease in family, or FamilyMemberHistory.
-keywords: [family history, hereditary, genetic, familial, family member, parent, mother, father, sibling, brother, sister, grandparent, cancer history, heart disease family, diabetes family, BRCA, Lynch syndrome, inherited, predisposition, consanguinity]
 resource_types: [FamilyMemberHistory]
 always: false
 ---

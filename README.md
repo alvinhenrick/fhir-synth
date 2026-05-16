@@ -24,9 +24,11 @@ FHIR Bundles (JSON + NDJSON) — R4B or STU3
 pip install git+https://github.com/alvinhenrick/fhir-synth.git
 
 # Optional extras
-pip install "fhir-synth[bedrock] @ git+https://github.com/alvinhenrick/fhir-synth.git@main"  # AWS Bedrock
-pip install "fhir-synth[dspy] @ git+https://github.com/alvinhenrick/fhir-synth.git@main"     # DSPy pipeline
-pip install "fhir-synth[semantic] @ git+https://github.com/alvinhenrick/fhir-synth.git@main"  # FAISS selector
+pip install "fhir-synth[mcp] @ git+https://github.com/alvinhenrick/fhir-synth.git@main"       # MCP server (Claude Desktop / Claude Code)
+pip install "fhir-synth[bedrock] @ git+https://github.com/alvinhenrick/fhir-synth.git@main"   # AWS Bedrock
+pip install "fhir-synth[dspy] @ git+https://github.com/alvinhenrick/fhir-synth.git@main"      # DSPy two-stage pipeline
+pip install "fhir-synth[semantic] @ git+https://github.com/alvinhenrick/fhir-synth.git@main"  # FAISS semantic skill selector
+pip install "fhir-synth[all] @ git+https://github.com/alvinhenrick/fhir-synth.git@main"       # Everything above + sandbox executors
 ```
 
 ## Quick Start
@@ -75,7 +77,7 @@ fhir-synth generate "10 patients with diabetes" --fhir-version stu3
 ```
 
 **What happens under the hood:**
-1. **Skills selection**: Your prompt is matched against 16 built-in skills (patient demographics, medications, labs, etc.) using fuzzy keyword matching with typo tolerance
+1. **Skills selection**: Your prompt is matched against 17 built-in skills (patient demographics, medications, labs, etc.) by token overlap on each skill's `description` (per the [agentskills.io](https://agentskills.io/specification) spec), with a fuzzy fallback for typo tolerance
 2. Your prompt + selected skills go to the LLM (via [LiteLLM](https://docs.litellm.ai/) — 100+ providers)
 3. LLM generates Python code using `fhir.resources` (Pydantic FHIR models)
 4. Code is safety-checked (import whitelist + dangerous builtins scan) and auto-fixed (naive datetimes → UTC)
@@ -98,11 +100,43 @@ pip install 'fhir-synth[dspy]'
 # Two-stage: clinical planning → code synthesis
 fhir-synth generate "5 diabetic patients with HbA1c observations" --pipeline dspy
 
-# With a pre-optimized compiled program
-fhir-synth generate "5 patients" --pipeline dspy --compiled-program optimized.json
+# With a bundled pre-optimized compiled program (ships inside the wheel)
+fhir-synth generate "5 patients" --pipeline dspy --compiled-program miprov2
+fhir-synth generate "5 patients" --pipeline dspy --compiled-program bootstrap
+
+# Or your own compiled program
+fhir-synth generate "5 patients" --pipeline dspy --compiled-program path/to/optimized.json
 ```
 
-The pipeline separates clinical reasoning (disease codes, demographics, care settings) from code generation (FHIR imports, references, validation). A `PlanEnricher` auto-detects missing resource dependencies (Practitioner, Organization) from the FHIR spec. See [`examples/optimize_pipeline.py`](examples/optimize_pipeline.py) for DSPy optimization.
+The pipeline separates clinical reasoning (disease codes, demographics, care settings) from code generation (FHIR imports, references, validation). A `PlanEnricher` auto-detects missing resource dependencies (Practitioner, Organization) from the FHIR spec, and a self-healing retry loop re-synthesizes on execution errors. Two pre-optimized programs (`miprov2` and `bootstrap`) ship inside the wheel — see [`examples/optimize_pipeline.py`](examples/optimize_pipeline.py) to roll your own.
+
+### MCP Server (Claude Desktop / Claude Code)
+
+Expose `fhir-synth` to Claude as native tools — generate FHIR data straight from a conversation:
+
+```bash
+pip install "fhir-synth[mcp]"
+```
+
+Then wire it into your Claude client:
+
+```json
+{
+  "mcpServers": {
+    "fhir-synth": {
+      "command": "fhir-synth-mcp",
+      "env": {
+        "FHIR_SYNTH_PROVIDER": "gpt-5.2-codex",
+        "OPENAI_API_KEY": "sk-...",
+        "FHIR_SYNTH_PIPELINE": "dspy",
+        "FHIR_SYNTH_COMPILED": "miprov2"
+      }
+    }
+  }
+}
+```
+
+Claude can now call `generate_fhir_data`, `validate_fhir_bundle`, `list_skills`, `list_runs`, and `get_run`. Each generation returns both the FHIR resources AND a self-contained Python script — commit the script and replay forever without another LLM call. See the [MCP guide](docs/guide/mcp.md) for the full setup.
 
 ### Output Structure
 
@@ -146,7 +180,7 @@ End-to-end: prompt → LLM → code → execute → FHIR Bundle.
 | `--score-threshold` | `0.3` | Min similarity score 0.0-1.0 (FAISS only) |
 | `--context` | — | Path to NDJSON/JSON with existing resources for stateful generation |
 | `--pipeline` | `default` | Generation pipeline: `default` (single-stage) or `dspy` (two-stage) |
-| `--compiled-program` | — | Path to compiled DSPy program JSON (from `dspy.save`). Only used with `--pipeline dspy`. |
+| `--compiled-program` | — | Compiled DSPy program: bundled short name (`miprov2`, `bootstrap`), filesystem path, or `none`. Only used with `--pipeline dspy`. |
 
 ### `fhir-synth codegen`
 Generate executable Python code from prompts (without bundling).

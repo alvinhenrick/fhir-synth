@@ -1,7 +1,6 @@
 ---
 name: comorbidity
 description: Generate realistic Condition resources with ICD-10 and SNOMED CT codes, comorbidity clustering, categories, severity, staging, body site, evidence, onset, abatement, and encounter linkage. Use when user mentions conditions, diagnoses, diseases, diabetes, hypertension, COPD, depression, chronic illness, comorbidity, problem list, encounter diagnosis, staging, or ICD-10.
-keywords: [comorbidity, condition, diagnosis, disease, diabetes, hypertension, COPD, depression, anxiety, obesity, CKD, cancer, asthma, heart failure, CHF, metabolic, chronic pain, dementia, severity, ICD-10, SNOMED, problem list, encounter diagnosis, staging, acute, chronic, bodySite, evidence]
 resource_types: [Condition]
 always: false
 ---

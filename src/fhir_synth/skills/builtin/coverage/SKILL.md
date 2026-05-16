@@ -1,7 +1,6 @@
 ---
 name: coverage
 description: Generate Coverage and insurance resources with payer diversity including Medicare, Medicaid, commercial, Tricare, VA, and self-pay. Use when user mentions coverage, insurance, payer, Medicare, Medicaid, benefits, or coordination of benefits. For claims and EOB see the claims-eob skill.
-keywords: [coverage, insurance, payer, Medicare, Medicaid, commercial, BCBS, Aetna, UHC, Cigna, Tricare, VA, self-pay, uninsured, workers comp, beneficiary, subscriber, coordination of benefits]
 resource_types: [Coverage, Organization]
 always: false
 ---

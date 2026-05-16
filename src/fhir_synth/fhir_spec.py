@@ -646,7 +646,9 @@ def spec_summary(resource_types: list[str] | None = None) -> str:
                 alias_note = f'  [JSON key: "{f.alias}"]' if f.alias else ""
                 t = _render_field_type(f)
                 req_parts.append(f"    {f.name}: {t}  [REQUIRED]{us_core_tag}{alias_note}")
-                req_parts.extend(_backbone_expansion(f.name, _short_type(f.type_annotation), indent=6))
+                req_parts.extend(
+                    _backbone_expansion(f.name, _short_type(f.type_annotation), indent=6)
+                )
         if req_parts:
             lines.extend(req_parts)
 
@@ -655,9 +657,7 @@ def spec_summary(resource_types: list[str] | None = None) -> str:
         for group_name, group_fields in meta.choice_groups.items():
             choice_field_names.update(f.name for f in group_fields)
             tag = "[ONE REQUIRED]" if group_fields[0].choice_required else "[pick one]"
-            variants = ", ".join(
-                f"{f.name} ({_render_field_type(f)})" for f in group_fields
-            )
+            variants = ", ".join(f"{f.name} ({_render_field_type(f)})" for f in group_fields)
             lines.append(f"    {group_name}[x] {tag}: {variants}")
 
         # Key optional fields with types (skip noise fields AND choice fields, cap at 12)

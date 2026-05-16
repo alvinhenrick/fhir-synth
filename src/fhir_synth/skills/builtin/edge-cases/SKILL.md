@@ -1,7 +1,6 @@
 ---
 name: edge-cases
 description: Generate edge-case patient scenarios for robustness including neonates, pregnant patients, elderly with polypharmacy, behavioral health, disability, rare diseases, multi-organ conditions, and deceased patients. Use when user mentions neonates, pregnancy, elderly, behavioral health, mental health, substance use, rare disease, cancer, disability, or deceased.
-keywords: [neonate, infant, pregnant, pregnancy, prenatal, geriatric, elderly, polypharmacy, behavioral health, mental health, substance use, depression, anxiety, PHQ-9, GAD-7, disability, rare disease, sickle cell, cystic fibrosis, lupus, HIV, cancer, staging, transplant, deceased, death]
 resource_types: [Patient, Condition, Observation, MedicationRequest]
 always: true
 ---

@@ -1,7 +1,6 @@
 ---
 name: care-team
 description: Generate Practitioner, PractitionerRole, Organization, and Location resources for the clinical care team including NPIs, specialties, taxonomies, and facility details. Use when user mentions practitioner, doctor, physician, nurse, provider, NPI, organization, hospital, clinic, facility, location, department, care team, or specialist.
-keywords: [practitioner, doctor, physician, nurse, NPI, provider, organization, hospital, clinic, facility, location, department, care team, specialist, PractitionerRole, taxonomy, specialty, referring, attending, primary care, surgeon, cardiologist, bed, ward, ICU, operating room]
 resource_types: [Practitioner, PractitionerRole, Organization, Location]
 always: false
 ---

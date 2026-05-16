@@ -169,7 +169,9 @@ def generate_fhir_data(
     selected_skills = get_selected_skill_names(prompt)
 
     effective_pipeline = (pipeline or _PIPELINE).lower()
-    effective_compiled_spec = compiled_program if compiled_program is not None else _COMPILED_DEFAULT
+    effective_compiled_spec = (
+        compiled_program if compiled_program is not None else _COMPILED_DEFAULT
+    )
 
     if effective_pipeline == "dspy":
         try:
@@ -297,7 +299,6 @@ def list_skills() -> dict[str, Any]:
                 "name": s.name,
                 "description": s.description,
                 "source": s.source,
-                "keywords": list(s.keywords),
                 "resource_types": list(s.resource_types),
                 "always": s.always,
             }
