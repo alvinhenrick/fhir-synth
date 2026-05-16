@@ -2,6 +2,41 @@
 
 <!-- version list -->
 
+## v1.18.0 (2026-05-16)
+
+### Features
+
+- Add MCP server to expose FHIR Synth as Claude tools, update dependencies, and include bundled DSPy
+  programs
+  ([`86bd2be`](https://github.com/alvinhenrick/fhir-synth/commit/86bd2be1b4f0e59f617e8ed8677a777835a7bcec))
+
+- Add retry mechanism for code synthesis and execution in pipeline, enable configurable max_retries
+  ([`c16f3a2`](https://github.com/alvinhenrick/fhir-synth/commit/c16f3a29627e1f33a75790c043fc60c6c16fa675))
+
+### Refactoring
+
+- Delegate API key resolution to LiteLLM, remove redundant env var mapping logic
+  ([`5682651`](https://github.com/alvinhenrick/fhir-synth/commit/5682651ec0b08c58c6c7ce86a774dde54f8a4d31))
+
+- Remove deprecated `keywords` field from all skills, update selectors to rely on `description` and
+  `resource_types` for skill matching
+  ([`09017f1`](https://github.com/alvinhenrick/fhir-synth/commit/09017f15ebf7b9023ea326bfa2701d298281cd55))
+
+- Remove deprecated `keywords` field from all skills, update selectors to rely on `description` and
+  `resource_types` for skill matching
+  ([`2d16ea9`](https://github.com/alvinhenrick/fhir-synth/commit/2d16ea9039a9d4a67c546e7a177205f63d25c692))
+
+- Remove deprecated `keywords` field from all skills, update selectors to rely on `description` and
+  `resource_types` for skill matching
+  ([`9042520`](https://github.com/alvinhenrick/fhir-synth/commit/904252041bcb3b0c43fae649fc2a34da64fa2302))
+
+- Simplify mypy overrides by removing unnecessary wildcard module entries
+  ([`5655409`](https://github.com/alvinhenrick/fhir-synth/commit/5655409796a82cf58d4eca4f9ac16b3a474fd178))
+
+- Simplify mypy overrides by removing unnecessary wildcard module entries
+  ([`4cef860`](https://github.com/alvinhenrick/fhir-synth/commit/4cef860cc8f68e670005c49df5bd58c26d8350fa))
+
+
 ## v1.17.0 (2026-04-11)
 
 ### Features
