@@ -9,72 +9,73 @@ Each skill is a folder containing a `SKILL.md` file with:
 - **YAML frontmatter** — Metadata for discovery and selection
 - **Markdown body** — Domain-specific guidance for the LLM
 
+Per the agentskills.io spec, **`description` is the selection signal** — selectors tokenize or embed it to decide when the skill applies. FHIR Synth adds one extension field, `resource_types`, that gives the selector a precise structural signal when the user names a FHIR resource type directly.
+
 Skills are automatically selected based on your prompt and injected into the system context, ensuring the LLM generates realistic, compliant FHIR data.
 
 ## Built-in Skills
 
-FHIR Synth includes 16 production-ready skills covering core healthcare domains:
+FHIR Synth ships 17 production-ready skills covering core healthcare domains:
 
 | Skill | Description | Resource Types |
-|-------|-------------|----------------|
+| --- | --- | --- |
 | **patient-variation** | Demographics, age distribution, race, ethnicity, language diversity | `Patient` |
-| **medications** | RxNorm codes, dosing, timing, adherence patterns | `MedicationRequest` |
+| **medications** | Full medication family — RxNorm, dosing, dispensing, administration, statements | `Medication`, `MedicationRequest`, `MedicationDispense`, `MedicationAdministration`, `MedicationStatement`, `MedicationKnowledge` |
 | **vitals-and-labs** | LOINC codes, normal ranges, temporal patterns | `Observation` |
 | **comorbidity** | Disease clustering, chronic condition patterns | `Condition` |
 | **encounters** | Visit types, coding systems, class progression | `Encounter` |
 | **coverage** | Insurance diversity (Medicare, Medicaid, commercial) | `Coverage` |
 | **allergies-immunizations** | CVX codes, contraindications, vaccine schedules | `AllergyIntolerance`, `Immunization` |
 | **careplan-goals** | Care coordination, goal tracking, service requests | `CarePlan`, `Goal`, `ServiceRequest` |
-| **care-team** | Care team composition and roles | `CareTeam` |
+| **care-team** | Care team composition and roles | `CareTeam`, `Practitioner`, `PractitionerRole`, `Organization`, `Location` |
 | **diagnostics-documents** | Imaging, reports, diagnostic procedures | `DiagnosticReport`, `DocumentReference` |
 | **procedures** | Surgical and non-surgical procedures | `Procedure` |
 | **claims-eob** | Claims and explanation of benefits | `Claim`, `ExplanationOfBenefit` |
 | **sdoh** | Social determinants of health (housing, food, employment) | `Observation` |
+| **longitudinal** | Multi-encounter timelines, disease progression, treatment response | All |
 | **edge-cases** | Missing data, ambiguous records, real-world messiness | All |
 | **provenance-data-quality** | Audit trails, data quality flags, source attribution | `Provenance` |
 | **family-history** | Genetic conditions, family relationships | `FamilyMemberHistory` |
 
-Skills marked as **always** (patient-variation, edge-cases, provenance-data-quality) are included in every generation.
+Skills marked **`always: true`** in their frontmatter (patient-variation, edge-cases, provenance-data-quality) are included in every generation.
 
 ## Skill Selection
 
 ### Keyword Selector (Default)
 
-The **keyword selector** uses fuzzy matching with **typo tolerance** to select relevant skills. It's fast, has zero dependencies, and handles common typos automatically.
+The default selector scores skills by **token overlap between the prompt and the skill's `description` + `name`**, with a fuzzy fallback for typo tolerance via Python's built-in `difflib`. Zero dependencies.
 
 **How it works:**
 
-1. Exact keyword matches score **+2 points**
-2. Fuzzy matches (≥80% similarity) score **+1 point**
-3. Description token overlap scores **+1 point per token**
-4. Skills scoring ≥1 are selected
-5. Safe fallback: if nothing matches, all skills are included
+1. Resource-type substring hit (e.g. user wrote "MedicationRequest") → **+2 points**
+2. Token overlap between prompt and skill description/name → **+1 per shared token**
+3. Fuzzy fallback (≥85% similarity) when score is still 0 → **+1 point**
+4. Skills scoring ≥ `min_score` (default 1) are selected
+5. **Safe fallback**: if nothing matches, all skills are included
 
 **Examples:**
 
 ```bash
-# Exact match
+# Description-token match
 fhir-synth generate "10 patients with diabetes and medications"
-# → Selects: medications, comorbidity
+# → Selects: medications (description names "medication"), comorbidity ("diabetes")
 
-# Typo tolerance
+# Typo tolerance via fuzzy fallback
 fhir-synth generate "10 patients with diabtes and medicaton"
 # → Still selects: medications, comorbidity
-# "diabtes" → "diabetes" ✓ (88% similarity)
-# "medicaton" → "medication" ✓ (91% similarity)
 
-# Resource type matching
+# Resource-type matching
 fhir-synth generate "Generate 20 Observation resources"
-# → Selects: vitals-and-labs, sdoh
+# → Selects: vitals-and-labs, sdoh (both list Observation)
 ```
 
 **Configuration:**
 
-The keyword selector uses a fuzzy threshold of 0.8 (80% similarity) by default. This is tuned to catch common typos while avoiding false matches.
+The default fuzzy threshold is 0.85 (85% similarity). Tune via `KeywordSelector(fuzzy_threshold=0.8)` for more tolerant matching.
 
 ### FAISS Selector (Optional)
 
-The **FAISS selector** uses semantic embeddings for similarity-based retrieval. It's best for large custom skill sets or when you need semantic understanding beyond keywords.
+The **FAISS selector** uses semantic embeddings of the skill description for similarity-based retrieval. Best for large custom skill sets or when you need semantic understanding ("blood sugar" ≈ "glucose").
 
 **Installation:**
 
@@ -83,6 +84,7 @@ pip install fhir-synth[semantic]
 ```
 
 This installs:
+
 - `faiss-cpu` — Vector similarity search
 - `sentence-transformers` — Local embedding model (all-MiniLM-L6-v2, 384-dim, ~80MB)
 - `numpy` — Array operations
@@ -93,28 +95,28 @@ This installs:
 # Basic usage
 fhir-synth generate "5 patients" --selector faiss
 
-# Adjust similarity threshold (0.0-1.0)
+# Adjust similarity threshold (0.0–1.0)
 fhir-synth generate "5 patients" --selector faiss --score-threshold 0.5
 ```
 
 **How it works:**
 
-1. On first run: embeds all skills → builds FAISS index → saves to `~/.cache/fhir-synth/skills/`
+1. On first run: embeds all skill descriptions → builds FAISS index → saves to `~/.cache/fhir-synth/skills/`
 2. Subsequent runs: loads cached index (instant)
 3. Embeds your prompt → searches for similar skills
-4. Returns all skills above similarity threshold (default: 0.3)
+4. Returns all skills above the similarity threshold (default 0.3)
 
 **When to use FAISS:**
 
 - You have 50+ custom skills
-- You need semantic matching ("blood sugar" ≈ "glucose", "HTN" ≈ "hypertension")
+- You need semantic matching ("HTN" ≈ "hypertension")
 - You're building a specialized domain (oncology, genomics, etc.)
 
 **When to use keyword (default):**
 
 - You have ≤20 skills (built-in skills work great)
 - You want zero extra dependencies
-- Keyword + typo tolerance is sufficient
+- Token overlap + typo tolerance is sufficient
 
 ## Custom Skills
 
@@ -137,8 +139,7 @@ Each skill is a directory with a `SKILL.md` file:
 ```yaml
 ---
 name: oncology-staging
-description: Generate cancer conditions with TNM staging observations and treatment plans
-keywords: [cancer, oncology, staging, tnm, tumor, node, metastasis, chemotherapy]
+description: Generate cancer conditions with TNM staging observations and treatment plans. Use when user mentions cancer, oncology, tumor, staging, TNM, metastasis, chemotherapy, or radiation.
 resource_types: [Condition, Observation, MedicationRequest, Procedure]
 always: false
 ---
@@ -171,17 +172,19 @@ Include appropriate treatments:
 ### Frontmatter Fields
 
 | Field | Required | Type | Description |
-|-------|----------|------|-------------|
+| --- | --- | --- | --- |
 | `name` | ✓ | string | Unique identifier (lowercase, hyphens, max 64 chars) |
-| `description` | ✓ | string | What the skill does and when to use it (max 1024 chars) |
-| `keywords` | | list | Trigger words for keyword matching |
-| `resource_types` | | list | FHIR resource types this skill covers |
-| `always` | | boolean | Include in every generation (default: false) |
+| `description` | ✓ | string | What the skill does and when to use it. **This is the selection signal** — bake your trigger terms (conditions, drugs, code systems, resource type names) into the natural-language description. Max 1024 chars. |
+| `resource_types` |   | list | FHIR resource types this skill covers — gives the selector a precise structural signal when the user names a FHIR type directly |
+| `always` |   | boolean | Include in every generation (default: false) |
+
+!!! note "Migrating from older skills with `keywords:`"
+    Earlier versions of fhir-synth used a separate `keywords:` field for matching. That field is now a deviation from the agentskills.io spec and has been removed — the loader silently ignores any legacy `keywords:` you leave in place, so old skills keep working. To get the same matching power, **fold your keywords into the description as natural language** (see the "Use when user mentions …" pattern used by every built-in skill).
 
 ### Using Custom Skills
 
 ```bash
-# Use custom skills directory
+# Use a custom skills directory
 fhir-synth generate "5 lung cancer patients" --skills-dir ~/.fhir-synth/skills
 
 # Custom skills override built-in skills with the same name
@@ -192,30 +195,19 @@ fhir-synth generate "5 lung cancer patients" --skills-dir ~/.fhir-synth/skills
 
 ### Writing Effective Skills
 
-1. **Be specific**: Include exact code systems, value sets, and LOINC/SNOMED/RxNorm codes
-2. **Provide examples**: Show realistic data patterns
-3. **Explain temporal relationships**: When do observations occur relative to encounters?
-4. **Note edge cases**: Missing data, unusual values, contraindications
-5. **Keep it focused**: One skill per clinical domain
-
-### Keyword Selection Tips
-
-Choose keywords that users would naturally type:
-
-```yaml
-# Good keywords — match user intent
-keywords: [diabetes, diabetic, glucose, hba1c, insulin, blood sugar, a1c]
-
-# Avoid overly broad keywords that trigger on everything
-keywords: [patient, observation, condition]  # ❌ Too broad
-```
+1. **Front-load triggers in `description`.** The first 1–2 sentences should name the conditions, drugs, code systems, and resource types a user might mention. The selector sees this verbatim.
+2. **Use the "Use when user mentions …" pattern.** Built-in descriptions end with that clause — it concentrates trigger terms where both the keyword and FAISS selectors will pick them up.
+3. **Be specific in the body.** Include exact LOINC / SNOMED / RxNorm codes, value sets, units, status enums.
+4. **Provide examples.** Show realistic data patterns and resource cross-references.
+5. **Note edge cases.** Missing data, unusual values, contraindications.
+6. **Keep skills focused.** One skill per clinical domain.
 
 ### When to Mark `always: true`
 
 Use `always: true` sparingly. Reserve it for:
 
 - **Foundational skills** everyone needs (patient demographics)
-- **Data quality guidelines** that apply to all generations
+- **Data-quality guidelines** that apply to every generation
 - **Compliance requirements** (provenance, audit trails)
 
 Most skills should be `always: false` and selected based on the prompt.
@@ -226,14 +218,12 @@ Most skills should be `always: false` and selected based on the prompt.
 
 If your prompt doesn't match any skills:
 
-1. Check your keywords for typos (fuzzy matching helps, but isn't perfect)
-2. Verify `resource_types` match what you're requesting
-3. Try more specific keywords in your prompt
-4. As a fallback, all skills are included when nothing matches
+1. Check that trigger terms (drug names, conditions, resource types) appear in the skill's `description` — not just the body.
+2. Verify `resource_types` matches what the prompt asks for (e.g. include `Observation` if users ask for "labs").
+3. Try more specific terms in your prompt, or lower the keyword selector's `fuzzy_threshold` (default 0.85).
+4. As a safe fallback, all skills are included when nothing matches.
 
 ### FAISS Import Errors
-
-If you see `ImportError: No module named 'faiss'`:
 
 ```bash
 pip install fhir-synth[semantic]
@@ -241,21 +231,18 @@ pip install fhir-synth[semantic]
 
 ### Viewing Selected Skills
 
-Enable debug logging to see which skills were selected:
-
 ```bash
 export LOG_LEVEL=DEBUG
 fhir-synth generate "10 patients with diabetes"
 ```
 
 Look for:
+
 ```
-INFO Selected 3/16 skills: medications, comorbidity, vitals-and-labs
+INFO Selected 3/17 skills: medications, comorbidity, vitals-and-labs
 ```
 
 ## API Usage
-
-Use skills programmatically in Python:
 
 ```python
 from pathlib import Path
@@ -265,8 +252,8 @@ from fhir_synth.skills import SkillLoader, KeywordSelector, FaissSelector
 loader = SkillLoader(user_dirs=[Path("~/.fhir-synth/skills")])
 all_skills = loader.discover()
 
-# Select with keyword matcher
-selector = KeywordSelector(min_score=1, fuzzy_threshold=0.8)
+# Select with keyword matcher (default)
+selector = KeywordSelector(min_score=1, fuzzy_threshold=0.85)
 selected = selector.select("10 diabetic patients with labs", all_skills)
 
 # Select with FAISS

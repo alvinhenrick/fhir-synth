@@ -1,7 +1,6 @@
 ---
 name: careplan-goals
 description: Generate CarePlan, Goal, and ServiceRequest resources with proper status, intent, categories, targets, and linked conditions. Use when user mentions care plan, goals, service request, referral, orders, lab orders, imaging orders, or care coordination.
-keywords: [careplan, care plan, goal, service request, referral, order, lab order, imaging, physical therapy, counseling, care coordination, target, HbA1c target, blood pressure target]
 resource_types: [CarePlan, Goal, ServiceRequest]
 always: false
 ---

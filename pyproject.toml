@@ -24,13 +24,13 @@ classifiers = [
 dependencies = [
     "pydantic~=2.0",
     "pyyaml~=6.0",
-    "typer[all]~=0.9",
+    "typer~=0.25",
     "python-dateutil~=2.8",
-    "fhir.resources~=7.0",
-    "litellm~=1.83",
+    "fhir.resources~=8.0",
+    "litellm~=1.84",
     "python-dotenv~=1.2",
     "faker~=37.0",
-    "smolagents~=1.24",
+    "smolagents~=1.25",
     "coolname~=2.0",
 ]
 
@@ -55,6 +55,12 @@ semantic = [
 dspy = [
     "dspy-ai>=2.0",
 ]
+mcp = [
+    "mcp>=1.0",
+]
+all = [
+    "fhir-synth[bedrock,docker,e2b,blaxel,semantic,dspy,mcp]",
+]
 docs = [
     "mkdocs>=1.6,<2",
     "mkdocs-material>=9.0,<=9.7.3",
@@ -71,9 +77,14 @@ Issues = "https://github.com/alvinhenrick/fhir-synth/issues"
 
 [project.scripts]
 fhir-synth = "fhir_synth.cli:app"
+fhir-synth-mcp = "fhir_synth.mcp.server:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/fhir_synth"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"src/fhir_synth/data/miprov2.json" = "fhir_synth/data/miprov2.json"
+"src/fhir_synth/data/bootstrap_few_shot.json" = "fhir_synth/data/bootstrap_few_shot.json"
 
 [tool.hatch.envs.default]
 installer = "uv"
@@ -148,9 +159,8 @@ module = ["smolagents", "smolagents.*"]
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
-module = ["dspy", "dspy.*"]
+module = ["dspy"]
 ignore_missing_imports = true
-
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

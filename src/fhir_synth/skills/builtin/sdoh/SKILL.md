@@ -1,7 +1,6 @@
 ---
 name: sdoh
 description: Generate Social Determinants of Health (SDOH) observations and conditions using Gravity Project value sets. Use when user mentions social determinants, food insecurity, housing, transportation, financial strain, social isolation, employment, veteran, or SDOH screening.
-keywords: [sdoh, social determinants, food insecurity, housing, homelessness, transportation, financial, social isolation, employment, veteran, education, stress, gravity project, intimate partner violence]
 resource_types: [Observation, Condition, Goal, ServiceRequest]
 always: false
 ---

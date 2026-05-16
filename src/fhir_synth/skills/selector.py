@@ -75,38 +75,42 @@ def _tokenize(text: str) -> set[str]:
 
 
 class KeywordSelector:
-    """Select skills by keyword overlap between the prompt and skill metadata.
+    """Select skills by token overlap between the prompt and skill description.
+
+    Follows the agentskills.io spec: ``description`` is the primary matching
+    signal. The selector tokenises the prompt and each skill's
+    ``description`` + ``name`` + ``resource_types``, then scores by overlap.
 
     Selection logic:
 
-    1. Skills with `always=True` are always included.
-    2. Each remaining skill is scored by counting how many of its
-       `keywords`, `resource_types`, and description tokens appear in
-       the prompt (with fuzzy matching for typo tolerance).
-    3. Skills with score > 0 are included.
-    4. **Safe fallback**: if no skill scored > 0, *all* skills are included
-       so behaviour is never worse than before skills existed.
+    1. Skills with ``always=True`` are always included.
+    2. Each remaining skill is scored:
+
+       - exact ``resource_type`` substring hit → +2
+       - description / name token overlap → +1 per shared token
+       - fuzzy description-token match (typo-tolerant) → +1
+
+    3. Skills with score >= ``min_score`` are included.
+    4. **Safe fallback**: if no skill scores high enough, *all* skills are
+       included so behaviour is never worse than before skills existed.
 
     Args:
         min_score: Minimum score for a skill to be selected (default 1).
-        fuzzy_threshold: Similarity threshold for fuzzy matching (0.0-1.0, default 0.8).
-            Lower = more tolerant of typos, higher = stricter matching.
+        fuzzy_threshold: Similarity threshold for fuzzy matching (0.0-1.0,
+            default 0.85). Lower = more tolerant of typos, higher = stricter.
     """
 
-    def __init__(self, min_score: int = 1, fuzzy_threshold: float = 0.8) -> None:
+    def __init__(self, min_score: int = 1, fuzzy_threshold: float = 0.85) -> None:
         self.min_score = min_score
         self.fuzzy_threshold = fuzzy_threshold
 
-    def _fuzzy_match(self, keyword: str, prompt_tokens: set[str]) -> bool:
-        """Check if keyword fuzzy-matches any prompt token.
-
-        Uses difflib.SequenceMatcher for typo tolerance.
-        """
+    def _fuzzy_match(self, term: str, prompt_tokens: set[str]) -> bool:
+        """Check if *term* fuzzy-matches any prompt token (typo tolerance)."""
         for token in prompt_tokens:
             # Quick length check: if length diff > 30%, skip expensive comparison
-            if abs(len(keyword) - len(token)) > max(len(keyword), len(token)) * 0.3:
+            if abs(len(term) - len(token)) > max(len(term), len(token)) * 0.3:
                 continue
-            similarity = difflib.SequenceMatcher(None, keyword, token).ratio()
+            similarity = difflib.SequenceMatcher(None, term, token).ratio()
             if similarity >= self.fuzzy_threshold:
                 return True
         return False
@@ -126,33 +130,32 @@ class KeywordSelector:
 
             score = 0
 
-            # Match keywords (exact substring or fuzzy match)
-            for kw in skill.keywords:
-                kw_lower = kw.lower()
-                if kw_lower in prompt_lower:
-                    score += 2  # exact keyword hits are high-value
-                elif self._fuzzy_match(kw_lower, prompt_tokens):
-                    score += 1  # fuzzy match gets lower score
-
-            # Match resource types (exact or fuzzy)
+            # Resource types — high-signal structural match
             for rt in skill.resource_types:
                 rt_lower = rt.lower()
                 if rt_lower in prompt_lower:
-                    score += 2  # exact match
+                    score += 2
                 elif self._fuzzy_match(rt_lower, prompt_tokens):
-                    score += 1  # fuzzy match
+                    score += 1
 
-            # Match description tokens against prompt tokens (exact only)
-            desc_tokens = _tokenize(skill.description)
+            # Description + name — agentskills.io primary signal.
+            # Tokenize once, score by overlap with prompt tokens.
+            desc_tokens = _tokenize(skill.description) | _tokenize(skill.name.replace("-", " "))
             score += len(prompt_tokens & desc_tokens)
+
+            # Fuzzy fallback: catch typos against high-signal description terms
+            # the prompt didn't match exactly. Cap candidates to keep this O(N).
+            if score == 0:
+                for term in list(desc_tokens)[:40]:
+                    if self._fuzzy_match(term, prompt_tokens):
+                        score += 1
+                        break
 
             scored.append((score, skill))
 
-        # Select skills above threshold
         selected = [skill for sc, skill in scored if sc >= self.min_score]
 
         if not selected:
-            # Safe fallback: load everything (same as pre-skills behaviour)
             logger.debug("No skills matched prompt — falling back to all skills")
             return skills
 
@@ -181,8 +184,6 @@ def _skills_fingerprint(skills: list[Skill]) -> str:
 def _skill_text(skill: Skill) -> str:
     """Build a rich text representation for embedding a single skill."""
     parts = [skill.name.replace("-", " "), skill.description]
-    if skill.keywords:
-        parts.append(" ".join(skill.keywords))
     if skill.resource_types:
         parts.append(" ".join(skill.resource_types))
     return " ".join(parts)

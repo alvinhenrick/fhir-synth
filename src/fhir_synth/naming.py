@@ -6,7 +6,7 @@ for each generation run, so users never need to specify `--out`.
 
 from pathlib import Path
 
-from coolname import generate_slug  # type: ignore[attr-defined]
+from coolname import generate_slug  # type: ignore[import-untyped]
 
 
 def generate_run_name(n_words: int = 2) -> str:

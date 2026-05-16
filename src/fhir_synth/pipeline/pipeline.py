@@ -144,6 +144,7 @@ class TwoStagePipeline:
         executor: Executor | None = None,
         skill_context_builder: SkillContextBuilder | None = None,
         plan_enricher: ClinicalPlanEnricher | None = None,
+        max_retries: int = 2,
     ) -> None:
         self._planner = planner
         self._synthesizer = synthesizer
@@ -151,6 +152,7 @@ class TwoStagePipeline:
         self._executor: Executor = executor or LocalSmolagentsExecutor()
         self._skill_builder = skill_context_builder or SkillContextBuilder()
         self._enricher: ClinicalPlanEnricher = plan_enricher or PlanEnricher()
+        self.max_retries = max_retries
 
     def run(self, prompt: str, timeout: int = 30) -> PipelineResult:
         """Execute the full pipeline for *prompt*.
@@ -183,15 +185,44 @@ class TwoStagePipeline:
                 [m.role for m in plan.care_team],
             )
 
-        # Stage 2: code synthesis
-        logger.info("Stage 2 — Code synthesis from clinical plan")
-        code = self._synthesizer.synthesize(plan)
-        code = self.preprocess_code(code)
+        # Stage 2: code synthesis + execution with self-healing retry.
+        # Synthesizer is non-deterministic (LLM-backed) — re-synthesizing on
+        # failure typically produces different code that satisfies fhir.resources
+        # v2 strict validation.
+        code = ""
+        resources: list[dict[str, Any]] = []
+        last_error: Exception | None = None
 
-        # Execution
-        logger.info("Executing generated code")
-        result = self._executor.execute(code, timeout=timeout)
-        resources: list[dict[str, Any]] = result.artifacts
+        for attempt in range(1 + self.max_retries):
+            logger.info(
+                "Stage 2 — Code synthesis from clinical plan (attempt %d/%d)",
+                attempt + 1,
+                self.max_retries + 1,
+            )
+            code = self._synthesizer.synthesize(plan)
+            code = self.preprocess_code(code)
+
+            try:
+                result = self._executor.execute(code, timeout=timeout)
+                resources = result.artifacts
+                last_error = None
+                break
+            except Exception as exc:  # noqa: BLE001 — re-raised below if all attempts fail
+                last_error = exc
+                if attempt < self.max_retries:
+                    logger.warning(
+                        "Execution failed on attempt %d/%d: %s — re-synthesizing",
+                        attempt + 1,
+                        self.max_retries + 1,
+                        str(exc).splitlines()[0][:200] if str(exc) else type(exc).__name__,
+                    )
+                else:
+                    logger.error(
+                        "Execution failed after %d attempts; giving up", self.max_retries + 1
+                    )
+
+        if last_error is not None:
+            raise last_error
 
         # Post-processing: reference repair
         resources, repair_report = repair_references(resources)
@@ -224,6 +255,7 @@ class TwoStagePipeline:
         llm_provider: Any,
         executor: Executor | None = None,
         user_skill_dirs: list[Path] | None = None,
+        max_retries: int = 2,
     ) -> Self:
         """Load a compiled (optimized) DSPy program and wire it into the pipeline.
 
@@ -264,6 +296,7 @@ class TwoStagePipeline:
             evaluator=GenerationEvaluator(),
             executor=executor,
             skill_context_builder=SkillContextBuilder(user_dirs=user_skill_dirs),
+            max_retries=max_retries,
         )
 
     @classmethod
@@ -272,6 +305,7 @@ class TwoStagePipeline:
         llm_provider: Any,
         executor: Executor | None = None,
         user_skill_dirs: list[Path] | None = None,
+        max_retries: int = 2,
     ) -> Self:
         """Convenience factory using DSPy modules and default collaborators.
 
@@ -302,6 +336,7 @@ class TwoStagePipeline:
             evaluator=GenerationEvaluator(),
             executor=executor,
             skill_context_builder=SkillContextBuilder(user_dirs=user_skill_dirs),
+            max_retries=max_retries,
         )
 
     # ── Private helpers ───────────────────────────────────────────────────────

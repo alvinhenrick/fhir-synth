@@ -103,7 +103,11 @@ def generate(
     compiled_program: str | None = typer.Option(
         None,
         "--compiled-program",
-        help="Path to a compiled DSPy program JSON (from dspy.save). Only used with --pipeline dspy.",
+        help=(
+            "Compiled DSPy program to load (only with --pipeline dspy). Accepts: "
+            "'miprov2' (bundled MIPROv2), 'bootstrap' (bundled BootstrapFewShot), "
+            "a path to your own compiled JSON, or 'none' for the unoptimized default."
+        ),
     ),
 ) -> None:
     """Generate synthetic FHIR data end-to-end: prompt → LLM → code → execute → NDJSON.
@@ -316,12 +320,14 @@ def generate(
 
         if pipeline == "dspy":
             # ── Two-stage DSPy pipeline ──────────────────────────────────
+            from fhir_synth.compiled_programs import resolve_compiled_program
             from fhir_synth.pipeline.pipeline import TwoStagePipeline
 
-            if compiled_program:
-                typer.echo(f"⚙  Two-stage pipeline (compiled): loading {compiled_program} …")
+            compiled_path = resolve_compiled_program(compiled_program)
+            if compiled_path is not None:
+                typer.echo(f"⚙  Two-stage pipeline (compiled): loading {compiled_path} …")
                 two_stage = TwoStagePipeline.from_compiled(
-                    compiled_path=Path(compiled_program),
+                    compiled_path=compiled_path,
                     llm_provider=llm,
                     executor=executor,
                     user_skill_dirs=[Path(skills_dir)] if skills_dir else None,

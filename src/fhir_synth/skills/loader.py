@@ -30,11 +30,16 @@ _BUILTIN_PACKAGE = "fhir_synth.skills.builtin"
 class Skill:
     """A parsed skill with metadata and body content.
 
+    Per the agentskills.io spec, ``description`` is the primary selection
+    signal — selectors tokenize / embed it to decide when the skill applies.
+    ``resource_types`` is an fhir-synth extension that gives the selector a
+    precise structural signal beyond the natural-language description.
+
     Attributes:
         name: Unique skill identifier (lowercase, hyphens).
-        description: What the skill does and when to use it.
+        description: What the skill does and when to use it. Used by selectors
+            for matching.
         body: Markdown instruction body (loaded on demand).
-        keywords: Domain-specific trigger words for matching.
         resource_types: FHIR resource types this skill covers.
         always: Whether this skill is always included.
         path: Filesystem path to the SKILL.md file.
@@ -44,7 +49,6 @@ class Skill:
     name: str
     description: str
     body: str
-    keywords: list[str] = field(default_factory=list)
     resource_types: list[str] = field(default_factory=list)
     always: bool = False
     path: str = ""
@@ -94,10 +98,9 @@ def _parse_skill_md(content: str, skill_path: str, source: str = "builtin") -> S
         logger.warning("Description too long in %s, truncating", skill_path)
         description = description[:MAX_SKILL_DESCRIPTION_LENGTH]
 
-    # Parse extension fields (keywords, resource_types, always)
-    raw_keywords = meta.get("keywords", [])
-    keywords = [str(k).lower() for k in raw_keywords] if isinstance(raw_keywords, list) else []
-
+    # Parse extension fields (resource_types, always).
+    # The agentskills.io spec uses `description` as the selection signal;
+    # legacy `keywords:` fields are ignored if present.
     raw_types = meta.get("resource_types", [])
     resource_types = [str(t) for t in raw_types] if isinstance(raw_types, list) else []
 
@@ -107,7 +110,6 @@ def _parse_skill_md(content: str, skill_path: str, source: str = "builtin") -> S
         name=name,
         description=description,
         body=body,
-        keywords=keywords,
         resource_types=resource_types,
         always=always,
         path=skill_path,

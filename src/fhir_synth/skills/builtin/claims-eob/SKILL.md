@@ -1,7 +1,6 @@
 ---
 name: claims-eob
 description: Generate Claim, ClaimResponse, and ExplanationOfBenefit (EOB) resources for healthcare billing including professional, institutional, pharmacy (Rx), dental, and vision claims. Use when user mentions claims, EOB, explanation of benefit, billing, reimbursement, adjudication, pharmacy claims, Rx claims, denied claims, copay, deductible, or allowed amount.
-keywords: [claim, claims, EOB, explanation of benefit, billing, reimbursement, adjudication, pharmacy claim, Rx claim, professional claim, institutional claim, dental claim, vision claim, denied, copay, deductible, coinsurance, allowed amount, paid, CMS-1500, UB-04, NCPDP, DRG, CPT, HCPCS, NDC, revenue code]
 resource_types: [Claim, ClaimResponse, ExplanationOfBenefit]
 always: false
 ---

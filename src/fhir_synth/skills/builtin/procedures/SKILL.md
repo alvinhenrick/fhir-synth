@@ -1,7 +1,6 @@
 ---
 name: procedures
 description: Generate Procedure resources with CPT, SNOMED CT, and HCPCS codes, body sites, performers, outcomes, and complication details. Use when user mentions procedures, surgery, operations, biopsy, catheterization, endoscopy, imaging procedures, physical therapy, or CPT codes.
-keywords: [procedure, surgery, operation, biopsy, catheterization, endoscopy, colonoscopy, appendectomy, C-section, cesarean, joint replacement, stent, dialysis, intubation, ventilation, physical therapy, CPT, HCPCS, SNOMED, performed, surgical, operative, wound care, debridement, transplant]
 resource_types: [Procedure]
 always: false
 ---

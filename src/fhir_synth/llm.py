@@ -204,19 +204,9 @@ def get_provider(
     if provider_name == "mock":
         return MockLLMProvider(**kwargs)
 
-    # If no api_key provided, check environment for common API key names
-    if not api_key:
-        env_key_map = {
-            "gpt-": "OPENAI_API_KEY",
-            "claude": "ANTHROPIC_API_KEY",
-            "gemini": "GEMINI_API_KEY",
-        }
-
-        for provider_prefix, env_var in env_key_map.items():
-            if provider_name.startswith(provider_prefix):
-                api_key = os.getenv(env_var)
-                if api_key:
-                    break
+    # LiteLLM resolves the provider-appropriate env var (OPENAI_API_KEY,
+    # ANTHROPIC_API_KEY, etc.) internally when api_key is None — no need to
+    # mirror its table here.
 
     return LLMProvider(
         model=provider_name,

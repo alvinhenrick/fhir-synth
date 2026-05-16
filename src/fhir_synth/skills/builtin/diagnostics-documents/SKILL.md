@@ -1,7 +1,6 @@
 ---
 name: diagnostics-documents
 description: Generate DiagnosticReport resources (lab, radiology, pathology, cardiology) and DocumentReference resources (discharge summaries, consultation notes, progress notes, procedure notes). Use when user mentions diagnostic report, radiology, pathology, lab report, document, discharge summary, clinical notes, or reports.
-keywords: [diagnostic report, radiology, pathology, lab report, document, discharge summary, consultation note, progress note, procedure note, surgical note, referral note, X-ray, CT, MRI, biopsy, report]
 resource_types: [DiagnosticReport, DocumentReference]
 always: false
 ---

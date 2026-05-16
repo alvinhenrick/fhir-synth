@@ -1,7 +1,6 @@
 ---
 name: provenance-data-quality
 description: Generate Provenance resources for audit trails with agents, activities, entities, and security labels. Model realistic EHR data quality variation with missing fields, sparse records, data-absent reasons, duplicate records, and correction workflows. Use when user mentions provenance, audit, data quality, data origin, missing data, sparse records, data completeness, data lineage, correction, amendment, or data governance.
-keywords: [provenance, audit, data quality, data origin, tracking, missing data, sparse, data absent, completeness, unconfirmed, cancelled, entered-in-error, amendment, correction, duplicate, lineage, security label, consent, redaction, data governance, source system, interface, HL7v2, migration]
 resource_types: [Provenance]
 always: true
 ---

@@ -1,7 +1,6 @@
 ---
 name: longitudinal
 description: Temporal disease progression patterns for longitudinal FHIR data generation. Covers encounter frequency, lab value trajectories, medication escalation logic, and vital sign trends for common chronic conditions. Use when generating patients with follow-up visits, multi-year histories, or disease progression over time.
-keywords: [longitudinal, follow-up, progression, timeline, history, chronic, years, months, visits, encounters, trend, trajectory, worsening, improving, escalation, titration, quarterly, annual, baseline, follow up, over time, disease course, treatment response]
 resource_types: [Patient, Encounter, Observation, Condition, MedicationRequest, Procedure, DiagnosticReport, CarePlan, Goal, ServiceRequest]
 always: false
 ---
