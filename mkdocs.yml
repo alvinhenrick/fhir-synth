@@ -75,6 +75,7 @@ nav:
       - Quick Start: getting-started/quickstart.md
   - User Guide:
       - CLI Reference: guide/cli.md
+      - MCP Server: guide/mcp.md
       - Skills System: guide/skills.md
       - DSPy Pipeline: guide/pipeline.md
       - Python API: guide/api.md
