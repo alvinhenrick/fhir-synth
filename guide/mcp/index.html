@@ -10,13 +10,13 @@
       
       
       
-        <link rel="canonical" href="https://alvinhenrick.github.io/fhir-synth/getting-started/quickstart/">
+        <link rel="canonical" href="https://alvinhenrick.github.io/fhir-synth/guide/mcp/">
       
       
-        <link rel="prev" href="../installation/">
+        <link rel="prev" href="../cli/">
       
       
-        <link rel="next" href="../../guide/cli/">
+        <link rel="next" href="../skills/">
       
       
         
@@ -27,7 +27,7 @@
     
     
       
-        <title>Quick Start - FHIR Synth</title>
+        <title>MCP Server - FHIR Synth</title>
       
     
     
@@ -80,7 +80,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#quick-start" class="md-skip">
+        <a href="#mcp-server" class="md-skip">
           Skip to content
         </a>
       
@@ -114,7 +114,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Quick Start
+              MCP Server
             
           </span>
         </div>
@@ -244,13 +244,11 @@
   
   
   
-    
-  
   
     
     
-      <li class="md-tabs__item md-tabs__item--active">
-        <a href="../installation/" class="md-tabs__link">
+      <li class="md-tabs__item">
+        <a href="../../getting-started/installation/" class="md-tabs__link">
           
   
   
@@ -266,11 +264,13 @@
   
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
-        <a href="../../guide/cli/" class="md-tabs__link">
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../cli/" class="md-tabs__link">
           
   
   
@@ -416,6 +416,121 @@
       
   
   
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Getting Started
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quick Start
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
     
   
   
@@ -437,17 +552,17 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
         
           
-          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
             
   
   
   <span class="md-ellipsis">
     
   
-    Getting Started
+    User Guide
   
 
     
@@ -458,12 +573,12 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
-          <label class="md-nav__title" for="__nav_2">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
             <span class="md-nav__icon md-icon"></span>
             
   
-    Getting Started
+    User Guide
   
 
           </label>
@@ -476,14 +591,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../installation/" class="md-nav__link">
+      <a href="../cli/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Installation
+    CLI Reference
   
 
     
@@ -520,7 +635,7 @@
   <span class="md-ellipsis">
     
   
-    Quick Start
+    MCP Server
   
 
     
@@ -538,7 +653,7 @@
   <span class="md-ellipsis">
     
   
-    Quick Start
+    MCP Server
   
 
     
@@ -564,10 +679,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#generate-data-from-a-prompt" class="md-nav__link">
+  <a href="#why" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Generate Data from a Prompt
+        Why
       
     </span>
   </a>
@@ -575,10 +690,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#what-happens-under-the-hood" class="md-nav__link">
+  <a href="#install" class="md-nav__link">
     <span class="md-ellipsis">
       
-        What Happens Under the Hood
+        Install
       
     </span>
   </a>
@@ -586,10 +701,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#output-structure" class="md-nav__link">
+  <a href="#tools" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Output Structure
+        Tools
       
     </span>
   </a>
@@ -597,10 +712,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#empi-mode" class="md-nav__link">
+  <a href="#configure-your-llm-provider" class="md-nav__link">
     <span class="md-ellipsis">
       
-        EMPI Mode
+        Configure your LLM provider
       
     </span>
   </a>
@@ -608,10 +723,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#two-stage-dspy-pipeline" class="md-nav__link">
+  <a href="#wire-into-claude-desktop" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Two-Stage DSPy Pipeline
+        Wire into Claude Desktop
       
     </span>
   </a>
@@ -619,10 +734,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#use-the-python-api" class="md-nav__link">
+  <a href="#wire-into-claude-code" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Use the Python API
+        Wire into Claude Code
       
     </span>
   </a>
@@ -630,10 +745,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#add-custom-metadata" class="md-nav__link">
+  <a href="#bundled-compiled-dspy-programs" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Add Custom Metadata
+        Bundled compiled DSPy programs
       
     </span>
   </a>
@@ -641,13 +756,74 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#test-without-an-api-key" class="md-nav__link">
+  <a href="#environment-variables" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Test Without an API Key
+        Environment variables
       
     </span>
   </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#replaying-generated-code-without-the-llm" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Replaying generated code without the LLM
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#troubleshooting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Troubleshooting
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Troubleshooting">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-dspy-pipeline-requires-the-optional-dspy-extra" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        "The DSPy pipeline requires the optional dspy extra"
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#authenticationerror-from-litellm" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        AuthenticationError from LiteLLM
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#compiled-program-version-warnings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Compiled program version warnings
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -660,65 +836,6 @@
 
               
             
-          </ul>
-        </nav>
-      
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-  
-    
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
-        
-          
-          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    User Guide
-  
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_3">
-            <span class="md-nav__icon md-icon"></span>
-            
-  
-    User Guide
-  
-
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
               
                 
   
@@ -726,63 +843,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../guide/cli/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    CLI Reference
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../guide/mcp/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    MCP Server
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../guide/skills/" class="md-nav__link">
+      <a href="../skills/" class="md-nav__link">
         
   
   
@@ -810,7 +871,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../guide/pipeline/" class="md-nav__link">
+      <a href="../pipeline/" class="md-nav__link">
         
   
   
@@ -838,7 +899,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../guide/api/" class="md-nav__link">
+      <a href="../api/" class="md-nav__link">
         
   
   
@@ -866,7 +927,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../guide/metadata/" class="md-nav__link">
+      <a href="../metadata/" class="md-nav__link">
         
   
   
@@ -894,7 +955,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../guide/metadata-reference/" class="md-nav__link">
+      <a href="../metadata-reference/" class="md-nav__link">
         
   
   
@@ -922,7 +983,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../guide/providers/" class="md-nav__link">
+      <a href="../providers/" class="md-nav__link">
         
   
   
@@ -950,7 +1011,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../guide/code-quality/" class="md-nav__link">
+      <a href="../code-quality/" class="md-nav__link">
         
   
   
@@ -1286,10 +1347,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#generate-data-from-a-prompt" class="md-nav__link">
+  <a href="#why" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Generate Data from a Prompt
+        Why
       
     </span>
   </a>
@@ -1297,10 +1358,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#what-happens-under-the-hood" class="md-nav__link">
+  <a href="#install" class="md-nav__link">
     <span class="md-ellipsis">
       
-        What Happens Under the Hood
+        Install
       
     </span>
   </a>
@@ -1308,10 +1369,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#output-structure" class="md-nav__link">
+  <a href="#tools" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Output Structure
+        Tools
       
     </span>
   </a>
@@ -1319,10 +1380,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#empi-mode" class="md-nav__link">
+  <a href="#configure-your-llm-provider" class="md-nav__link">
     <span class="md-ellipsis">
       
-        EMPI Mode
+        Configure your LLM provider
       
     </span>
   </a>
@@ -1330,10 +1391,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#two-stage-dspy-pipeline" class="md-nav__link">
+  <a href="#wire-into-claude-desktop" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Two-Stage DSPy Pipeline
+        Wire into Claude Desktop
       
     </span>
   </a>
@@ -1341,10 +1402,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#use-the-python-api" class="md-nav__link">
+  <a href="#wire-into-claude-code" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Use the Python API
+        Wire into Claude Code
       
     </span>
   </a>
@@ -1352,10 +1413,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#add-custom-metadata" class="md-nav__link">
+  <a href="#bundled-compiled-dspy-programs" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Add Custom Metadata
+        Bundled compiled DSPy programs
       
     </span>
   </a>
@@ -1363,13 +1424,74 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#test-without-an-api-key" class="md-nav__link">
+  <a href="#environment-variables" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Test Without an API Key
+        Environment variables
       
     </span>
   </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#replaying-generated-code-without-the-llm" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Replaying generated code without the LLM
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#troubleshooting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Troubleshooting
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Troubleshooting">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-dspy-pipeline-requires-the-optional-dspy-extra" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        "The DSPy pipeline requires the optional dspy extra"
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#authenticationerror-from-litellm" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        AuthenticationError from LiteLLM
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#compiled-program-version-warnings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Compiled program version warnings
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1393,98 +1515,205 @@
   
 
 
-<h1 id="quick-start">Quick Start<a class="headerlink" href="#quick-start" title="Permanent link">&para;</a></h1>
-<h2 id="generate-data-from-a-prompt">Generate Data from a Prompt<a class="headerlink" href="#generate-data-from-a-prompt" title="Permanent link">&para;</a></h2>
-<p>Describe what you need in plain English — FHIR Synth generates the code and executes it.
-All outputs are auto-saved to <code>runs/</code> with a unique Docker-style name (e.g. <code>brave_phoenix</code>):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># 10 diabetic patients with labs → runs/brave_phoenix/</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;10 diabetic patients with HbA1c observations&quot;</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="c1"># Also split: one JSON file per patient in the run directory</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;10 diabetic patients with HbA1c observations&quot;</span><span class="w"> </span>--split
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="c1"># 5 patients with hypertension, encounters, and meds</span>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;5 patients with hypertension, office encounters, and antihypertensive medications&quot;</span>
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>
-<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="c1"># Generate STU3 resources instead of R4B (case-insensitive)</span>
-<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;10 patients with diabetes&quot;</span><span class="w"> </span>--fhir-version<span class="w"> </span>stu3
+<h1 id="mcp-server">MCP Server<a class="headerlink" href="#mcp-server" title="Permanent link">&para;</a></h1>
+<p>FHIR Synth ships an <a href="https://modelcontextprotocol.io/">MCP (Model Context Protocol)</a> server so Claude (Desktop, Code, or any MCP client) can generate synthetic FHIR data on demand.</p>
+<h2 id="why">Why<a class="headerlink" href="#why" title="Permanent link">&para;</a></h2>
+<p>The MCP server returns <strong>both the generated Python code AND the executed FHIR resources</strong>. The script is self-contained — commit it to your repo and call <code>generate_resources()</code> from pytest fixtures forever after, with no LLM round-trip for replay.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>LLM runs once to author the code  →  the code runs forever.
 </code></pre></div>
-<h2 id="what-happens-under-the-hood">What Happens Under the Hood<a class="headerlink" href="#what-happens-under-the-hood" title="Permanent link">&para;</a></h2>
-<ol>
-<li><strong>Skills selection</strong>: Your prompt is matched against 16 built-in skills using fuzzy keyword matching with typo tolerance</li>
-<li>Your prompt + selected skills go to the LLM (via <a href="https://docs.litellm.ai/">LiteLLM</a> — 100+ providers)</li>
-<li>LLM generates Python code using <code>fhir.resources</code> (Pydantic FHIR models)</li>
-<li>Code is safety-checked (import whitelist + dangerous builtins scan) and auto-fixed (naive datetimes → UTC)</li>
-<li>Code executes via a pluggable executor backend powered by <a href="https://huggingface.co/docs/smolagents">smolagents</a> (local AST interpreter, Docker, E2B, or Blaxel)</li>
-<li><strong>Enhanced FHIR validation</strong> — offline validation using <code>fhir.resources</code>:<ul>
-<li>Pydantic model validation (required fields, types, cardinality)</li>
-<li>Choice-type [x] mutual exclusion checks</li>
-<li>Reference integrity checks (cross-resource references)</li>
-<li>US Core compliance checks (must-support field coverage)</li>
-</ul>
-</li>
-<li>If anything fails, the error is sent back to the LLM for self-healing (up to 2 retries)</li>
-<li>Resources are split by patient and saved as NDJSON</li>
-</ol>
-<h2 id="output-structure">Output Structure<a class="headerlink" href="#output-structure" title="Permanent link">&para;</a></h2>
-<p>Each run auto-generates a unique name and saves all artifacts in a directory:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>runs/
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>  brave_phoenix/
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>    prompt.txt              ← the user&#39;s prompt
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>    brave_phoenix.py        ← generated Python code
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>    brave_phoenix.ndjson    ← NDJSON output (one patient bundle per line)
-<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>    patient_001.json        ← (with --split) per-patient JSON files
-<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>    patient_002.json
-<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>    ...
+<h2 id="install">Install<a class="headerlink" href="#install" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>pip<span class="w"> </span>install<span class="w"> </span><span class="s2">&quot;fhir-synth[mcp]&quot;</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="c1"># Or get everything (DSPy two-stage, Bedrock, semantic skills, sandboxes):</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>pip<span class="w"> </span>install<span class="w"> </span><span class="s2">&quot;fhir-synth[all]&quot;</span>
 </code></pre></div>
-<h2 id="empi-mode">EMPI Mode<a class="headerlink" href="#empi-mode" title="Permanent link">&para;</a></h2>
-<p>Generate Person → Patient linkages across EMR systems:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;EMPI dataset&quot;</span><span class="w"> </span>--empi<span class="w"> </span>--persons<span class="w"> </span><span class="m">3</span>
+<p>This adds a <code>fhir-synth-mcp</code> console script.</p>
+<h2 id="tools">Tools<a class="headerlink" href="#tools" title="Permanent link">&para;</a></h2>
+<p>The server exposes five tools:</p>
+<table>
+<thead>
+<tr>
+<th>Tool</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>generate_fhir_data</code></td>
+<td>Prompt → Python code + executed FHIR resources + quality report</td>
+</tr>
+<tr>
+<td><code>validate_fhir_bundle</code></td>
+<td>Validate any FHIR JSON / Bundle / NDJSON payload (Pydantic + reference integrity + US Core)</td>
+</tr>
+<tr>
+<td><code>list_skills</code></td>
+<td>Discover the clinical domains the generator knows about</td>
+</tr>
+<tr>
+<td><code>list_runs</code></td>
+<td>Browse previously generated runs</td>
+</tr>
+<tr>
+<td><code>get_run</code></td>
+<td>Fetch a run's prompt, code, and resources for replay</td>
+</tr>
+</tbody>
+</table>
+<h2 id="configure-your-llm-provider">Configure your LLM provider<a class="headerlink" href="#configure-your-llm-provider" title="Permanent link">&para;</a></h2>
+<p>The server reads provider settings from environment variables — each user brings their own credentials.</p>
+<p><strong>Anthropic direct:</strong></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>FHIR_SYNTH_PROVIDER=claude-sonnet-4-5
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>ANTHROPIC_API_KEY=sk-ant-...
 </code></pre></div>
-<h2 id="two-stage-dspy-pipeline">Two-Stage DSPy Pipeline<a class="headerlink" href="#two-stage-dspy-pipeline" title="Permanent link">&para;</a></h2>
-<p>Use the optional DSPy pipeline for structured clinical planning before code generation:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1"># Two-stage: clinical planning → code synthesis</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>pip<span class="w"> </span>install<span class="w"> </span><span class="s1">&#39;fhir-synth[dspy]&#39;</span>
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;5 diabetic patients with labs&quot;</span><span class="w"> </span>--pipeline<span class="w"> </span>dspy
-<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>
-<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="c1"># Use a pre-optimized DSPy program</span>
-<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;5 diabetic patients&quot;</span><span class="w"> </span>--pipeline<span class="w"> </span>dspy<span class="w"> </span>--compiled-program<span class="w"> </span>optimized.json
+<p><strong>AWS Bedrock:</strong></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>FHIR_SYNTH_PROVIDER=bedrock/anthropic.claude-3-5-sonnet-20241022-v2:0
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>AWS_PROFILE=my-profile
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>AWS_REGION=us-east-1
 </code></pre></div>
-<p>See <a href="../../guide/pipeline/">DSPy Pipeline</a> for details.</p>
-<h2 id="use-the-python-api">Use the Python API<a class="headerlink" href="#use-the-python-api" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fhir_synth.llm</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_provider</span>
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fhir_synth.code_generator</span><span class="w"> </span><span class="kn">import</span> <span class="n">CodeGenerator</span>
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fhir_synth.bundle</span><span class="w"> </span><span class="kn">import</span> <span class="n">BundleBuilder</span>
-<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>
-<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="c1"># Generate code from prompts</span>
-<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="n">llm</span> <span class="o">=</span> <span class="n">get_provider</span><span class="p">(</span><span class="s2">&quot;mock&quot;</span><span class="p">)</span>
-<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="n">code_gen</span> <span class="o">=</span> <span class="n">CodeGenerator</span><span class="p">(</span><span class="n">llm</span><span class="p">)</span>
-<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="n">code</span> <span class="o">=</span> <span class="n">code_gen</span><span class="o">.</span><span class="n">generate_code_from_prompt</span><span class="p">(</span><span class="s2">&quot;Create 20 patients&quot;</span><span class="p">)</span>
-<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="n">resources</span> <span class="o">=</span> <span class="n">code_gen</span><span class="o">.</span><span class="n">execute_generated_code</span><span class="p">(</span><span class="n">code</span><span class="p">)</span>
-<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a>
-<a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a><span class="c1"># Build a FHIR bundle</span>
-<a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a><span class="n">builder</span> <span class="o">=</span> <span class="n">BundleBuilder</span><span class="p">(</span><span class="n">bundle_type</span><span class="o">=</span><span class="s2">&quot;transaction&quot;</span><span class="p">)</span>
-<a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a><span class="n">builder</span><span class="o">.</span><span class="n">add_resources</span><span class="p">(</span><span class="n">resources</span><span class="p">)</span>
-<a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a><span class="n">bundle</span> <span class="o">=</span> <span class="n">builder</span><span class="o">.</span><span class="n">build</span><span class="p">()</span>
+<p><strong>OpenAI / codex:</strong></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>FHIR_SYNTH_PROVIDER=gpt-5.2-codex
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>OPENAI_API_KEY=sk-...
 </code></pre></div>
-<h2 id="add-custom-metadata">Add Custom Metadata<a class="headerlink" href="#add-custom-metadata" title="Permanent link">&para;</a></h2>
-<p>Apply security labels, tags, and profiles via YAML:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="c1"># meta-normal.yaml</span>
-<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="nt">meta</span><span class="p">:</span>
-<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">  </span><span class="nt">security</span><span class="p">:</span>
-<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">system</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;http://terminology.hl7.org/CodeSystem/v3-Confidentiality&quot;</span>
-<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="w">      </span><span class="nt">code</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;R&quot;</span>
-<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="w">      </span><span class="nt">display</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Restricted&quot;</span>
-<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="w">  </span><span class="nt">tag</span><span class="p">:</span>
-<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">system</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;http://example.org/tags&quot;</span>
-<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a><span class="w">      </span><span class="nt">code</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;synthetic-data&quot;</span>
-<a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a><span class="w">  </span><span class="nt">source</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;http://example.org/fhir-synth&quot;</span>
+<p>Any <a href="https://docs.litellm.ai/docs/providers">LiteLLM</a> model string works.</p>
+<h2 id="wire-into-claude-desktop">Wire into Claude Desktop<a class="headerlink" href="#wire-into-claude-desktop" title="Permanent link">&para;</a></h2>
+<p><code>~/Library/Application Support/Claude/claude_desktop_config.json</code>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="p">{</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">  </span><span class="nt">&quot;mcpServers&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">    </span><span class="nt">&quot;fhir-synth&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="w">      </span><span class="nt">&quot;command&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;fhir-synth-mcp&quot;</span><span class="p">,</span>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="w">      </span><span class="nt">&quot;env&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="w">        </span><span class="nt">&quot;FHIR_SYNTH_PROVIDER&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;claude-sonnet-4-5&quot;</span><span class="p">,</span>
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="w">        </span><span class="nt">&quot;ANTHROPIC_API_KEY&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;sk-ant-...&quot;</span>
+<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a><span class="w">      </span><span class="p">}</span>
+<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a><span class="w">  </span><span class="p">}</span>
+<a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a><span class="p">}</span>
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;20 patients&quot;</span><span class="w"> </span>--meta-config<span class="w"> </span>examples/meta-normal.yaml
+<h2 id="wire-into-claude-code">Wire into Claude Code<a class="headerlink" href="#wire-into-claude-code" title="Permanent link">&para;</a></h2>
+<p><code>~/.claude/settings.json</code> (or project <code>.claude/settings.json</code>):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="p">{</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">  </span><span class="nt">&quot;mcpServers&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">    </span><span class="nt">&quot;fhir-synth&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">      </span><span class="nt">&quot;command&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;fhir-synth-mcp&quot;</span><span class="p">,</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="w">      </span><span class="nt">&quot;env&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="w">        </span><span class="nt">&quot;FHIR_SYNTH_PROVIDER&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;bedrock/anthropic.claude-3-5-sonnet-20241022-v2:0&quot;</span><span class="p">,</span>
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="w">        </span><span class="nt">&quot;AWS_PROFILE&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;my-profile&quot;</span><span class="p">,</span>
+<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="w">        </span><span class="nt">&quot;AWS_REGION&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;us-east-1&quot;</span><span class="p">,</span>
+<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a><span class="w">        </span><span class="nt">&quot;FHIR_SYNTH_PIPELINE&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;dspy&quot;</span><span class="p">,</span>
+<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a><span class="w">        </span><span class="nt">&quot;FHIR_SYNTH_COMPILED&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;miprov2&quot;</span>
+<a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a><span class="w">      </span><span class="p">}</span>
+<a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a><span class="w">  </span><span class="p">}</span>
+<a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a><span class="p">}</span>
 </code></pre></div>
-<h2 id="test-without-an-api-key">Test Without an API Key<a class="headerlink" href="#test-without-an-api-key" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;5 patients&quot;</span><span class="w"> </span>--provider<span class="w"> </span>mock
+<p>Restart Claude. Type something like <em>"generate 10 diabetic patients with HbA1c labs"</em> — Claude calls <code>generate_fhir_data</code> and you'll get back a <code>runs/&lt;name&gt;/</code> directory with the script and NDJSON.</p>
+<h2 id="bundled-compiled-dspy-programs">Bundled compiled DSPy programs<a class="headerlink" href="#bundled-compiled-dspy-programs" title="Permanent link">&para;</a></h2>
+<p>Two pre-optimized <a href="../pipeline/">DSPy</a> programs ship inside the wheel:</p>
+<table>
+<thead>
+<tr>
+<th>Short name</th>
+<th>What it is</th>
+<th>When to pick it</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>miprov2</code></td>
+<td>MIPROv2-optimized program (default)</td>
+<td>Best quality, recommended</td>
+</tr>
+<tr>
+<td><code>bootstrap</code></td>
+<td>BootstrapFewShot program</td>
+<td>Faster, smaller few-shot context</td>
+</tr>
+</tbody>
+</table>
+<p>Enable via env vars:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>FHIR_SYNTH_PIPELINE=dspy
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>FHIR_SYNTH_COMPILED=miprov2     # or &quot;bootstrap&quot;, or &quot;/path/to/your.json&quot;, or &quot;none&quot;
 </code></pre></div>
+<p>Requires <code>pip install "fhir-synth[mcp,dspy]"</code>.</p>
+<p>Override per call from a prompt — the tool also accepts <code>pipeline</code> and <code>compiled_program</code> parameters, so a user can say <em>"regenerate using the bootstrap program"</em> and Claude will pass <code>compiled_program="bootstrap"</code> for that one call without touching the env config.</p>
+<h2 id="environment-variables">Environment variables<a class="headerlink" href="#environment-variables" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Default</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>FHIR_SYNTH_PROVIDER</code></td>
+<td><code>claude-sonnet-4-5</code></td>
+<td>LiteLLM model string</td>
+</tr>
+<tr>
+<td><code>ANTHROPIC_API_KEY</code></td>
+<td>–</td>
+<td>Anthropic credentials</td>
+</tr>
+<tr>
+<td><code>OPENAI_API_KEY</code></td>
+<td>–</td>
+<td>OpenAI credentials</td>
+</tr>
+<tr>
+<td><code>AWS_PROFILE</code> / <code>AWS_REGION</code></td>
+<td>–</td>
+<td>Bedrock credentials</td>
+</tr>
+<tr>
+<td><code>FHIR_SYNTH_PIPELINE</code></td>
+<td><code>default</code></td>
+<td><code>default</code> (single-stage) or <code>dspy</code> (two-stage)</td>
+</tr>
+<tr>
+<td><code>FHIR_SYNTH_COMPILED</code></td>
+<td><code>miprov2</code></td>
+<td>Bundled short name, filesystem path, or <code>none</code></td>
+</tr>
+<tr>
+<td><code>FHIR_SYNTH_EXECUTOR</code></td>
+<td><code>local</code></td>
+<td><code>local</code>, <code>docker</code>, <code>e2b</code>, <code>blaxel</code></td>
+</tr>
+<tr>
+<td><code>FHIR_SYNTH_RUNS_DIR</code></td>
+<td><code>runs</code></td>
+<td>Where run artefacts are written</td>
+</tr>
+</tbody>
+</table>
+<h2 id="replaying-generated-code-without-the-llm">Replaying generated code without the LLM<a class="headerlink" href="#replaying-generated-code-without-the-llm" title="Permanent link">&para;</a></h2>
+<p>The killer feature: every <code>generate_fhir_data</code> call writes a self-contained Python script. Drop it into your repo and your tests no longer need an LLM round-trip:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="c1"># conftest.py</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">runs.brave_phoenix.brave_phoenix</span><span class="w"> </span><span class="kn">import</span> <span class="n">generate_resources</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="kn">import</span><span class="w"> </span><span class="nn">pytest</span>
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span><span class="p">(</span><span class="n">scope</span><span class="o">=</span><span class="s2">&quot;session&quot;</span><span class="p">)</span>
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="k">def</span><span class="w"> </span><span class="nf">fhir_patients</span><span class="p">():</span>
+<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a>    <span class="k">return</span> <span class="n">generate_resources</span><span class="p">()</span>   <span class="c1"># pure Python, deterministic, no API call</span>
+</code></pre></div>
+<h2 id="troubleshooting">Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permanent link">&para;</a></h2>
+<h3 id="the-dspy-pipeline-requires-the-optional-dspy-extra">"The DSPy pipeline requires the optional dspy extra"<a class="headerlink" href="#the-dspy-pipeline-requires-the-optional-dspy-extra" title="Permanent link">&para;</a></h3>
+<p>You set <code>FHIR_SYNTH_PIPELINE=dspy</code> but installed <code>[mcp]</code> only. Install with both:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>pip<span class="w"> </span>install<span class="w"> </span><span class="s2">&quot;fhir-synth[mcp,dspy]&quot;</span>
+</code></pre></div>
+<h3 id="authenticationerror-from-litellm"><code>AuthenticationError</code> from LiteLLM<a class="headerlink" href="#authenticationerror-from-litellm" title="Permanent link">&para;</a></h3>
+<p>The provider-appropriate env var isn't set or isn't visible to the MCP process. Confirm with:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$ANTHROPIC_API_KEY</span><span class="s2">&quot;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>head<span class="w"> </span>-c<span class="w"> </span><span class="m">10</span>
+</code></pre></div>
+<p>Then re-launch your Claude client so it picks up the env.</p>
+<h3 id="compiled-program-version-warnings">Compiled program version warnings<a class="headerlink" href="#compiled-program-version-warnings" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>WARNING dspy.primitives.base_module: There is a mismatch of dspy version between
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>saved model and current environment.
+</code></pre></div>
+<p>This is informational — the bundled <code>miprov2.json</code> was compiled against a slightly older DSPy version. Quality is unaffected; suppress by re-running <code>fhir-synth optimize</code> against your current DSPy and pointing <code>FHIR_SYNTH_COMPILED</code> at the result.</p>
 
 
 

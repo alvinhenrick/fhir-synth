@@ -13,7 +13,7 @@
         <link rel="canonical" href="https://alvinhenrick.github.io/fhir-synth/guide/skills/">
       
       
-        <link rel="prev" href="../cli/">
+        <link rel="prev" href="../mcp/">
       
       
         <link rel="next" href="../pipeline/">
@@ -616,6 +616,34 @@
                 
   
   
+  
+  
+    <li class="md-nav__item">
+      <a href="../mcp/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MCP Server
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
     
   
   
@@ -817,17 +845,6 @@
     <span class="md-ellipsis">
       
         Writing Effective Skills
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#keyword-selection-tips" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Keyword Selection Tips
       
     </span>
   </a>
@@ -1559,17 +1576,6 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#keyword-selection-tips" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Keyword Selection Tips
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
   <a href="#when-to-mark-always-true" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1685,9 +1691,10 @@
 <li><strong>YAML frontmatter</strong> — Metadata for discovery and selection</li>
 <li><strong>Markdown body</strong> — Domain-specific guidance for the LLM</li>
 </ul>
+<p>Per the agentskills.io spec, <strong><code>description</code> is the selection signal</strong> — selectors tokenize or embed it to decide when the skill applies. FHIR Synth adds one extension field, <code>resource_types</code>, that gives the selector a precise structural signal when the user names a FHIR resource type directly.</p>
 <p>Skills are automatically selected based on your prompt and injected into the system context, ensuring the LLM generates realistic, compliant FHIR data.</p>
 <h2 id="built-in-skills">Built-in Skills<a class="headerlink" href="#built-in-skills" title="Permanent link">&para;</a></h2>
-<p>FHIR Synth includes 16 production-ready skills covering core healthcare domains:</p>
+<p>FHIR Synth ships 17 production-ready skills covering core healthcare domains:</p>
 <table>
 <thead>
 <tr>
@@ -1704,8 +1711,8 @@
 </tr>
 <tr>
 <td><strong>medications</strong></td>
-<td>RxNorm codes, dosing, timing, adherence patterns</td>
-<td><code>MedicationRequest</code></td>
+<td>Full medication family — RxNorm, dosing, dispensing, administration, statements</td>
+<td><code>Medication</code>, <code>MedicationRequest</code>, <code>MedicationDispense</code>, <code>MedicationAdministration</code>, <code>MedicationStatement</code>, <code>MedicationKnowledge</code></td>
 </tr>
 <tr>
 <td><strong>vitals-and-labs</strong></td>
@@ -1740,7 +1747,7 @@
 <tr>
 <td><strong>care-team</strong></td>
 <td>Care team composition and roles</td>
-<td><code>CareTeam</code></td>
+<td><code>CareTeam</code>, <code>Practitioner</code>, <code>PractitionerRole</code>, <code>Organization</code>, <code>Location</code></td>
 </tr>
 <tr>
 <td><strong>diagnostics-documents</strong></td>
@@ -1763,6 +1770,11 @@
 <td><code>Observation</code></td>
 </tr>
 <tr>
+<td><strong>longitudinal</strong></td>
+<td>Multi-encounter timelines, disease progression, treatment response</td>
+<td>All</td>
+</tr>
+<tr>
 <td><strong>edge-cases</strong></td>
 <td>Missing data, ambiguous records, real-world messiness</td>
 <td>All</td>
@@ -1779,69 +1791,69 @@
 </tr>
 </tbody>
 </table>
-<p>Skills marked as <strong>always</strong> (patient-variation, edge-cases, provenance-data-quality) are included in every generation.</p>
+<p>Skills marked <strong><code>always: true</code></strong> in their frontmatter (patient-variation, edge-cases, provenance-data-quality) are included in every generation.</p>
 <h2 id="skill-selection">Skill Selection<a class="headerlink" href="#skill-selection" title="Permanent link">&para;</a></h2>
 <h3 id="keyword-selector-default">Keyword Selector (Default)<a class="headerlink" href="#keyword-selector-default" title="Permanent link">&para;</a></h3>
-<p>The <strong>keyword selector</strong> uses fuzzy matching with <strong>typo tolerance</strong> to select relevant skills. It's fast, has zero dependencies, and handles common typos automatically.</p>
+<p>The default selector scores skills by <strong>token overlap between the prompt and the skill's <code>description</code> + <code>name</code></strong>, with a fuzzy fallback for typo tolerance via Python's built-in <code>difflib</code>. Zero dependencies.</p>
 <p><strong>How it works:</strong></p>
 <ol>
-<li>Exact keyword matches score <strong>+2 points</strong></li>
-<li>Fuzzy matches (≥80% similarity) score <strong>+1 point</strong></li>
-<li>Description token overlap scores <strong>+1 point per token</strong></li>
-<li>Skills scoring ≥1 are selected</li>
-<li>Safe fallback: if nothing matches, all skills are included</li>
+<li>Resource-type substring hit (e.g. user wrote "MedicationRequest") → <strong>+2 points</strong></li>
+<li>Token overlap between prompt and skill description/name → <strong>+1 per shared token</strong></li>
+<li>Fuzzy fallback (≥85% similarity) when score is still 0 → <strong>+1 point</strong></li>
+<li>Skills scoring ≥ <code>min_score</code> (default 1) are selected</li>
+<li><strong>Safe fallback</strong>: if nothing matches, all skills are included</li>
 </ol>
 <p><strong>Examples:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># Exact match</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># Description-token match</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;10 patients with diabetes and medications&quot;</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="c1"># → Selects: medications, comorbidity</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="c1"># → Selects: medications (description names &quot;medication&quot;), comorbidity (&quot;diabetes&quot;)</span>
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="c1"># Typo tolerance</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="c1"># Typo tolerance via fuzzy fallback</span>
 <a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;10 patients with diabtes and medicaton&quot;</span>
 <a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="c1"># → Still selects: medications, comorbidity</span>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="c1"># &quot;diabtes&quot; → &quot;diabetes&quot; ✓ (88% similarity)</span>
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="c1"># &quot;medicaton&quot; → &quot;medication&quot; ✓ (91% similarity)</span>
-<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>
-<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="c1"># Resource type matching</span>
-<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;Generate 20 Observation resources&quot;</span>
-<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="c1"># → Selects: vitals-and-labs, sdoh</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="c1"># Resource-type matching</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;Generate 20 Observation resources&quot;</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="c1"># → Selects: vitals-and-labs, sdoh (both list Observation)</span>
 </code></pre></div>
 <p><strong>Configuration:</strong></p>
-<p>The keyword selector uses a fuzzy threshold of 0.8 (80% similarity) by default. This is tuned to catch common typos while avoiding false matches.</p>
+<p>The default fuzzy threshold is 0.85 (85% similarity). Tune via <code>KeywordSelector(fuzzy_threshold=0.8)</code> for more tolerant matching.</p>
 <h3 id="faiss-selector-optional">FAISS Selector (Optional)<a class="headerlink" href="#faiss-selector-optional" title="Permanent link">&para;</a></h3>
-<p>The <strong>FAISS selector</strong> uses semantic embeddings for similarity-based retrieval. It's best for large custom skill sets or when you need semantic understanding beyond keywords.</p>
+<p>The <strong>FAISS selector</strong> uses semantic embeddings of the skill description for similarity-based retrieval. Best for large custom skill sets or when you need semantic understanding ("blood sugar" ≈ "glucose").</p>
 <p><strong>Installation:</strong></p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>pip<span class="w"> </span>install<span class="w"> </span>fhir-synth<span class="o">[</span>semantic<span class="o">]</span>
 </code></pre></div>
-<p>This installs:
-- <code>faiss-cpu</code> — Vector similarity search
-- <code>sentence-transformers</code> — Local embedding model (all-MiniLM-L6-v2, 384-dim, ~80MB)
-- <code>numpy</code> — Array operations</p>
+<p>This installs:</p>
+<ul>
+<li><code>faiss-cpu</code> — Vector similarity search</li>
+<li><code>sentence-transformers</code> — Local embedding model (all-MiniLM-L6-v2, 384-dim, ~80MB)</li>
+<li><code>numpy</code> — Array operations</li>
+</ul>
 <p><strong>Usage:</strong></p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># Basic usage</span>
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;5 patients&quot;</span><span class="w"> </span>--selector<span class="w"> </span>faiss
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="c1"># Adjust similarity threshold (0.0-1.0)</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="c1"># Adjust similarity threshold (0.0–1.0)</span>
 <a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;5 patients&quot;</span><span class="w"> </span>--selector<span class="w"> </span>faiss<span class="w"> </span>--score-threshold<span class="w"> </span><span class="m">0</span>.5
 </code></pre></div>
 <p><strong>How it works:</strong></p>
 <ol>
-<li>On first run: embeds all skills → builds FAISS index → saves to <code>~/.cache/fhir-synth/skills/</code></li>
+<li>On first run: embeds all skill descriptions → builds FAISS index → saves to <code>~/.cache/fhir-synth/skills/</code></li>
 <li>Subsequent runs: loads cached index (instant)</li>
 <li>Embeds your prompt → searches for similar skills</li>
-<li>Returns all skills above similarity threshold (default: 0.3)</li>
+<li>Returns all skills above the similarity threshold (default 0.3)</li>
 </ol>
 <p><strong>When to use FAISS:</strong></p>
 <ul>
 <li>You have 50+ custom skills</li>
-<li>You need semantic matching ("blood sugar" ≈ "glucose", "HTN" ≈ "hypertension")</li>
+<li>You need semantic matching ("HTN" ≈ "hypertension")</li>
 <li>You're building a specialized domain (oncology, genomics, etc.)</li>
 </ul>
 <p><strong>When to use keyword (default):</strong></p>
 <ul>
 <li>You have ≤20 skills (built-in skills work great)</li>
 <li>You want zero extra dependencies</li>
-<li>Keyword + typo tolerance is sufficient</li>
+<li>Token overlap + typo tolerance is sufficient</li>
 </ul>
 <h2 id="custom-skills">Custom Skills<a class="headerlink" href="#custom-skills" title="Permanent link">&para;</a></h2>
 <p>Create your own skills to extend FHIR Synth with domain-specific knowledge.</p>
@@ -1856,35 +1868,34 @@
 <h3 id="skillmd-format">SKILL.md Format<a class="headerlink" href="#skillmd-format" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="nn">---</span>
 <a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">oncology-staging</span>
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Generate cancer conditions with TNM staging observations and treatment plans</span>
-<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="nt">keywords</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">cancer</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">oncology</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">staging</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">tnm</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">tumor</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">node</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">metastasis</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">chemotherapy</span><span class="p p-Indicator">]</span>
-<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="nt">resource_types</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">Condition</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">Observation</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">MedicationRequest</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">Procedure</span><span class="p p-Indicator">]</span>
-<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="nt">always</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
-<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="nn">---</span>
-<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>
-<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="c1"># Oncology Staging</span>
-<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a>
-<a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a><span class="l l-Scalar l-Scalar-Plain">Generate cancer patients with realistic staging and treatment data.</span>
-<a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a>
-<a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a><span class="l l-Scalar l-Scalar-Plain">## Primary Cancer Conditions</span>
-<a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a>
-<a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a><span class="l l-Scalar l-Scalar-Plain">Use SNOMED CT codes for cancer diagnoses</span><span class="p p-Indicator">:</span>
-<a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">93655004 — Primary malignant neoplasm of lung</span>
-<a id="__codelineno-4-17" name="__codelineno-4-17" href="#__codelineno-4-17"></a><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">254837009 — Malignant neoplasm of breast</span>
-<a id="__codelineno-4-18" name="__codelineno-4-18" href="#__codelineno-4-18"></a><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">363418001 — Malignant neoplasm of colon</span>
-<a id="__codelineno-4-19" name="__codelineno-4-19" href="#__codelineno-4-19"></a>
-<a id="__codelineno-4-20" name="__codelineno-4-20" href="#__codelineno-4-20"></a><span class="c1">## TNM Staging</span>
-<a id="__codelineno-4-21" name="__codelineno-4-21" href="#__codelineno-4-21"></a>
-<a id="__codelineno-4-22" name="__codelineno-4-22" href="#__codelineno-4-22"></a><span class="nt">Create TNM staging observations using LOINC 21908-9 (Stage group)</span><span class="p">:</span>
-<a id="__codelineno-4-23" name="__codelineno-4-23" href="#__codelineno-4-23"></a><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Use components for T (tumor), N (node), M (metastasis)</span>
-<a id="__codelineno-4-24" name="__codelineno-4-24" href="#__codelineno-4-24"></a><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">Example</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">T2N1M0 = Stage IIB</span>
-<a id="__codelineno-4-25" name="__codelineno-4-25" href="#__codelineno-4-25"></a>
-<a id="__codelineno-4-26" name="__codelineno-4-26" href="#__codelineno-4-26"></a><span class="c1">## Treatment Plans</span>
-<a id="__codelineno-4-27" name="__codelineno-4-27" href="#__codelineno-4-27"></a>
-<a id="__codelineno-4-28" name="__codelineno-4-28" href="#__codelineno-4-28"></a><span class="nt">Include appropriate treatments</span><span class="p">:</span>
-<a id="__codelineno-4-29" name="__codelineno-4-29" href="#__codelineno-4-29"></a><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">Chemotherapy</span><span class="p">:</span><span class="w"> </span><span class="err">`</span><span class="l l-Scalar l-Scalar-Plain">MedicationRequest` with RxNorm codes</span>
-<a id="__codelineno-4-30" name="__codelineno-4-30" href="#__codelineno-4-30"></a><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">Radiation</span><span class="p">:</span><span class="w"> </span><span class="err">`</span><span class="l l-Scalar l-Scalar-Plain">Procedure` with SNOMED codes</span>
-<a id="__codelineno-4-31" name="__codelineno-4-31" href="#__codelineno-4-31"></a><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">Surgery</span><span class="p">:</span><span class="w"> </span><span class="err">`</span><span class="l l-Scalar l-Scalar-Plain">Procedure` with ICD-10-PCS codes</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Generate cancer conditions with TNM staging observations and treatment plans. Use when user mentions cancer, oncology, tumor, staging, TNM, metastasis, chemotherapy, or radiation.</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="nt">resource_types</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">Condition</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">Observation</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">MedicationRequest</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">Procedure</span><span class="p p-Indicator">]</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="nt">always</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="nn">---</span>
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="c1"># Oncology Staging</span>
+<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>
+<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="l l-Scalar l-Scalar-Plain">Generate cancer patients with realistic staging and treatment data.</span>
+<a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a>
+<a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a><span class="l l-Scalar l-Scalar-Plain">## Primary Cancer Conditions</span>
+<a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a>
+<a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a><span class="l l-Scalar l-Scalar-Plain">Use SNOMED CT codes for cancer diagnoses</span><span class="p p-Indicator">:</span>
+<a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">93655004 — Primary malignant neoplasm of lung</span>
+<a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">254837009 — Malignant neoplasm of breast</span>
+<a id="__codelineno-4-17" name="__codelineno-4-17" href="#__codelineno-4-17"></a><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">363418001 — Malignant neoplasm of colon</span>
+<a id="__codelineno-4-18" name="__codelineno-4-18" href="#__codelineno-4-18"></a>
+<a id="__codelineno-4-19" name="__codelineno-4-19" href="#__codelineno-4-19"></a><span class="c1">## TNM Staging</span>
+<a id="__codelineno-4-20" name="__codelineno-4-20" href="#__codelineno-4-20"></a>
+<a id="__codelineno-4-21" name="__codelineno-4-21" href="#__codelineno-4-21"></a><span class="nt">Create TNM staging observations using LOINC 21908-9 (Stage group)</span><span class="p">:</span>
+<a id="__codelineno-4-22" name="__codelineno-4-22" href="#__codelineno-4-22"></a><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Use components for T (tumor), N (node), M (metastasis)</span>
+<a id="__codelineno-4-23" name="__codelineno-4-23" href="#__codelineno-4-23"></a><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">Example</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">T2N1M0 = Stage IIB</span>
+<a id="__codelineno-4-24" name="__codelineno-4-24" href="#__codelineno-4-24"></a>
+<a id="__codelineno-4-25" name="__codelineno-4-25" href="#__codelineno-4-25"></a><span class="c1">## Treatment Plans</span>
+<a id="__codelineno-4-26" name="__codelineno-4-26" href="#__codelineno-4-26"></a>
+<a id="__codelineno-4-27" name="__codelineno-4-27" href="#__codelineno-4-27"></a><span class="nt">Include appropriate treatments</span><span class="p">:</span>
+<a id="__codelineno-4-28" name="__codelineno-4-28" href="#__codelineno-4-28"></a><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">Chemotherapy</span><span class="p">:</span><span class="w"> </span><span class="err">`</span><span class="l l-Scalar l-Scalar-Plain">MedicationRequest` with RxNorm codes</span>
+<a id="__codelineno-4-29" name="__codelineno-4-29" href="#__codelineno-4-29"></a><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">Radiation</span><span class="p">:</span><span class="w"> </span><span class="err">`</span><span class="l l-Scalar l-Scalar-Plain">Procedure` with SNOMED codes</span>
+<a id="__codelineno-4-30" name="__codelineno-4-30" href="#__codelineno-4-30"></a><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">Surgery</span><span class="p">:</span><span class="w"> </span><span class="err">`</span><span class="l l-Scalar l-Scalar-Plain">Procedure` with ICD-10-PCS codes</span>
 </code></pre></div>
 <h3 id="frontmatter-fields">Frontmatter Fields<a class="headerlink" href="#frontmatter-fields" title="Permanent link">&para;</a></h3>
 <table>
@@ -1907,19 +1918,13 @@
 <td><code>description</code></td>
 <td>✓</td>
 <td>string</td>
-<td>What the skill does and when to use it (max 1024 chars)</td>
-</tr>
-<tr>
-<td><code>keywords</code></td>
-<td></td>
-<td>list</td>
-<td>Trigger words for keyword matching</td>
+<td>What the skill does and when to use it. <strong>This is the selection signal</strong> — bake your trigger terms (conditions, drugs, code systems, resource type names) into the natural-language description. Max 1024 chars.</td>
 </tr>
 <tr>
 <td><code>resource_types</code></td>
 <td></td>
 <td>list</td>
-<td>FHIR resource types this skill covers</td>
+<td>FHIR resource types this skill covers — gives the selector a precise structural signal when the user names a FHIR type directly</td>
 </tr>
 <tr>
 <td><code>always</code></td>
@@ -1929,8 +1934,12 @@
 </tr>
 </tbody>
 </table>
+<div class="admonition note">
+<p class="admonition-title">Migrating from older skills with <code>keywords:</code></p>
+<p>Earlier versions of fhir-synth used a separate <code>keywords:</code> field for matching. That field is now a deviation from the agentskills.io spec and has been removed — the loader silently ignores any legacy <code>keywords:</code> you leave in place, so old skills keep working. To get the same matching power, <strong>fold your keywords into the description as natural language</strong> (see the "Use when user mentions …" pattern used by every built-in skill).</p>
+</div>
 <h3 id="using-custom-skills">Using Custom Skills<a class="headerlink" href="#using-custom-skills" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="c1"># Use custom skills directory</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="c1"># Use a custom skills directory</span>
 <a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;5 lung cancer patients&quot;</span><span class="w"> </span>--skills-dir<span class="w"> </span>~/.fhir-synth/skills
 <a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>
 <a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="c1"># Custom skills override built-in skills with the same name</span>
@@ -1939,25 +1948,18 @@
 <h2 id="best-practices">Best Practices<a class="headerlink" href="#best-practices" title="Permanent link">&para;</a></h2>
 <h3 id="writing-effective-skills">Writing Effective Skills<a class="headerlink" href="#writing-effective-skills" title="Permanent link">&para;</a></h3>
 <ol>
-<li><strong>Be specific</strong>: Include exact code systems, value sets, and LOINC/SNOMED/RxNorm codes</li>
-<li><strong>Provide examples</strong>: Show realistic data patterns</li>
-<li><strong>Explain temporal relationships</strong>: When do observations occur relative to encounters?</li>
-<li><strong>Note edge cases</strong>: Missing data, unusual values, contraindications</li>
-<li><strong>Keep it focused</strong>: One skill per clinical domain</li>
+<li><strong>Front-load triggers in <code>description</code>.</strong> The first 1–2 sentences should name the conditions, drugs, code systems, and resource types a user might mention. The selector sees this verbatim.</li>
+<li><strong>Use the "Use when user mentions …" pattern.</strong> Built-in descriptions end with that clause — it concentrates trigger terms where both the keyword and FAISS selectors will pick them up.</li>
+<li><strong>Be specific in the body.</strong> Include exact LOINC / SNOMED / RxNorm codes, value sets, units, status enums.</li>
+<li><strong>Provide examples.</strong> Show realistic data patterns and resource cross-references.</li>
+<li><strong>Note edge cases.</strong> Missing data, unusual values, contraindications.</li>
+<li><strong>Keep skills focused.</strong> One skill per clinical domain.</li>
 </ol>
-<h3 id="keyword-selection-tips">Keyword Selection Tips<a class="headerlink" href="#keyword-selection-tips" title="Permanent link">&para;</a></h3>
-<p>Choose keywords that users would naturally type:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="c1"># Good keywords — match user intent</span>
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="nt">keywords</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">diabetes</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">diabetic</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">glucose</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">hba1c</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">insulin</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">blood sugar</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">a1c</span><span class="p p-Indicator">]</span>
-<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>
-<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="c1"># Avoid overly broad keywords that trigger on everything</span>
-<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="nt">keywords</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">patient</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">observation</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">condition</span><span class="p p-Indicator">]</span><span class="w">  </span><span class="c1"># ❌ Too broad</span>
-</code></pre></div>
 <h3 id="when-to-mark-always-true">When to Mark <code>always: true</code><a class="headerlink" href="#when-to-mark-always-true" title="Permanent link">&para;</a></h3>
 <p>Use <code>always: true</code> sparingly. Reserve it for:</p>
 <ul>
 <li><strong>Foundational skills</strong> everyone needs (patient demographics)</li>
-<li><strong>Data quality guidelines</strong> that apply to all generations</li>
+<li><strong>Data-quality guidelines</strong> that apply to every generation</li>
 <li><strong>Compliance requirements</strong> (provenance, audit trails)</li>
 </ul>
 <p>Most skills should be <code>always: false</code> and selected based on the prompt.</p>
@@ -1965,42 +1967,39 @@
 <h3 id="skills-not-being-selected">Skills Not Being Selected<a class="headerlink" href="#skills-not-being-selected" title="Permanent link">&para;</a></h3>
 <p>If your prompt doesn't match any skills:</p>
 <ol>
-<li>Check your keywords for typos (fuzzy matching helps, but isn't perfect)</li>
-<li>Verify <code>resource_types</code> match what you're requesting</li>
-<li>Try more specific keywords in your prompt</li>
-<li>As a fallback, all skills are included when nothing matches</li>
+<li>Check that trigger terms (drug names, conditions, resource types) appear in the skill's <code>description</code> — not just the body.</li>
+<li>Verify <code>resource_types</code> matches what the prompt asks for (e.g. include <code>Observation</code> if users ask for "labs").</li>
+<li>Try more specific terms in your prompt, or lower the keyword selector's <code>fuzzy_threshold</code> (default 0.85).</li>
+<li>As a safe fallback, all skills are included when nothing matches.</li>
 </ol>
 <h3 id="faiss-import-errors">FAISS Import Errors<a class="headerlink" href="#faiss-import-errors" title="Permanent link">&para;</a></h3>
-<p>If you see <code>ImportError: No module named 'faiss'</code>:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>pip<span class="w"> </span>install<span class="w"> </span>fhir-synth<span class="o">[</span>semantic<span class="o">]</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>pip<span class="w"> </span>install<span class="w"> </span>fhir-synth<span class="o">[</span>semantic<span class="o">]</span>
 </code></pre></div>
 <h3 id="viewing-selected-skills">Viewing Selected Skills<a class="headerlink" href="#viewing-selected-skills" title="Permanent link">&para;</a></h3>
-<p>Enable debug logging to see which skills were selected:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">LOG_LEVEL</span><span class="o">=</span>DEBUG
-<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;10 patients with diabetes&quot;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">LOG_LEVEL</span><span class="o">=</span>DEBUG
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;10 patients with diabetes&quot;</span>
 </code></pre></div>
-<p>Look for:
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>INFO Selected 3/16 skills: medications, comorbidity, vitals-and-labs
-</code></pre></div></p>
+<p>Look for:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>INFO Selected 3/17 skills: medications, comorbidity, vitals-and-labs
+</code></pre></div>
 <h2 id="api-usage">API Usage<a class="headerlink" href="#api-usage" title="Permanent link">&para;</a></h2>
-<p>Use skills programmatically in Python:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
-<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fhir_synth.skills</span><span class="w"> </span><span class="kn">import</span> <span class="n">SkillLoader</span><span class="p">,</span> <span class="n">KeywordSelector</span><span class="p">,</span> <span class="n">FaissSelector</span>
-<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>
-<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="c1"># Discover skills</span>
-<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="n">loader</span> <span class="o">=</span> <span class="n">SkillLoader</span><span class="p">(</span><span class="n">user_dirs</span><span class="o">=</span><span class="p">[</span><span class="n">Path</span><span class="p">(</span><span class="s2">&quot;~/.fhir-synth/skills&quot;</span><span class="p">)])</span>
-<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a><span class="n">all_skills</span> <span class="o">=</span> <span class="n">loader</span><span class="o">.</span><span class="n">discover</span><span class="p">()</span>
-<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a>
-<a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a><span class="c1"># Select with keyword matcher</span>
-<a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a><span class="n">selector</span> <span class="o">=</span> <span class="n">KeywordSelector</span><span class="p">(</span><span class="n">min_score</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">fuzzy_threshold</span><span class="o">=</span><span class="mf">0.8</span><span class="p">)</span>
-<a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a><span class="n">selected</span> <span class="o">=</span> <span class="n">selector</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="s2">&quot;10 diabetic patients with labs&quot;</span><span class="p">,</span> <span class="n">all_skills</span><span class="p">)</span>
-<a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a>
-<a id="__codelineno-10-12" name="__codelineno-10-12" href="#__codelineno-10-12"></a><span class="c1"># Select with FAISS</span>
-<a id="__codelineno-10-13" name="__codelineno-10-13" href="#__codelineno-10-13"></a><span class="n">faiss_selector</span> <span class="o">=</span> <span class="n">FaissSelector</span><span class="p">(</span><span class="n">score_threshold</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
-<a id="__codelineno-10-14" name="__codelineno-10-14" href="#__codelineno-10-14"></a><span class="n">selected</span> <span class="o">=</span> <span class="n">faiss_selector</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="s2">&quot;10 diabetic patients with labs&quot;</span><span class="p">,</span> <span class="n">all_skills</span><span class="p">)</span>
-<a id="__codelineno-10-15" name="__codelineno-10-15" href="#__codelineno-10-15"></a>
-<a id="__codelineno-10-16" name="__codelineno-10-16" href="#__codelineno-10-16"></a><span class="c1"># Get skill bodies for LLM context</span>
-<a id="__codelineno-10-17" name="__codelineno-10-17" href="#__codelineno-10-17"></a><span class="n">skill_context</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">body</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">selected</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fhir_synth.skills</span><span class="w"> </span><span class="kn">import</span> <span class="n">SkillLoader</span><span class="p">,</span> <span class="n">KeywordSelector</span><span class="p">,</span> <span class="n">FaissSelector</span>
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="c1"># Discover skills</span>
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="n">loader</span> <span class="o">=</span> <span class="n">SkillLoader</span><span class="p">(</span><span class="n">user_dirs</span><span class="o">=</span><span class="p">[</span><span class="n">Path</span><span class="p">(</span><span class="s2">&quot;~/.fhir-synth/skills&quot;</span><span class="p">)])</span>
+<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="n">all_skills</span> <span class="o">=</span> <span class="n">loader</span><span class="o">.</span><span class="n">discover</span><span class="p">()</span>
+<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a>
+<a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a><span class="c1"># Select with keyword matcher (default)</span>
+<a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a><span class="n">selector</span> <span class="o">=</span> <span class="n">KeywordSelector</span><span class="p">(</span><span class="n">min_score</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">fuzzy_threshold</span><span class="o">=</span><span class="mf">0.85</span><span class="p">)</span>
+<a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a><span class="n">selected</span> <span class="o">=</span> <span class="n">selector</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="s2">&quot;10 diabetic patients with labs&quot;</span><span class="p">,</span> <span class="n">all_skills</span><span class="p">)</span>
+<a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a>
+<a id="__codelineno-9-12" name="__codelineno-9-12" href="#__codelineno-9-12"></a><span class="c1"># Select with FAISS</span>
+<a id="__codelineno-9-13" name="__codelineno-9-13" href="#__codelineno-9-13"></a><span class="n">faiss_selector</span> <span class="o">=</span> <span class="n">FaissSelector</span><span class="p">(</span><span class="n">score_threshold</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
+<a id="__codelineno-9-14" name="__codelineno-9-14" href="#__codelineno-9-14"></a><span class="n">selected</span> <span class="o">=</span> <span class="n">faiss_selector</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="s2">&quot;10 diabetic patients with labs&quot;</span><span class="p">,</span> <span class="n">all_skills</span><span class="p">)</span>
+<a id="__codelineno-9-15" name="__codelineno-9-15" href="#__codelineno-9-15"></a>
+<a id="__codelineno-9-16" name="__codelineno-9-16" href="#__codelineno-9-16"></a><span class="c1"># Get skill bodies for LLM context</span>
+<a id="__codelineno-9-17" name="__codelineno-9-17" href="#__codelineno-9-17"></a><span class="n">skill_context</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">body</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">selected</span><span class="p">)</span>
 </code></pre></div>
 <h2 id="next-steps">Next Steps<a class="headerlink" href="#next-steps" title="Permanent link">&para;</a></h2>
 <ul>
