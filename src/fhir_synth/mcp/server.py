@@ -112,6 +112,7 @@ def generate_fhir_data(
     split: bool = False,
     pipeline: str | None = None,
     compiled_program: str | None = None,
+    meta_config: dict[str, Any] | None = None,
     max_resources_returned: int = 200,
 ) -> dict[str, Any]:
     """Generate synthetic FHIR data from a natural language prompt.
@@ -138,6 +139,32 @@ def generate_fhir_data(
             "/abs/path"   — user's own compiled JSON
             "none"        — unoptimized DSPy default
             Leave None to use the FHIR_SYNTH_COMPILED env var (default: "miprov2").
+        meta_config: Optional FHIR Meta to stamp on every generated resource —
+            security labels, tags, profiles, source. Only pass when the user
+            explicitly asks for metadata (most generations skip this).
+
+            Schema (mirrors the ``--meta-config`` YAML used by the CLI)::
+
+                {
+                  "meta": {
+                    "security": [
+                      {"system": "http://terminology.hl7.org/CodeSystem/v3-Confidentiality",
+                       "code": "R", "display": "Restricted"}
+                    ],
+                    "tag": [
+                      {"system": "http://example.org/tags",
+                       "code": "synthetic-data", "display": "Synthetic Test Data"}
+                    ],
+                    "profile": [
+                      "http://hl7.org/fhir/us/core/StructureDefinition/us-core-patient"
+                    ],
+                    "source": "http://example.org/fhir-synth"
+                  }
+                }
+
+            All four sub-fields are individually optional. Inline what the user
+            asks for; omit the rest. Examples in ``examples/meta-normal.yaml``
+            and ``examples/meta-restricted.yaml`` show real-world shapes.
         max_resources_returned: Cap on resources inlined in the response (full set
             is always written to NDJSON). Use ``get_run`` to fetch the rest.
     """
@@ -173,6 +200,33 @@ def generate_fhir_data(
         compiled_program if compiled_program is not None else _COMPILED_DEFAULT
     )
 
+    # Build the prompt the LLM actually sees — augment with metadata hints when
+    # the caller passed meta_config. The clinical-planning stage of the DSPy
+    # pipeline should stay metadata-free (metadata is post-processing), so we
+    # only augment the prompt used by the single-stage pipeline.
+    metadata_prompt = prompt
+    meta_dict = meta_config.get("meta") if isinstance(meta_config, dict) else None
+    if isinstance(meta_dict, dict):
+        hints: list[str] = []
+        for sec in meta_dict.get("security") or []:
+            hints.append(
+                f"Add security label: system={sec.get('system')}, "
+                f"code={sec.get('code')}, display={sec.get('display', sec.get('code'))}"
+            )
+        for tag in meta_dict.get("tag") or []:
+            hints.append(
+                f"Add tag: system={tag.get('system')}, "
+                f"code={tag.get('code')}, display={tag.get('display', tag.get('code'))}"
+            )
+        for prof in meta_dict.get("profile") or []:
+            hints.append(f"Add profile: {prof}")
+        if meta_dict.get("source"):
+            hints.append(f"Set meta.source to: {meta_dict['source']}")
+        if hints:
+            metadata_prompt = (
+                "METADATA REQUIREMENTS:\n" + "\n".join(f"- {h}" for h in hints) + f"\n\n{prompt}"
+            )
+
     if effective_pipeline == "dspy":
         try:
             from fhir_synth.pipeline.pipeline import TwoStagePipeline
@@ -194,6 +248,8 @@ def generate_fhir_data(
             two_stage = TwoStagePipeline.default(llm_provider=llm, executor=executor)
             pipeline_mode = "dspy (unoptimized)"
 
+        # DSPy clinical-planning stage skips metadata hints; metadata is applied
+        # as post-processing below for both pipelines.
         result = two_stage.run(prompt)
         code = result.code
         resources = result.resources
@@ -201,8 +257,18 @@ def generate_fhir_data(
     else:
         pipeline_mode = "default"
         code_gen = CodeGenerator(llm, executor=executor, fhir_version=fhir_version)
-        code = code_gen.generate_code_from_prompt(prompt)
+        code = code_gen.generate_code_from_prompt(metadata_prompt)
         resources = code_gen.execute_generated_code(code)
+
+    # Stamp the FHIR Meta on each resource (post-processing, both pipelines).
+    if isinstance(meta_dict, dict):
+        CodeGenerator.apply_metadata_to_resources(
+            resources,
+            security=meta_dict.get("security"),
+            tag=meta_dict.get("tag"),
+            profile=meta_dict.get("profile"),
+            source=meta_dict.get("source"),
+        )
 
     code_path.write_text(code)
 
