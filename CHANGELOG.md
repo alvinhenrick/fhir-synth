@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.19.0 (2026-05-16)
+
+### Features
+
+- Add `meta_config` support to MCP server for applying metadata to generated FHIR resources
+  ([`9c25c0f`](https://github.com/alvinhenrick/fhir-synth/commit/9c25c0f6773588bcea0ad1892db6a11ad4087217))
+
+
 ## v1.18.0 (2026-05-16)
 
 ### Features
