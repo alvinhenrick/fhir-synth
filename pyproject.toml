@@ -159,9 +159,8 @@ module = ["smolagents", "smolagents.*"]
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
-module = ["dspy", "dspy.*"]
+module = ["dspy"]
 ignore_missing_imports = true
-
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
