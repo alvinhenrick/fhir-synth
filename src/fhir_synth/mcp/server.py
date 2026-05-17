@@ -301,7 +301,9 @@ async def generate_fhir_data(
 
 
 @mcp.tool()
-async def validate_fhir_bundle(bundle: str, ctx: Context[Any, Any, Any] | None = None) -> dict[str, Any]:
+async def validate_fhir_bundle(
+    bundle: str, ctx: Context[Any, Any, Any] | None = None
+) -> dict[str, Any]:
     """Validate an existing FHIR payload (Bundle, list of resources, or NDJSON).
 
     Runs Pydantic validation, cross-resource reference integrity, and US Core
