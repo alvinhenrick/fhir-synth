@@ -49,8 +49,7 @@ async def report_validation_results(
         )
         for err in vr.errors[:5]:
             await reporter.error(
-                f"      ❌ {err['resourceType']}/{err['id']}: "
-                f"{'; '.join(err['errors'][:2])}"
+                f"      ❌ {err['resourceType']}/{err['id']}: {'; '.join(err['errors'][:2])}"
             )
 
     # ── Reference integrity ────────────────────────────────────────────────
@@ -59,22 +58,16 @@ async def report_validation_results(
     if broken_refs == 0:
         await reporter.info("   ✅ Reference integrity — all references valid")
     else:
-        await reporter.warning(
-            f"   ⚠️  Reference integrity — {broken_refs} broken reference(s)"
-        )
+        await reporter.warning(f"   ⚠️  Reference integrity — {broken_refs} broken reference(s)")
         for entry in ref_errors[:3]:
             for err in entry.get("errors", [])[:2]:
-                await reporter.error(
-                    f"      ↳ {entry['resourceType']}/{entry['id']}: {err}"
-                )
+                await reporter.error(f"      ↳ {entry['resourceType']}/{entry['id']}: {err}")
 
     # ── US Core compliance ─────────────────────────────────────────────────
     ucr = validate_us_core(resources)
     if ucr.total_checked > 0:
         if not ucr.has_warnings:
-            await reporter.info(
-                f"   ✅ US Core — {ucr.total_checked} resources fully compliant"
-            )
+            await reporter.info(f"   ✅ US Core — {ucr.total_checked} resources fully compliant")
         else:
             non_compliant = ucr.total_checked - ucr.fully_compliant
             await reporter.warning(
@@ -83,9 +76,7 @@ async def report_validation_results(
             )
             for w in ucr.warnings[:3]:
                 missing = ", ".join(w["missing_must_support"][:3])
-                await reporter.error(
-                    f"      ↳ {w['resourceType']}/{w['id']}: missing {missing}"
-                )
+                await reporter.error(f"      ↳ {w['resourceType']}/{w['id']}: missing {missing}")
 
     return {
         "fhir_total": vr.total,

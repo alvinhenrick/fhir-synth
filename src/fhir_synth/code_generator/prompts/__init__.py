@@ -313,9 +313,7 @@ def build_empi_prompt(
     )
 
 
-def build_metadata_prompt_hints(
-    user_prompt: str, meta_config: dict[str, Any] | None
-) -> str:
+def build_metadata_prompt_hints(user_prompt: str, meta_config: dict[str, Any] | None) -> str:
     """Prefix ``user_prompt`` with ``METADATA REQUIREMENTS`` hints if any.
 
     Accepts both the CLI shape (full ``{"meta": {...}}`` from YAML) and the
@@ -354,11 +352,7 @@ def build_metadata_prompt_hints(
 
     if not hints:
         return user_prompt
-    return (
-        "METADATA REQUIREMENTS:\n"
-        + "\n".join(f"- {h}" for h in hints)
-        + f"\n\n{user_prompt}"
-    )
+    return "METADATA REQUIREMENTS:\n" + "\n".join(f"- {h}" for h in hints) + f"\n\n{user_prompt}"
 
 
 __all__ = [
