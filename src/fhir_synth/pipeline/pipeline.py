@@ -29,7 +29,7 @@ from fhir_synth.pipeline.evaluator import EvaluationReport, GenerationEvaluator
 from fhir_synth.pipeline.models import ClinicalPlan
 from fhir_synth.pipeline.plan_enricher import PlanEnricher
 from fhir_synth.pipeline.protocols import ClinicalPlanEnricher, ClinicalPlanner, CodeSynthesizer
-from fhir_synth.skills import KeywordSelector, SkillLoader, SkillSelector
+from fhir_synth.skills import SemanticSelector, SkillLoader, SkillSelector
 
 logger = logging.getLogger(__name__)
 
@@ -69,7 +69,7 @@ class SkillContextBuilder:
         selector: SkillSelector | None = None,
     ) -> None:
         self._loader = SkillLoader(user_dirs=user_dirs)
-        self._selector: SkillSelector = selector or KeywordSelector()
+        self._selector: SkillSelector = selector or SemanticSelector()
 
     def build(self, prompt: str) -> str:
         """Return concatenated skill bodies relevant to *prompt*."""

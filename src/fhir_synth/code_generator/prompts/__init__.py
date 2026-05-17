@@ -23,7 +23,7 @@ from typing import Any
 from fhir_synth.code_generator.constants import ALLOWED_MODULE_PREFIXES, ALLOWED_MODULES
 from fhir_synth.code_generator.prompts.loader import load_prompt, load_section, render
 from fhir_synth.fhir_spec import get_fhir_version, import_guide, spec_summary
-from fhir_synth.skills import KeywordSelector, SkillLoader, SkillSelector
+from fhir_synth.skills import SemanticSelector, SkillLoader, SkillSelector
 
 logger = logging.getLogger(__name__)
 
@@ -42,12 +42,12 @@ class _SkillState:
     """
 
     loader: SkillLoader | None = None
-    selector: SkillSelector = field(default_factory=KeywordSelector)
+    selector: SkillSelector = field(default_factory=SemanticSelector)
 
     def reset(self) -> None:
         """Restore defaults — useful between server requests or tests."""
         self.loader = None
-        self.selector = KeywordSelector()
+        self.selector = SemanticSelector()
 
     def get_loader(self) -> SkillLoader:
         """Return the skill loader, creating a default if needed."""
@@ -66,11 +66,11 @@ def configure_skills(
     """Configure the skills' system.
 
     Call before generating prompts to set up user skill directories and/or
-    swap the selection strategy (e.g. `FaissSelector`).
+    swap the selection strategy (e.g. :class:`KeywordSelector`).
 
     Args:
         user_dirs: User-provided skill directories (higher priority than built-in).
-        selector: Selection strategy.  Defaults to :class:`KeywordSelector`.
+        selector: Selection strategy.  Defaults to :class:`SemanticSelector`.
     """
     _state.loader = SkillLoader(user_dirs=user_dirs)
     if selector is not None:

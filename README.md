@@ -27,8 +27,9 @@ pip install git+https://github.com/alvinhenrick/fhir-synth.git
 pip install "fhir-synth[mcp] @ git+https://github.com/alvinhenrick/fhir-synth.git@main"       # MCP server (Claude Desktop / Claude Code)
 pip install "fhir-synth[bedrock] @ git+https://github.com/alvinhenrick/fhir-synth.git@main"   # AWS Bedrock
 pip install "fhir-synth[dspy] @ git+https://github.com/alvinhenrick/fhir-synth.git@main"      # DSPy two-stage pipeline
-pip install "fhir-synth[semantic] @ git+https://github.com/alvinhenrick/fhir-synth.git@main"  # FAISS semantic skill selector
 pip install "fhir-synth[all] @ git+https://github.com/alvinhenrick/fhir-synth.git@main"       # Everything above + sandbox executors
+
+# Semantic skill selection (fastembed + numpy) is now a core dependency — no extra install needed.
 ```
 
 ## Quick Start
@@ -176,8 +177,8 @@ End-to-end: prompt → LLM → code → execute → FHIR Bundle.
 | `--aws-region` | — | AWS region for Bedrock (e.g. `us-east-1`) |
 | `-e / --executor` | `local` | Execution backend: `local`, `docker`, `e2b`, or `blaxel` (powered by smolagents) |
 | `--skills-dir` | — | Directory with user-provided SKILL.md skills |
-| `--selector` | `keyword` | Skill selection: `keyword` (fuzzy) or `faiss` (semantic) |
-| `--score-threshold` | `0.3` | Min similarity score 0.0-1.0 (FAISS only) |
+| `--selector` | `semantic` | Skill selection: `semantic` (fastembed cosine) or `keyword` (fuzzy token overlap) |
+| `--score-threshold` | `0.5` | Min cosine similarity 0.0-1.0 (semantic only) |
 | `--context` | — | Path to NDJSON/JSON with existing resources for stateful generation |
 | `--pipeline` | `default` | Generation pipeline: `default` (single-stage) or `dspy` (two-stage) |
 | `--compiled-program` | — | Compiled DSPy program: bundled short name (`miprov2`, `bootstrap`), filesystem path, or `none`. Only used with `--pipeline dspy`. |
@@ -308,19 +309,18 @@ The system includes 16 built-in skills following the [agentskills.io](https://ag
 
 ### Skill Selection
 
-**Keyword selector** (default) — Zero-dependency fuzzy matching with typo tolerance:
+**Semantic selector** (default) — Local ONNX embeddings via `fastembed` (`BAAI/bge-small-en-v1.5`) + `numpy` cosine. Handles synonyms naturally ("blood sugar" ≈ "HbA1c"). Vectors are cached to `~/.cache/fhir-synth/skills/` after the first run:
 ```bash
-# "diabtes" → "diabetes" ✓, "medicaton" → "medication" ✓
-fhir-synth generate "10 diabtes patients with medicaton"
+fhir-synth generate "10 patients with diabetes"
+
+# Custom cosine threshold (default 0.5)
+fhir-synth generate "5 patients" --score-threshold 0.6
 ```
 
-**FAISS selector** (optional) — Semantic similarity for advanced users:
+**Keyword selector** — Zero-ML, deterministic fuzzy matching with typo tolerance. Useful for air-gapped environments or reproducible CI:
 ```bash
-# Install semantic dependencies
-pip install fhir-synth[semantic]
-
-# Use semantic matching
-fhir-synth generate "5 patients" --selector faiss
+# "diabtes" → "diabetes" ✓, "medicaton" → "medication" ✓
+fhir-synth generate "10 diabtes patients with medicaton" --selector keyword
 ```
 
 ### Custom Skills
@@ -376,7 +376,7 @@ Use `--provider mock` for testing without an API key.
 
 FHIR Synth is organized into focused packages:
 
-- **`skills/`** — Skill discovery and selection following agentskills.io spec (`SkillLoader`, `KeywordSelector`, `FaissSelector`)
+- **`skills/`** — Skill discovery and selection following agentskills.io spec (`SkillLoader`, `SemanticSelector`, `KeywordSelector`)
 - **`bundle/`** — Bundle creation and management (`BundleBuilder`, `BundleManager`, `BundleFactory`, `split_resources_by_patient`, `write_ndjson`, `write_split_bundles`)
 - **`code_generator/`** — LLM-powered code generation with self-healing execution (`CodeGenerator`)
     - **`code_generator/executor/`** — Pluggable executor backends powered by [smolagents](https://huggingface.co/docs/smolagents) (`LocalSmolagentsExecutor`, `DockerSandboxExecutor`, `E2BExecutor`, `BlaxelExecutor`)

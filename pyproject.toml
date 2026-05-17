@@ -32,6 +32,8 @@ dependencies = [
     "faker~=37.0",
     "smolagents~=1.25",
     "coolname~=2.0",
+    "fastembed~=0.8",
+    "numpy~=2.0",
 ]
 
 [project.optional-dependencies]
@@ -47,11 +49,6 @@ e2b = [
 blaxel = [
     "smolagents[blaxel]",
 ]
-semantic = [
-    "faiss-cpu>=1.7",
-    "numpy>=1.24",
-    "sentence-transformers>=2.2",
-]
 dspy = [
     "dspy-ai>=2.0",
 ]
@@ -59,7 +56,7 @@ mcp = [
     "mcp>=1.0",
 ]
 all = [
-    "fhir-synth[bedrock,docker,e2b,blaxel,semantic,dspy,mcp]",
+    "fhir-synth[bedrock,docker,e2b,blaxel,dspy,mcp]",
 ]
 docs = [
     "mkdocs>=1.6,<2",
