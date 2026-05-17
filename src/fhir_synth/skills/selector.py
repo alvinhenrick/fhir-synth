@@ -1,15 +1,17 @@
 """Skill selection strategies.
-Provides a: class:`SkillSelector` protocol and two concrete implementations:
 
-*: class:`KeywordSelector` — zero-dependency keyword + resource-type matching
-  with fuzzy matching for typo tolerance (default).
-*: class:`FaissSelector` — semantic retrieval using `faiss-cpu` with
-  `sentence-transformers` for local embeddings (no API calls).  Embeddings
-  are pre-computed **once** and cached to disk, so later loads are
-  instant.  Install with `pip install fhir-synth[semantic]`.
+Provides a :class:`SkillSelector` protocol and two concrete implementations:
 
-Both return the Markdown bodies of the selected skills, ready for injection
-into the LLM system prompt.
+* :class:`SemanticSelector` (default) — semantic retrieval using `fastembed`
+  for local ONNX embeddings (default model `BAAI/bge-small-en-v1.5`,
+  ~130 MB, 384-dim) and `numpy` cosine similarity.  Embeddings are
+  pre-computed **once** and cached to disk, so later loads are instant.
+* :class:`KeywordSelector` — zero-dependency keyword + resource-type
+  matching with fuzzy spell tolerance via :mod:`difflib`.  Useful as a
+  manual override when embeddings are undesirable.
+
+Both return the :class:`~fhir_synth.skills.loader.Skill` instances ready
+for injection into the LLM system prompt.
 """
 
 import difflib
@@ -18,21 +20,18 @@ import json
 import logging
 import re
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
+from typing import Any, Protocol, runtime_checkable
 
 from fhir_synth.skills.loader import Skill
 
-if TYPE_CHECKING:
-    import types
-
 logger = logging.getLogger(__name__)
 
-# Default cache location for pre-computed FAISS index
+# Default cache location for pre-computed embeddings
 _DEFAULT_CACHE_DIR = Path.home() / ".cache" / "fhir-synth" / "skills"
 
-# Default local embedding model — good balance of quality / size / speed.
-# all-MiniLM-L6-v2: 384-dim, 80 MB, very fast, top-tier for retrieval.
-DEFAULT_EMBED_MODEL = "all-MiniLM-L6-v2"
+# Default fastembed model — best size/quality ratio at the 384-dim tier.
+# ~130 MB ONNX, beats all-MiniLM-L6-v2 on MTEB retrieval, no PyTorch dep.
+DEFAULT_EMBED_MODEL = "BAAI/bge-small-en-v1.5"
 
 
 # ── Protocol ────────────────────────────────────────────────────────────
@@ -55,7 +54,7 @@ class SkillSelector(Protocol):
         ...
 
 
-# ── Keyword selector (default, zero deps) ──────────────────────────────
+# ── Keyword selector (zero deps, manual override) ──────────────────────
 
 
 # Common English stop-words excluded from matching
@@ -169,15 +168,19 @@ class KeywordSelector:
         return result
 
 
-# ── Helpers for FAISS index caching ─────────────────────────────────────
+# ── Helpers for embedding cache ─────────────────────────────────────────
 
 
 def _skills_fingerprint(skills: list[Skill]) -> str:
-    """Compute a stable hash of skill names + descriptions.
+    """Compute a stable hash of skill names + descriptions + resource types.
 
-    Used to detect when the index needs to be rebuilt (new/changed skills).
+    Used to detect when the cached index needs to be rebuilt.
     """
-    content = "|".join(f"{s.name}:{s.description}" for s in sorted(skills, key=lambda s: s.name))
+    parts = [
+        f"{s.name}:{s.description}:{','.join(s.resource_types)}"
+        for s in sorted(skills, key=lambda s: s.name)
+    ]
+    content = "|".join(parts)
     return hashlib.sha256(content.encode()).hexdigest()[:16]
 
 
@@ -189,154 +192,119 @@ def _skill_text(skill: Skill) -> str:
     return " ".join(parts)
 
 
-# ── FAISS semantic selector ─────────────────────────────────────────────
+# ── Semantic selector (default) ────────────────────────────────────────
 
 
-class FaissSelector:
-    """Select skills via semantic similarity with pre-computed embeddings.
+class SemanticSelector:
+    """Select skills by semantic similarity using local ONNX embeddings.
 
-    **Embeddings are generated once and cached to disk.**  Subsequent loads
-    read the FAISS index + metadata from `~/.cache/fhir-synth/skills/`
-    in milliseconds — no model loading or API calls needed at query time
-    after the first run.
+    Uses `fastembed <https://github.com/qdrant/fastembed>`_ for fast,
+    PyTorch-free embeddings and :mod:`numpy` for cosine similarity.
+    Embeddings are computed once and cached to
+    ``~/.cache/fhir-synth/skills/`` keyed by model + fingerprint, so
+    later loads read straight from disk in milliseconds.
 
-    Uses `sentence-transformers <https://www.sbert.net/>`_ for local
-    embeddings (default model: `all-MiniLM-L6-v2`, 384-dim, ~80 MB)
-    and raw `faiss-cpu` for the vector index.
+    Selection logic:
 
-    Install with::
-
-        pip install fhir-synth[semantic]
+    1. Skills with ``always=True`` are always included.
+    2. Remaining skills are scored by cosine similarity (dot product of
+       normalised vectors).
+    3. Skills with score >= ``score_threshold`` are included, up to
+       ``top_k`` of them.
+    4. **Safe fallback**: if no skill clears the threshold, *all* skills
+       are returned so behaviour is never worse than before skills existed.
 
     Args:
-        model_name: sentence-transformers model name.
-            Default `"all-MiniLM-L6-v2"` — fast, 384-dim, great for
-            short-text retrieval.  Alternatives:
-            `"all-mpnet-base-v2"` (768-dim, higher quality, slower).
-        score_threshold: Minimum cosine similarity (0.0–1.0).
-            Returns all skills above this threshold.
-        cache_dir: Directory for the cached FAISS index and metadata.
-            Defaults to `~/.cache/fhir-synth/skills/`.
+        model_name: fastembed model name.  Default
+            ``"BAAI/bge-small-en-v1.5"`` — 384-dim, ~130 MB, strong on
+            short-text retrieval.  Alternatives: ``"BAAI/bge-base-en-v1.5"``
+            (768-dim, higher quality, ~440 MB).
+        score_threshold: Minimum cosine similarity (0.0–1.0, default 0.5).
+        top_k: Maximum number of skills to return above the threshold
+            (default 5).
+        cache_dir: Directory for cached embeddings.  Defaults to
+            ``~/.cache/fhir-synth/skills/``.
 
     Example::
 
-        selector = FaissSelector()
-        # First call: encodes skills → builds index → saves to disk
+        selector = SemanticSelector()
+        # First call: downloads model → encodes skills → saves to disk
         selected = selector.select("diabetes HbA1c labs", all_skills)
 
-        # Second call: loads index from disk (instant)
+        # Second call: loads cached vectors (instant)
         selected = selector.select("coverage Medicare", all_skills)
     """
 
     def __init__(
         self,
         model_name: str = DEFAULT_EMBED_MODEL,
-        score_threshold: float = 0.3,
+        score_threshold: float = 0.5,
+        top_k: int = 5,
         cache_dir: Path | None = None,
     ) -> None:
         self.model_name = model_name
         self.score_threshold = score_threshold
+        self.top_k = top_k
         self.cache_dir = cache_dir or _DEFAULT_CACHE_DIR
 
-        # Lazy state
-        self._faiss: types.ModuleType | None = None
-        self._np: types.ModuleType | None = None
+        # Lazy state — model and vectors are loaded on first select()
         self._model: Any = None
-        self._index: Any = None
+        self._vectors: Any = None  # numpy.ndarray, shape (N, dim), L2-normalised
         self._indexed_skills: list[Skill] = []
         self._fingerprint: str = ""
 
-    # ── Dependency management ───────────────────────────────────────
-
-    def _ensure_deps(self) -> tuple[Any, Any]:
-        """Import faiss and numpy, raising a clear error if missing."""
-        if self._faiss is not None and self._np is not None:
-            return self._faiss, self._np
-        try:
-            import faiss  # type: ignore[import-not-found]
-            import numpy as np
-        except ImportError as exc:
-            msg = (
-                "FaissSelector requires faiss-cpu and numpy. "
-                "Install with: pip install fhir-synth[semantic]  "
-                "or: pip install faiss-cpu numpy"
-            )
-            raise ImportError(msg) from exc
-        self._faiss = faiss
-        self._np = np
-        return faiss, np
+    # ── Model loading ───────────────────────────────────────────────
 
     def _get_model(self) -> Any:
-        """Lazy-load the sentence-transformers model."""
+        """Lazy-load the fastembed TextEmbedding model."""
         if self._model is not None:
             return self._model
-        try:
-            from sentence_transformers import SentenceTransformer  # type: ignore[import-not-found]
-        except ImportError as exc:
-            msg = (
-                "FaissSelector requires sentence-transformers. "
-                "Install with: pip install fhir-synth[semantic]  "
-                "or: pip install sentence-transformers"
-            )
-            raise ImportError(msg) from exc
+        from fastembed import TextEmbedding
+
         logger.debug("Loading embedding model: %s", self.model_name)
-        self._model = SentenceTransformer(self.model_name)
+        self._model = TextEmbedding(model_name=self.model_name)
         return self._model
 
     # ── Embedding ───────────────────────────────────────────────────
 
     def _embed(self, texts: list[str]) -> Any:
-        """Embed texts using sentence-transformers (local, no API call).
+        """Embed *texts* with fastembed and return L2-normalised float32 array."""
+        import numpy as np
 
-        Returns:
-            numpy array of shape (len(texts), dimension), dtype float32.
-        """
         model = self._get_model()
-        return model.encode(texts, normalize_embeddings=True, show_progress_bar=False)
+        vectors = np.array(list(model.embed(texts)), dtype=np.float32)
+        norms = np.linalg.norm(vectors, axis=1, keepdims=True)
+        return vectors / np.maximum(norms, 1e-12)
 
-    # ── Index persistence (build once, load many) ───────────────────
+    # ── Cache paths and persistence ─────────────────────────────────
 
     def _cache_paths(self, fingerprint: str) -> tuple[Path, Path]:
-        """Return (index_path, meta_path) for a given fingerprint."""
+        """Return ``(vectors_path, meta_path)`` for a given fingerprint."""
         prefix = f"{self.model_name.replace('/', '_')}_{fingerprint}"
-        index_path = self.cache_dir / f"{prefix}.faiss"
-        meta_path = self.cache_dir / f"{prefix}.json"
-        return index_path, meta_path
+        return self.cache_dir / f"{prefix}.npy", self.cache_dir / f"{prefix}.json"
 
-    def _save_index(
-        self,
-        fingerprint: str,
-        skills: list[Skill],
-    ) -> None:
-        """Persist the FAISS index and skill metadata to disk."""
-        faiss, _np = self._ensure_deps()
-        index_path, meta_path = self._cache_paths(fingerprint)
+    def _save_index(self, fingerprint: str, skills: list[Skill]) -> None:
+        """Persist vectors + metadata to disk for instant reload."""
+        import numpy as np
+
+        vectors_path, meta_path = self._cache_paths(fingerprint)
         self.cache_dir.mkdir(parents=True, exist_ok=True)
 
-        faiss.write_index(self._index, str(index_path))
-
+        np.save(vectors_path, self._vectors)
         meta = {
             "model": self.model_name,
             "fingerprint": fingerprint,
             "skills": [s.name for s in skills],
         }
         meta_path.write_text(json.dumps(meta, indent=2), encoding="utf-8")
-        logger.info("Saved FAISS index to %s (%d skills)", index_path, len(skills))
+        logger.info("Saved skill embeddings to %s (%d skills)", vectors_path, len(skills))
 
-    def _load_index(
-        self,
-        fingerprint: str,
-        skills: list[Skill],
-    ) -> bool:
-        """Try to load a cached FAISS index from disk.
+    def _load_index(self, fingerprint: str, skills: list[Skill]) -> bool:
+        """Try to load cached vectors. Returns True on success."""
+        import numpy as np
 
-        Returns:
-            `True` if a valid cached index was loaded, `False` otherwise.
-        """
-        faiss, _np = self._ensure_deps()
-        index_path, meta_path = self._cache_paths(fingerprint)
-
-        if not index_path.exists() or not meta_path.exists():
+        vectors_path, meta_path = self._cache_paths(fingerprint)
+        if not vectors_path.exists() or not meta_path.exists():
             return False
 
         try:
@@ -345,67 +313,54 @@ class FaissSelector:
             logger.debug("Corrupt cache metadata at %s", meta_path)
             return False
 
-        # Validate cache: same model, same fingerprint, same skill names
         if meta.get("model") != self.model_name:
             return False
         if meta.get("fingerprint") != fingerprint:
             return False
-        cached_names = meta.get("skills", [])
-        current_names = [s.name for s in skills]
-        if cached_names != current_names:
+        if meta.get("skills") != [s.name for s in skills]:
             return False
 
         try:
-            self._index = faiss.read_index(str(index_path))
-        except Exception:
-            logger.debug("Could not read FAISS index from %s", index_path, exc_info=True)
+            self._vectors = np.load(vectors_path)
+        except (OSError, ValueError):
+            logger.debug("Could not load cached vectors at %s", vectors_path, exc_info=True)
             return False
 
         self._indexed_skills = list(skills)
         self._fingerprint = fingerprint
-        logger.info("Loaded cached FAISS index from %s (%d skills)", index_path, len(skills))
+        logger.info("Loaded cached skill embeddings from %s (%d skills)", vectors_path, len(skills))
         return True
 
     # ── Index building ──────────────────────────────────────────────
 
     def _build_index(self, skills: list[Skill]) -> None:
-        """Build (or load from cache) the FAISS index for skill retrieval."""
-        faiss, np = self._ensure_deps()
-
+        """Build or load the embedding index for *skills*."""
         fingerprint = _skills_fingerprint(skills)
 
-        # Try loading from disk cache first
         if self._load_index(fingerprint, skills):
             return
 
-        # Build fresh: embed all skill texts
         texts = [_skill_text(s) for s in skills]
-        logger.debug("Computing embeddings for %d skills with %s…", len(skills), self.model_name)
-        matrix = self._embed(texts)
-        matrix = np.array(matrix, dtype="float32")
-
-        dimension = matrix.shape[1]
-        self._index = faiss.IndexFlatIP(dimension)  # cosine on normalised vectors
-        self._index.add(matrix)
+        logger.debug("Embedding %d skills with %s…", len(skills), self.model_name)
+        self._vectors = self._embed(texts)
         self._indexed_skills = list(skills)
         self._fingerprint = fingerprint
 
-        # Persist to disk for next time
         try:
             self._save_index(fingerprint, skills)
         except OSError:
-            logger.warning("Could not cache FAISS index to %s", self.cache_dir, exc_info=True)
+            logger.warning("Could not cache embeddings to %s", self.cache_dir, exc_info=True)
 
     # ── Public API ──────────────────────────────────────────────────
 
     def select(self, prompt: str, skills: list[Skill]) -> list[Skill]:
         """Return semantically relevant skills for *prompt*.
 
-        Always-on skills are included unconditionally.  Remaining skills are
-        ranked by cosine similarity, returning all skills above the score
-        threshold.  Falls back to all skills on error.
+        Always-on skills are included unconditionally.  Remaining skills
+        are ranked by cosine similarity and filtered by ``score_threshold``
+        and ``top_k``.  Falls back to all skills on error or empty result.
         """
-        _faiss, np = self._ensure_deps()
+        import numpy as np
 
         always = [s for s in skills if s.always]
         candidates = [s for s in skills if not s.always]
@@ -413,36 +368,29 @@ class FaissSelector:
         if not candidates:
             return always
 
-        # (Re)build index if skill set changed
         fingerprint = _skills_fingerprint(candidates)
         if self._fingerprint != fingerprint:
             try:
                 self._build_index(candidates)
             except Exception:
                 logger.warning(
-                    "FAISS index build failed — falling back to all skills", exc_info=True
+                    "Embedding index build failed — falling back to all skills",
+                    exc_info=True,
                 )
                 return skills
 
-        # Embed query (fast: single sentence through local model)
         try:
-            query_vec = self._embed([prompt])
-            query_vec = np.array(query_vec, dtype="float32")
-
-            # Search all candidates to get complete similarity scores
-            k = len(candidates)
-            scores, indices = self._index.search(query_vec, k)
+            query_vec = self._embed([prompt])[0]
+            scores = self._vectors @ query_vec
         except Exception:
-            logger.warning("FAISS search failed — falling back to all skills", exc_info=True)
+            logger.warning("Semantic search failed — falling back to all skills", exc_info=True)
             return skills
 
-        # Filter by score threshold - return ALL skills above threshold
-        selected: list[Skill] = []
-        for score, idx in zip(scores[0], indices[0], strict=False):
-            if idx < 0:
-                continue  # FAISS sentinel
-            if float(score) >= self.score_threshold:
-                selected.append(candidates[idx])
+        # Rank by score, filter by threshold and top_k
+        ranked = np.argsort(scores)[::-1][: self.top_k]
+        selected = [
+            candidates[int(i)] for i in ranked if float(scores[int(i)]) >= self.score_threshold
+        ]
 
         if not selected:
             logger.debug(
@@ -452,10 +400,10 @@ class FaissSelector:
 
         result = always + selected
         logger.info(
-            "FAISS selected %d/%d skills: %s (top scores: %s)",
+            "Semantic selected %d/%d skills: %s (top scores: %s)",
             len(result),
             len(skills),
             ", ".join(s.name for s in result),
-            ", ".join(f"{s:.3f}" for s in scores[0][: min(5, len(selected))]),
+            ", ".join(f"{float(scores[int(i)]):.3f}" for i in ranked[: len(selected)]),
         )
         return result

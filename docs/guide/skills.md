@@ -41,9 +41,46 @@ Skills marked **`always: true`** in their frontmatter (patient-variation, edge-c
 
 ## Skill Selection
 
-### Keyword Selector (Default)
+### Semantic Selector (Default)
 
-The default selector scores skills by **token overlap between the prompt and the skill's `description` + `name`**, with a fuzzy fallback for typo tolerance via Python's built-in `difflib`. Zero dependencies.
+The default selector uses **local ONNX embeddings via [fastembed](https://github.com/qdrant/fastembed)** and `numpy` cosine similarity to match the prompt against each skill's `name` + `description` + `resource_types`. This handles synonyms naturally: "blood sugar" ≈ "HbA1c", "HTN" ≈ "hypertension".
+
+`fastembed` and `numpy` are core dependencies — no extras needed.
+
+**How it works:**
+
+1. On first run: downloads the embedding model → embeds every skill → caches vectors to `~/.cache/fhir-synth/skills/`
+2. Subsequent runs: loads cached vectors from disk (milliseconds)
+3. Embeds your prompt → cosine-similarity search → returns top-K skills above the threshold
+4. **Safe fallback**: if no skill clears the threshold (or the model fails), all skills are included
+
+**Default model:** `BAAI/bge-small-en-v1.5` (384-dim, ~130 MB ONNX). Strong on short-text retrieval, beats `all-MiniLM-L6-v2` on MTEB.
+
+**Usage:**
+
+```bash
+# Default — semantic selection just works
+fhir-synth generate "10 patients with diabetes"
+
+# Adjust cosine similarity threshold (0.0–1.0, default 0.5)
+fhir-synth generate "5 patients" --score-threshold 0.6
+```
+
+**Configuration (Python API):**
+
+```python
+from fhir_synth.skills import SemanticSelector
+
+selector = SemanticSelector(
+    model_name="BAAI/bge-small-en-v1.5",  # or "BAAI/bge-base-en-v1.5" for higher quality
+    score_threshold=0.5,
+    top_k=5,
+)
+```
+
+### Keyword Selector (Manual Override)
+
+The keyword selector scores skills by **token overlap between the prompt and the skill's `description` + `name`**, with a fuzzy fallback for typo tolerance via Python's built-in `difflib`. Zero ML dependencies and fully deterministic — useful for tests, air-gapped environments, or when you want to skip the embedding model download.
 
 **How it works:**
 
@@ -53,70 +90,38 @@ The default selector scores skills by **token overlap between the prompt and the
 4. Skills scoring ≥ `min_score` (default 1) are selected
 5. **Safe fallback**: if nothing matches, all skills are included
 
-**Examples:**
+**Usage:**
 
 ```bash
+# Opt out of embeddings explicitly
+fhir-synth generate "10 patients with diabetes" --selector keyword
+
 # Description-token match
-fhir-synth generate "10 patients with diabetes and medications"
-# → Selects: medications (description names "medication"), comorbidity ("diabetes")
+fhir-synth generate "10 patients with diabetes and medications" --selector keyword
+# → Selects: medications, comorbidity
 
 # Typo tolerance via fuzzy fallback
-fhir-synth generate "10 patients with diabtes and medicaton"
+fhir-synth generate "10 patients with diabtes and medicaton" --selector keyword
 # → Still selects: medications, comorbidity
 
 # Resource-type matching
-fhir-synth generate "Generate 20 Observation resources"
-# → Selects: vitals-and-labs, sdoh (both list Observation)
+fhir-synth generate "Generate 20 Observation resources" --selector keyword
+# → Selects: vitals-and-labs, sdoh
 ```
 
 **Configuration:**
 
 The default fuzzy threshold is 0.85 (85% similarity). Tune via `KeywordSelector(fuzzy_threshold=0.8)` for more tolerant matching.
 
-### FAISS Selector (Optional)
+### When to pick which
 
-The **FAISS selector** uses semantic embeddings of the skill description for similarity-based retrieval. Best for large custom skill sets or when you need semantic understanding ("blood sugar" ≈ "glucose").
-
-**Installation:**
-
-```bash
-pip install fhir-synth[semantic]
-```
-
-This installs:
-
-- `faiss-cpu` — Vector similarity search
-- `sentence-transformers` — Local embedding model (all-MiniLM-L6-v2, 384-dim, ~80MB)
-- `numpy` — Array operations
-
-**Usage:**
-
-```bash
-# Basic usage
-fhir-synth generate "5 patients" --selector faiss
-
-# Adjust similarity threshold (0.0–1.0)
-fhir-synth generate "5 patients" --selector faiss --score-threshold 0.5
-```
-
-**How it works:**
-
-1. On first run: embeds all skill descriptions → builds FAISS index → saves to `~/.cache/fhir-synth/skills/`
-2. Subsequent runs: loads cached index (instant)
-3. Embeds your prompt → searches for similar skills
-4. Returns all skills above the similarity threshold (default 0.3)
-
-**When to use FAISS:**
-
-- You have 50+ custom skills
-- You need semantic matching ("HTN" ≈ "hypertension")
-- You're building a specialized domain (oncology, genomics, etc.)
-
-**When to use keyword (default):**
-
-- You have ≤20 skills (built-in skills work great)
-- You want zero extra dependencies
-- Token overlap + typo tolerance is sufficient
+| Use case | Selector |
+| --- | --- |
+| Default — works for most prompts | **semantic** |
+| Synonym-heavy prompts ("blood sugar" ↔ "HbA1c") | **semantic** |
+| Large custom skill catalog (50+) | **semantic** |
+| Air-gapped / no model download possible | **keyword** |
+| Deterministic, reproducible CI tests | **keyword** |
 
 ## Custom Skills
 
@@ -220,13 +225,16 @@ If your prompt doesn't match any skills:
 
 1. Check that trigger terms (drug names, conditions, resource types) appear in the skill's `description` — not just the body.
 2. Verify `resource_types` matches what the prompt asks for (e.g. include `Observation` if users ask for "labs").
-3. Try more specific terms in your prompt, or lower the keyword selector's `fuzzy_threshold` (default 0.85).
+3. Try more specific terms in your prompt, or lower `--score-threshold` (semantic, default 0.5) / `KeywordSelector(fuzzy_threshold=0.8)` (keyword).
 4. As a safe fallback, all skills are included when nothing matches.
 
-### FAISS Import Errors
+### Embedding Model Download Issues
+
+The semantic selector downloads its ONNX model on first use to `~/.cache/fastembed/`. If you're offline or behind a strict proxy:
 
 ```bash
-pip install fhir-synth[semantic]
+# Opt out of embeddings — falls back to keyword matching, no network needed
+fhir-synth generate "5 patients" --selector keyword
 ```
 
 ### Viewing Selected Skills
@@ -246,19 +254,19 @@ INFO Selected 3/17 skills: medications, comorbidity, vitals-and-labs
 
 ```python
 from pathlib import Path
-from fhir_synth.skills import SkillLoader, KeywordSelector, FaissSelector
+from fhir_synth.skills import SkillLoader, SemanticSelector, KeywordSelector
 
 # Discover skills
 loader = SkillLoader(user_dirs=[Path("~/.fhir-synth/skills")])
 all_skills = loader.discover()
 
-# Select with keyword matcher (default)
-selector = KeywordSelector(min_score=1, fuzzy_threshold=0.85)
+# Select with semantic matcher (default)
+selector = SemanticSelector(score_threshold=0.5, top_k=5)
 selected = selector.select("10 diabetic patients with labs", all_skills)
 
-# Select with FAISS
-faiss_selector = FaissSelector(score_threshold=0.3)
-selected = faiss_selector.select("10 diabetic patients with labs", all_skills)
+# Or use the keyword matcher for zero-ML, deterministic selection
+keyword_selector = KeywordSelector(min_score=1, fuzzy_threshold=0.85)
+selected = keyword_selector.select("10 diabetic patients with labs", all_skills)
 
 # Get skill bodies for LLM context
 skill_context = "\n\n".join(s.body for s in selected)

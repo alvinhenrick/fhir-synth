@@ -38,8 +38,8 @@ runs/brave_phoenix/
 | `--aws-profile` | — | AWS profile for Bedrock |
 | `--aws-region` | — | AWS region for Bedrock |
 | `--skills-dir` | — | Directory with user-provided `SKILL.md` skills |
-| `--selector` | `keyword` | Skill selection: `keyword` (fuzzy) or `faiss` (semantic) |
-| `--score-threshold` | `0.3` | Minimum similarity score 0.0–1.0 (FAISS only) |
+| `--selector` | `semantic` | Skill selection: `semantic` (cosine via fastembed) or `keyword` (fuzzy token overlap) |
+| `--score-threshold` | `0.5` | Minimum cosine similarity 0.0–1.0 (semantic only) |
 | `--context` | — | Path to NDJSON/JSON with existing resources for stateful generation |
 | `--pipeline` | `default` | Generation pipeline: `default` (single-stage) or `dspy` (two-stage clinical planning) |
 | `--compiled-program` | — | Path to compiled DSPy program JSON (from `dspy.save`). Only used with `--pipeline dspy`. |
@@ -79,8 +79,11 @@ fhir-synth generate "follow-up visits with HbA1c labs" \
 # Custom skills directory
 fhir-synth generate "5 lung cancer patients" --skills-dir ~/.fhir-synth/skills
 
-# FAISS semantic skill selection (requires: pip install fhir-synth[semantic])
-fhir-synth generate "5 patients" --selector faiss --score-threshold 0.5
+# Force keyword (zero-ML, deterministic) skill selection
+fhir-synth generate "5 patients" --selector keyword
+
+# Semantic selection (default) with a custom cosine threshold
+fhir-synth generate "5 patients" --score-threshold 0.6
 
 # AWS Bedrock provider
 fhir-synth generate "5 patients" \

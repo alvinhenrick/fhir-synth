@@ -25,8 +25,8 @@ def _configure_skills(
 
     Args:
         skills_dir: Optional path to a user-provided skills directory.
-        selector: Selection strategy name (`"keyword"` or `"faiss"`).
-        score_threshold: Minimum similarity score (FAISS only).
+        selector: Selection strategy name (`"semantic"` or `"keyword"`).
+        score_threshold: Minimum cosine similarity (semantic only).
 
     Returns:
         Skill discovery summary dict.
@@ -34,14 +34,20 @@ def _configure_skills(
     from fhir_synth.code_generator.prompts import configure_skills, get_skill_discovery_summary
 
     user_dirs = [Path(skills_dir)] if skills_dir else None
-    skill_selector = None
-    if selector == "faiss":
-        from fhir_synth.skills import FaissSelector
+    skill_selector: Any = None
+    if selector == "keyword":
+        from fhir_synth.skills import KeywordSelector
+
+        skill_selector = KeywordSelector()
+    elif selector == "semantic":
+        from fhir_synth.skills import SemanticSelector
 
         if score_threshold is not None:
-            skill_selector = FaissSelector(score_threshold=score_threshold)
+            skill_selector = SemanticSelector(score_threshold=score_threshold)
         else:
-            skill_selector = FaissSelector()
+            skill_selector = SemanticSelector()
+    # Anything else (including the default) leaves selector=None,
+    # which lets the prompts layer pick its own default (SemanticSelector).
     configure_skills(user_dirs=user_dirs, selector=skill_selector)
     return get_skill_discovery_summary()
 
@@ -81,14 +87,14 @@ def generate(
         None, "--skills-dir", help="Directory with user-provided SKILL.md skills"
     ),
     selector: str = typer.Option(
-        "keyword",
+        "semantic",
         "--selector",
-        help="Skill selection strategy: keyword (fuzzy matching with typo tolerance) or faiss (semantic similarity)",
+        help="Skill selection strategy: semantic (cosine similarity via fastembed, default) or keyword (token overlap with fuzzy typo tolerance)",
     ),
     score_threshold: float | None = typer.Option(
         None,
         "--score-threshold",
-        help="Minimum similarity score 0.0-1.0 (FAISS only, default: 0.3)",
+        help="Minimum cosine similarity 0.0-1.0 (semantic only, default: 0.5)",
     ),
     context: str | None = typer.Option(
         None,
@@ -179,11 +185,11 @@ def generate(
       # Use custom skills directory
       fhir-synth generate "5 patients" --skills-dir ~/.fhir-synth/skills
 
-      # Use FAISS semantic skill selection (requires: pip install fhir-synth[semantic])
-      fhir-synth generate "5 patients" --selector faiss
+      # Force keyword (zero-dependency, no embeddings) skill selection
+      fhir-synth generate "5 patients" --selector keyword
 
-      # FAISS with a custom similarity threshold
-      fhir-synth generate "5 patients" --selector faiss --score-threshold 0.5
+      # Semantic selection (default) with a custom cosine threshold
+      fhir-synth generate "5 patients" --score-threshold 0.6
     """
     try:
         from fhir_synth.code_generator import CodeGenerator, get_executor
@@ -506,14 +512,14 @@ def codegen(
         None, "--skills-dir", help="Directory with user-provided SKILL.md skills"
     ),
     selector: str = typer.Option(
-        "keyword",
+        "semantic",
         "--selector",
-        help="Skill selection strategy: keyword (fuzzy matching with typo tolerance) or faiss (semantic similarity)",
+        help="Skill selection strategy: semantic (cosine similarity via fastembed, default) or keyword (token overlap with fuzzy typo tolerance)",
     ),
     score_threshold: float | None = typer.Option(
         None,
         "--score-threshold",
-        help="Minimum similarity score 0.0-1.0 (FAISS only, default: 0.3)",
+        help="Minimum cosine similarity 0.0-1.0 (semantic only, default: 0.5)",
     ),
 ) -> None:
     """Generate Python code for resource creation from a prompt."""
