@@ -310,51 +310,22 @@ async def _run_generate(
             context_resources=context_resources,
         )
 
-        # Load metadata configuration from YAML if provided
+        # Load metadata configuration from YAML if provided. ``dspy_prompt``
+        # stays free of metadata instructions — Stage 1 is clinical planning
+        # only; metadata (security labels, profiles, tags) is applied as
+        # post-processing on the generated resources (step 2.5).
         prompt_text = prompt
-        # dspy_prompt stays free of metadata instructions — Stage 1 is clinical
-        # planning only; metadata (security labels, profiles, tags) is applied
-        # as post-processing on the generated resources (step 2.5).
         dspy_prompt = prompt
         metadata_config = None
 
         if meta_config:
             import yaml
 
+            from fhir_synth.code_generator.prompts import build_metadata_prompt_hints
+
             with open(meta_config) as f:
                 metadata_config = yaml.safe_load(f)
-
-            # Build prompt hints from YAML config
-            metadata_hints: list[str] = []
-            meta = metadata_config.get("meta", {})
-
-            if meta.get("security"):
-                for sec in meta["security"]:
-                    metadata_hints.append(
-                        f"Add security label: system={sec.get('system')}, "
-                        f"code={sec.get('code')}, display={sec.get('display', sec.get('code'))}"
-                    )
-
-            if meta.get("tag"):
-                for tag in meta["tag"]:
-                    metadata_hints.append(
-                        f"Add tag: system={tag.get('system')}, "
-                        f"code={tag.get('code')}, display={tag.get('display', tag.get('code'))}"
-                    )
-
-            if meta.get("profile"):
-                for prof in meta["profile"]:
-                    metadata_hints.append(f"Add profile: {prof}")
-
-            if meta.get("source"):
-                metadata_hints.append(f"Set meta.source to: {meta['source']}")
-
-            if metadata_hints:
-                metadata_instructions = "METADATA REQUIREMENTS:\n" + "\n".join(
-                    f"- {hint}" for hint in metadata_hints
-                )
-                prompt_text = f"{metadata_instructions}\n\n{prompt_text}"
-                # dspy_prompt deliberately not updated here
+            prompt_text = build_metadata_prompt_hints(prompt_text, metadata_config)
 
         # Augment prompt with EMPI hints if requested
         if empi:
@@ -435,55 +406,10 @@ async def _run_generate(
             await reporter.info("▶  Executing generated code …")
             resources = code_gen.execute_generated_code(code)
 
-        # Step 2.1 — report FHIR validation
-        from fhir_synth.code_generator.fhir_validation import validate_resources
+        # Steps 2.1–2.3 — FHIR / reference / US Core validation reports
+        from fhir_synth.validation_report import report_validation_results
 
-        vr = validate_resources(resources)
-        if vr.is_valid:
-            await reporter.info(f"   ✅ {vr.total} resources — all valid FHIR {fhir_version}")
-        else:
-            await reporter.warning(
-                f"   ⚠️  {vr.total} resources — {vr.valid} valid, "
-                f"{vr.invalid} invalid ({vr.pass_rate:.0%} pass rate)"
-            )
-            for err in vr.errors[:5]:
-                await reporter.error(
-                    f"      ❌ {err['resourceType']}/{err['id']}: {'; '.join(err['errors'][:2])}"
-                )
-
-        # Step 2.2 — report reference integrity
-        from fhir_synth.code_generator.fhir_validation import validate_references
-
-        ref_errors = validate_references(resources)
-        broken_refs = sum(len(e.get("errors", [])) for e in ref_errors)
-        if broken_refs == 0:
-            await reporter.info("   ✅ Reference integrity — all references valid")
-        else:
-            await reporter.warning(f"   ⚠️  Reference integrity — {broken_refs} broken reference(s)")
-            for entry in ref_errors[:3]:
-                for err in entry.get("errors", [])[:2]:
-                    await reporter.error(f"      ↳ {entry['resourceType']}/{entry['id']}: {err}")
-
-        # Step 2.3 — report US Core compliance
-        from fhir_synth.code_generator.us_core_validation import validate_us_core
-
-        ucr = validate_us_core(resources)
-        if ucr.total_checked > 0:
-            if not ucr.has_warnings:
-                await reporter.info(
-                    f"   ✅ US Core — {ucr.total_checked} resources fully compliant"
-                )
-            else:
-                non_compliant = ucr.total_checked - ucr.fully_compliant
-                await reporter.warning(
-                    f"   ⚠️  US Core — {non_compliant}/{ucr.total_checked} resources "
-                    f"missing must-support fields ({ucr.compliance_rate:.0%} compliant)"
-                )
-                for w in ucr.warnings[:3]:
-                    missing = ", ".join(w["missing_must_support"][:3])
-                    await reporter.error(
-                        f"      ↳ {w['resourceType']}/{w['id']}: missing {missing}"
-                    )
+        await report_validation_results(resources, reporter, fhir_version=fhir_version)
 
         # Step 2.5 — apply metadata from YAML config if specified
         if metadata_config and "meta" in metadata_config:

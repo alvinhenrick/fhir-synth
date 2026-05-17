@@ -78,31 +78,6 @@ def _get_llm() -> Any:
     return get_provider(_PROVIDER, aws_profile=_AWS_PROFILE, aws_region=_AWS_REGION)
 
 
-def _quality_summary(resources: list[dict[str, Any]]) -> dict[str, Any]:
-    from fhir_synth.code_generator.fhir_validation import validate_references, validate_resources
-    from fhir_synth.code_generator.us_core_validation import validate_us_core
-
-    vr = validate_resources(resources)
-    ref_errors = validate_references(resources)
-    broken_refs = sum(len(e.get("errors", [])) for e in ref_errors)
-    ucr = validate_us_core(resources)
-
-    return {
-        "fhir_total": vr.total,
-        "fhir_valid": vr.valid,
-        "fhir_invalid": vr.invalid,
-        "fhir_pass_rate": round(vr.pass_rate, 3),
-        "broken_references": broken_refs,
-        "us_core_total_checked": ucr.total_checked,
-        "us_core_fully_compliant": ucr.fully_compliant,
-        "us_core_compliance_rate": (
-            round(ucr.compliance_rate, 3) if ucr.total_checked > 0 else None
-        ),
-        "fhir_errors_sample": vr.errors[:5],
-        "reference_errors_sample": ref_errors[:3],
-    }
-
-
 # ── Tool 1: generate_fhir_data ───────────────────────────────────────────────
 
 
@@ -177,6 +152,7 @@ async def generate_fhir_data(
     )
     from fhir_synth.code_generator import CodeGenerator, get_executor
     from fhir_synth.code_generator.prompts import (
+        build_metadata_prompt_hints,
         configure_skills,
         get_selected_skill_names,
         get_skill_discovery_summary,
@@ -227,28 +203,8 @@ async def generate_fhir_data(
     # the caller passed meta_config. The clinical-planning stage of the DSPy
     # pipeline should stay metadata-free (metadata is post-processing), so we
     # only augment the prompt used by the single-stage pipeline.
-    metadata_prompt = prompt
+    metadata_prompt = build_metadata_prompt_hints(prompt, meta_config)
     meta_dict = meta_config.get("meta") if isinstance(meta_config, dict) else None
-    if isinstance(meta_dict, dict):
-        hints: list[str] = []
-        for sec in meta_dict.get("security") or []:
-            hints.append(
-                f"Add security label: system={sec.get('system')}, "
-                f"code={sec.get('code')}, display={sec.get('display', sec.get('code'))}"
-            )
-        for tag in meta_dict.get("tag") or []:
-            hints.append(
-                f"Add tag: system={tag.get('system')}, "
-                f"code={tag.get('code')}, display={tag.get('display', tag.get('code'))}"
-            )
-        for prof in meta_dict.get("profile") or []:
-            hints.append(f"Add profile: {prof}")
-        if meta_dict.get("source"):
-            hints.append(f"Set meta.source to: {meta_dict['source']}")
-        if hints:
-            metadata_prompt = (
-                "METADATA REQUIREMENTS:\n" + "\n".join(f"- {h}" for h in hints) + f"\n\n{prompt}"
-            )
 
     if effective_pipeline == "dspy":
         try:
@@ -298,39 +254,9 @@ async def generate_fhir_data(
     code_path.write_text(code)
     await reporter.info(f"   Saved code → {code_path}")
 
-    # ── Validation reports (mirrors CLI step 2.1–2.3) ──────────────────────
-    from fhir_synth.code_generator.fhir_validation import (
-        validate_references,
-        validate_resources,
-    )
-    from fhir_synth.code_generator.us_core_validation import validate_us_core
+    from fhir_synth.validation_report import report_validation_results
 
-    vr = validate_resources(resources)
-    if vr.is_valid:
-        await reporter.info(f"   ✅ {vr.total} resources — all valid FHIR {fhir_version}")
-    else:
-        await reporter.warning(
-            f"{vr.total} resources — {vr.valid} valid, "
-            f"{vr.invalid} invalid ({vr.pass_rate:.0%} pass rate)"
-        )
-
-    ref_errors = validate_references(resources)
-    broken_refs = sum(len(e.get("errors", [])) for e in ref_errors)
-    if broken_refs == 0:
-        await reporter.info("   ✅ Reference integrity — all references valid")
-    else:
-        await reporter.warning(f"Reference integrity — {broken_refs} broken reference(s)")
-
-    ucr = validate_us_core(resources)
-    if ucr.total_checked > 0:
-        if not ucr.has_warnings:
-            await reporter.info(f"   ✅ US Core — {ucr.total_checked} resources fully compliant")
-        else:
-            non_compliant = ucr.total_checked - ucr.fully_compliant
-            await reporter.warning(
-                f"US Core — {non_compliant}/{ucr.total_checked} resources "
-                f"missing must-support fields ({ucr.compliance_rate:.0%} compliant)"
-            )
+    quality = await report_validation_results(resources, reporter, fhir_version=fhir_version)
     await reporter.progress(4, total_steps, "validation complete")
 
     # Stamp the FHIR Meta on each resource (post-processing, both pipelines).
@@ -351,21 +277,6 @@ async def generate_fhir_data(
         paths = write_split_bundles(per_patient, run_dir)
         await reporter.info(f"✓  {len(paths)} patient files → {run_dir}/")
     await reporter.progress(5, total_steps, "output written")
-
-    quality = {
-        "fhir_total": vr.total,
-        "fhir_valid": vr.valid,
-        "fhir_invalid": vr.invalid,
-        "fhir_pass_rate": round(vr.pass_rate, 3),
-        "broken_references": broken_refs,
-        "us_core_total_checked": ucr.total_checked,
-        "us_core_fully_compliant": ucr.fully_compliant,
-        "us_core_compliance_rate": (
-            round(ucr.compliance_rate, 3) if ucr.total_checked > 0 else None
-        ),
-        "fhir_errors_sample": vr.errors[:5],
-        "reference_errors_sample": ref_errors[:3],
-    }
     await reporter.progress(6, total_steps, "done")
 
     return {
@@ -403,14 +314,9 @@ async def validate_fhir_bundle(bundle: str, ctx: Context | None = None) -> dict[
                   - a list of resources (``[{...}, {...}]``)
                   - NDJSON (one JSON object per line)
     """
-    from fhir_synth.code_generator.fhir_validation import (
-        validate_references,
-        validate_resources,
-    )
-    from fhir_synth.code_generator.us_core_validation import validate_us_core
+    from fhir_synth.validation_report import report_validation_results
 
     reporter = MCPReporter(ctx)
-    total = 4
 
     bundle = bundle.strip()
     resources: list[dict[str, Any]] = []
@@ -440,52 +346,11 @@ async def validate_fhir_bundle(bundle: str, ctx: Context | None = None) -> dict[
             resources = [obj]
 
     await reporter.info(f"📥 Parsed {len(resources)} resource(s) from input")
-    await reporter.progress(1, total, "input parsed")
+    await reporter.progress(1, 2, "input parsed")
+    quality = await report_validation_results(resources, reporter)
+    await reporter.progress(2, 2, "validation done")
 
-    vr = validate_resources(resources)
-    if vr.is_valid:
-        await reporter.info(f"   ✅ FHIR validation — {vr.total} resources valid")
-    else:
-        await reporter.warning(
-            f"FHIR validation — {vr.valid}/{vr.total} valid ({vr.pass_rate:.0%})"
-        )
-    await reporter.progress(2, total, "FHIR validation complete")
-
-    ref_errors = validate_references(resources)
-    broken_refs = sum(len(e.get("errors", [])) for e in ref_errors)
-    if broken_refs == 0:
-        await reporter.info("   ✅ Reference integrity — all references valid")
-    else:
-        await reporter.warning(f"Reference integrity — {broken_refs} broken reference(s)")
-    await reporter.progress(3, total, "reference check complete")
-
-    ucr = validate_us_core(resources)
-    if ucr.total_checked > 0:
-        if not ucr.has_warnings:
-            await reporter.info(f"   ✅ US Core — {ucr.total_checked} resources fully compliant")
-        else:
-            non_compliant = ucr.total_checked - ucr.fully_compliant
-            await reporter.warning(
-                f"US Core — {non_compliant}/{ucr.total_checked} resources "
-                f"missing must-support fields ({ucr.compliance_rate:.0%} compliant)"
-            )
-    await reporter.progress(4, total, "validation done")
-
-    return {
-        "input_resource_count": len(resources),
-        "fhir_total": vr.total,
-        "fhir_valid": vr.valid,
-        "fhir_invalid": vr.invalid,
-        "fhir_pass_rate": round(vr.pass_rate, 3),
-        "broken_references": broken_refs,
-        "us_core_total_checked": ucr.total_checked,
-        "us_core_fully_compliant": ucr.fully_compliant,
-        "us_core_compliance_rate": (
-            round(ucr.compliance_rate, 3) if ucr.total_checked > 0 else None
-        ),
-        "fhir_errors_sample": vr.errors[:5],
-        "reference_errors_sample": ref_errors[:3],
-    }
+    return {"input_resource_count": len(resources), **quality}
 
 
 # ── Tool 3: list_skills ──────────────────────────────────────────────────────

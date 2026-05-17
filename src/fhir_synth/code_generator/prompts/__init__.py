@@ -313,10 +313,59 @@ def build_empi_prompt(
     )
 
 
+def build_metadata_prompt_hints(
+    user_prompt: str, meta_config: dict[str, Any] | None
+) -> str:
+    """Prefix ``user_prompt`` with ``METADATA REQUIREMENTS`` hints if any.
+
+    Accepts both the CLI shape (full ``{"meta": {...}}`` from YAML) and the
+    MCP shape (same dict, passed as an argument). Returns the original prompt
+    unchanged when ``meta_config`` is ``None``, missing ``"meta"``, or has
+    nothing to inject.
+
+    Args:
+        user_prompt: The user's natural-language prompt.
+        meta_config: A dict like ``{"meta": {"security": [...], "tag": [...],
+            "profile": [...], "source": "..."}}``. Any subset of fields may
+            be present.
+
+    Returns:
+        The prompt, possibly prefixed with a ``METADATA REQUIREMENTS:`` block.
+    """
+    meta = meta_config.get("meta") if isinstance(meta_config, dict) else None
+    if not isinstance(meta, dict):
+        return user_prompt
+
+    hints: list[str] = []
+    for sec in meta.get("security") or []:
+        hints.append(
+            f"Add security label: system={sec.get('system')}, "
+            f"code={sec.get('code')}, display={sec.get('display', sec.get('code'))}"
+        )
+    for tag in meta.get("tag") or []:
+        hints.append(
+            f"Add tag: system={tag.get('system')}, "
+            f"code={tag.get('code')}, display={tag.get('display', tag.get('code'))}"
+        )
+    for prof in meta.get("profile") or []:
+        hints.append(f"Add profile: {prof}")
+    if meta.get("source"):
+        hints.append(f"Set meta.source to: {meta['source']}")
+
+    if not hints:
+        return user_prompt
+    return (
+        "METADATA REQUIREMENTS:\n"
+        + "\n".join(f"- {h}" for h in hints)
+        + f"\n\n{user_prompt}"
+    )
+
+
 __all__ = [
     "build_code_prompt",
     "build_empi_prompt",
     "build_fix_prompt",
+    "build_metadata_prompt_hints",
     "configure_skills",
     "get_selected_skill_names",
     "get_skill_discovery_summary",
