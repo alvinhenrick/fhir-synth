@@ -90,7 +90,7 @@ async def generate_fhir_data(
     compiled_program: str | None = None,
     meta_config: dict[str, Any] | None = None,
     max_resources_returned: int = 200,
-    ctx: Context | None = None,
+    ctx: Context[Any, Any, Any] | None = None,
 ) -> dict[str, Any]:
     """Generate synthetic FHIR data from a natural language prompt.
 
@@ -301,7 +301,7 @@ async def generate_fhir_data(
 
 
 @mcp.tool()
-async def validate_fhir_bundle(bundle: str, ctx: Context | None = None) -> dict[str, Any]:
+async def validate_fhir_bundle(bundle: str, ctx: Context[Any, Any, Any] | None = None) -> dict[str, Any]:
     """Validate an existing FHIR payload (Bundle, list of resources, or NDJSON).
 
     Runs Pydantic validation, cross-resource reference integrity, and US Core
@@ -357,7 +357,7 @@ async def validate_fhir_bundle(bundle: str, ctx: Context | None = None) -> dict[
 
 
 @mcp.tool()
-async def list_skills(ctx: Context | None = None) -> dict[str, Any]:
+async def list_skills(ctx: Context[Any, Any, Any] | None = None) -> dict[str, Any]:
     """List all clinical-domain skills fhir-synth knows about.
 
     Useful before writing a prompt — tells you which conditions, resource types,
@@ -392,7 +392,7 @@ async def list_skills(ctx: Context | None = None) -> dict[str, Any]:
 
 
 @mcp.tool()
-async def list_runs(limit: int = 20, ctx: Context | None = None) -> dict[str, Any]:
+async def list_runs(limit: int = 20, ctx: Context[Any, Any, Any] | None = None) -> dict[str, Any]:
     """List recent generation runs in the runs/ directory.
 
     Args:
@@ -433,7 +433,7 @@ async def list_runs(limit: int = 20, ctx: Context | None = None) -> dict[str, An
 async def get_run(
     run_name: str,
     include_resources: bool = True,
-    ctx: Context | None = None,
+    ctx: Context[Any, Any, Any] | None = None,
 ) -> dict[str, Any]:
     """Fetch a previously generated run: prompt, code, and resources.
 
