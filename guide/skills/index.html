@@ -741,10 +741,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#keyword-selector-default" class="md-nav__link">
+  <a href="#semantic-selector-default" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Keyword Selector (Default)
+        Semantic Selector (Default)
       
     </span>
   </a>
@@ -752,10 +752,21 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#faiss-selector-optional" class="md-nav__link">
+  <a href="#keyword-selector-manual-override" class="md-nav__link">
     <span class="md-ellipsis">
       
-        FAISS Selector (Optional)
+        Keyword Selector (Manual Override)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#when-to-pick-which" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        When to pick which
       
     </span>
   </a>
@@ -891,10 +902,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#faiss-import-errors" class="md-nav__link">
+  <a href="#embedding-model-download-issues" class="md-nav__link">
     <span class="md-ellipsis">
       
-        FAISS Import Errors
+        Embedding Model Download Issues
       
     </span>
   </a>
@@ -1465,10 +1476,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#keyword-selector-default" class="md-nav__link">
+  <a href="#semantic-selector-default" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Keyword Selector (Default)
+        Semantic Selector (Default)
       
     </span>
   </a>
@@ -1476,10 +1487,21 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#faiss-selector-optional" class="md-nav__link">
+  <a href="#keyword-selector-manual-override" class="md-nav__link">
     <span class="md-ellipsis">
       
-        FAISS Selector (Optional)
+        Keyword Selector (Manual Override)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#when-to-pick-which" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        When to pick which
       
     </span>
   </a>
@@ -1615,10 +1637,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#faiss-import-errors" class="md-nav__link">
+  <a href="#embedding-model-download-issues" class="md-nav__link">
     <span class="md-ellipsis">
       
-        FAISS Import Errors
+        Embedding Model Download Issues
       
     </span>
   </a>
@@ -1793,8 +1815,35 @@
 </table>
 <p>Skills marked <strong><code>always: true</code></strong> in their frontmatter (patient-variation, edge-cases, provenance-data-quality) are included in every generation.</p>
 <h2 id="skill-selection">Skill Selection<a class="headerlink" href="#skill-selection" title="Permanent link">&para;</a></h2>
-<h3 id="keyword-selector-default">Keyword Selector (Default)<a class="headerlink" href="#keyword-selector-default" title="Permanent link">&para;</a></h3>
-<p>The default selector scores skills by <strong>token overlap between the prompt and the skill's <code>description</code> + <code>name</code></strong>, with a fuzzy fallback for typo tolerance via Python's built-in <code>difflib</code>. Zero dependencies.</p>
+<h3 id="semantic-selector-default">Semantic Selector (Default)<a class="headerlink" href="#semantic-selector-default" title="Permanent link">&para;</a></h3>
+<p>The default selector uses <strong>local ONNX embeddings via <a href="https://github.com/qdrant/fastembed">fastembed</a></strong> and <code>numpy</code> cosine similarity to match the prompt against each skill's <code>name</code> + <code>description</code> + <code>resource_types</code>. This handles synonyms naturally: "blood sugar" ≈ "HbA1c", "HTN" ≈ "hypertension".</p>
+<p><code>fastembed</code> and <code>numpy</code> are core dependencies — no extras needed.</p>
+<p><strong>How it works:</strong></p>
+<ol>
+<li>On first run: downloads the embedding model → embeds every skill → caches vectors to <code>~/.cache/fhir-synth/skills/</code></li>
+<li>Subsequent runs: loads cached vectors from disk (milliseconds)</li>
+<li>Embeds your prompt → cosine-similarity search → returns top-K skills above the threshold</li>
+<li><strong>Safe fallback</strong>: if no skill clears the threshold (or the model fails), all skills are included</li>
+</ol>
+<p><strong>Default model:</strong> <code>BAAI/bge-small-en-v1.5</code> (384-dim, ~130 MB ONNX). Strong on short-text retrieval, beats <code>all-MiniLM-L6-v2</code> on MTEB.</p>
+<p><strong>Usage:</strong></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># Default — semantic selection just works</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;10 patients with diabetes&quot;</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="c1"># Adjust cosine similarity threshold (0.0–1.0, default 0.5)</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;5 patients&quot;</span><span class="w"> </span>--score-threshold<span class="w"> </span><span class="m">0</span>.6
+</code></pre></div>
+<p><strong>Configuration (Python API):</strong></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fhir_synth.skills</span><span class="w"> </span><span class="kn">import</span> <span class="n">SemanticSelector</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="n">selector</span> <span class="o">=</span> <span class="n">SemanticSelector</span><span class="p">(</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>    <span class="n">model_name</span><span class="o">=</span><span class="s2">&quot;BAAI/bge-small-en-v1.5&quot;</span><span class="p">,</span>  <span class="c1"># or &quot;BAAI/bge-base-en-v1.5&quot; for higher quality</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>    <span class="n">score_threshold</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>    <span class="n">top_k</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="p">)</span>
+</code></pre></div>
+<h3 id="keyword-selector-manual-override">Keyword Selector (Manual Override)<a class="headerlink" href="#keyword-selector-manual-override" title="Permanent link">&para;</a></h3>
+<p>The keyword selector scores skills by <strong>token overlap between the prompt and the skill's <code>description</code> + <code>name</code></strong>, with a fuzzy fallback for typo tolerance via Python's built-in <code>difflib</code>. Zero ML dependencies and fully deterministic — useful for tests, air-gapped environments, or when you want to skip the embedding model download.</p>
 <p><strong>How it works:</strong></p>
 <ol>
 <li>Resource-type substring hit (e.g. user wrote "MedicationRequest") → <strong>+2 points</strong></li>
@@ -1803,58 +1852,55 @@
 <li>Skills scoring ≥ <code>min_score</code> (default 1) are selected</li>
 <li><strong>Safe fallback</strong>: if nothing matches, all skills are included</li>
 </ol>
-<p><strong>Examples:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># Description-token match</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;10 patients with diabetes and medications&quot;</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="c1"># → Selects: medications (description names &quot;medication&quot;), comorbidity (&quot;diabetes&quot;)</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="c1"># Typo tolerance via fuzzy fallback</span>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;10 patients with diabtes and medicaton&quot;</span>
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="c1"># → Still selects: medications, comorbidity</span>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="c1"># Resource-type matching</span>
-<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;Generate 20 Observation resources&quot;</span>
-<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="c1"># → Selects: vitals-and-labs, sdoh (both list Observation)</span>
+<p><strong>Usage:</strong></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># Opt out of embeddings explicitly</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;10 patients with diabetes&quot;</span><span class="w"> </span>--selector<span class="w"> </span>keyword
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="c1"># Description-token match</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;10 patients with diabetes and medications&quot;</span><span class="w"> </span>--selector<span class="w"> </span>keyword
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="c1"># → Selects: medications, comorbidity</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="c1"># Typo tolerance via fuzzy fallback</span>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;10 patients with diabtes and medicaton&quot;</span><span class="w"> </span>--selector<span class="w"> </span>keyword
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="c1"># → Still selects: medications, comorbidity</span>
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>
+<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="c1"># Resource-type matching</span>
+<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;Generate 20 Observation resources&quot;</span><span class="w"> </span>--selector<span class="w"> </span>keyword
+<a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a><span class="c1"># → Selects: vitals-and-labs, sdoh</span>
 </code></pre></div>
 <p><strong>Configuration:</strong></p>
 <p>The default fuzzy threshold is 0.85 (85% similarity). Tune via <code>KeywordSelector(fuzzy_threshold=0.8)</code> for more tolerant matching.</p>
-<h3 id="faiss-selector-optional">FAISS Selector (Optional)<a class="headerlink" href="#faiss-selector-optional" title="Permanent link">&para;</a></h3>
-<p>The <strong>FAISS selector</strong> uses semantic embeddings of the skill description for similarity-based retrieval. Best for large custom skill sets or when you need semantic understanding ("blood sugar" ≈ "glucose").</p>
-<p><strong>Installation:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>pip<span class="w"> </span>install<span class="w"> </span>fhir-synth<span class="o">[</span>semantic<span class="o">]</span>
-</code></pre></div>
-<p>This installs:</p>
-<ul>
-<li><code>faiss-cpu</code> — Vector similarity search</li>
-<li><code>sentence-transformers</code> — Local embedding model (all-MiniLM-L6-v2, 384-dim, ~80MB)</li>
-<li><code>numpy</code> — Array operations</li>
-</ul>
-<p><strong>Usage:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># Basic usage</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;5 patients&quot;</span><span class="w"> </span>--selector<span class="w"> </span>faiss
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="c1"># Adjust similarity threshold (0.0–1.0)</span>
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;5 patients&quot;</span><span class="w"> </span>--selector<span class="w"> </span>faiss<span class="w"> </span>--score-threshold<span class="w"> </span><span class="m">0</span>.5
-</code></pre></div>
-<p><strong>How it works:</strong></p>
-<ol>
-<li>On first run: embeds all skill descriptions → builds FAISS index → saves to <code>~/.cache/fhir-synth/skills/</code></li>
-<li>Subsequent runs: loads cached index (instant)</li>
-<li>Embeds your prompt → searches for similar skills</li>
-<li>Returns all skills above the similarity threshold (default 0.3)</li>
-</ol>
-<p><strong>When to use FAISS:</strong></p>
-<ul>
-<li>You have 50+ custom skills</li>
-<li>You need semantic matching ("HTN" ≈ "hypertension")</li>
-<li>You're building a specialized domain (oncology, genomics, etc.)</li>
-</ul>
-<p><strong>When to use keyword (default):</strong></p>
-<ul>
-<li>You have ≤20 skills (built-in skills work great)</li>
-<li>You want zero extra dependencies</li>
-<li>Token overlap + typo tolerance is sufficient</li>
-</ul>
+<h3 id="when-to-pick-which">When to pick which<a class="headerlink" href="#when-to-pick-which" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Use case</th>
+<th>Selector</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Default — works for most prompts</td>
+<td><strong>semantic</strong></td>
+</tr>
+<tr>
+<td>Synonym-heavy prompts ("blood sugar" ↔ "HbA1c")</td>
+<td><strong>semantic</strong></td>
+</tr>
+<tr>
+<td>Large custom skill catalog (50+)</td>
+<td><strong>semantic</strong></td>
+</tr>
+<tr>
+<td>Air-gapped / no model download possible</td>
+<td><strong>keyword</strong></td>
+</tr>
+<tr>
+<td>Deterministic, reproducible CI tests</td>
+<td><strong>keyword</strong></td>
+</tr>
+</tbody>
+</table>
 <h2 id="custom-skills">Custom Skills<a class="headerlink" href="#custom-skills" title="Permanent link">&para;</a></h2>
 <p>Create your own skills to extend FHIR Synth with domain-specific knowledge.</p>
 <h3 id="skill-structure">Skill Structure<a class="headerlink" href="#skill-structure" title="Permanent link">&para;</a></h3>
@@ -1969,11 +2015,13 @@
 <ol>
 <li>Check that trigger terms (drug names, conditions, resource types) appear in the skill's <code>description</code> — not just the body.</li>
 <li>Verify <code>resource_types</code> matches what the prompt asks for (e.g. include <code>Observation</code> if users ask for "labs").</li>
-<li>Try more specific terms in your prompt, or lower the keyword selector's <code>fuzzy_threshold</code> (default 0.85).</li>
+<li>Try more specific terms in your prompt, or lower <code>--score-threshold</code> (semantic, default 0.5) / <code>KeywordSelector(fuzzy_threshold=0.8)</code> (keyword).</li>
 <li>As a safe fallback, all skills are included when nothing matches.</li>
 </ol>
-<h3 id="faiss-import-errors">FAISS Import Errors<a class="headerlink" href="#faiss-import-errors" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>pip<span class="w"> </span>install<span class="w"> </span>fhir-synth<span class="o">[</span>semantic<span class="o">]</span>
+<h3 id="embedding-model-download-issues">Embedding Model Download Issues<a class="headerlink" href="#embedding-model-download-issues" title="Permanent link">&para;</a></h3>
+<p>The semantic selector downloads its ONNX model on first use to <code>~/.cache/fastembed/</code>. If you're offline or behind a strict proxy:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="c1"># Opt out of embeddings — falls back to keyword matching, no network needed</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;5 patients&quot;</span><span class="w"> </span>--selector<span class="w"> </span>keyword
 </code></pre></div>
 <h3 id="viewing-selected-skills">Viewing Selected Skills<a class="headerlink" href="#viewing-selected-skills" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">LOG_LEVEL</span><span class="o">=</span>DEBUG
@@ -1984,19 +2032,19 @@
 </code></pre></div>
 <h2 id="api-usage">API Usage<a class="headerlink" href="#api-usage" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
-<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fhir_synth.skills</span><span class="w"> </span><span class="kn">import</span> <span class="n">SkillLoader</span><span class="p">,</span> <span class="n">KeywordSelector</span><span class="p">,</span> <span class="n">FaissSelector</span>
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fhir_synth.skills</span><span class="w"> </span><span class="kn">import</span> <span class="n">SkillLoader</span><span class="p">,</span> <span class="n">SemanticSelector</span><span class="p">,</span> <span class="n">KeywordSelector</span>
 <a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>
 <a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="c1"># Discover skills</span>
 <a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="n">loader</span> <span class="o">=</span> <span class="n">SkillLoader</span><span class="p">(</span><span class="n">user_dirs</span><span class="o">=</span><span class="p">[</span><span class="n">Path</span><span class="p">(</span><span class="s2">&quot;~/.fhir-synth/skills&quot;</span><span class="p">)])</span>
 <a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="n">all_skills</span> <span class="o">=</span> <span class="n">loader</span><span class="o">.</span><span class="n">discover</span><span class="p">()</span>
 <a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a>
-<a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a><span class="c1"># Select with keyword matcher (default)</span>
-<a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a><span class="n">selector</span> <span class="o">=</span> <span class="n">KeywordSelector</span><span class="p">(</span><span class="n">min_score</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">fuzzy_threshold</span><span class="o">=</span><span class="mf">0.85</span><span class="p">)</span>
+<a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a><span class="c1"># Select with semantic matcher (default)</span>
+<a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a><span class="n">selector</span> <span class="o">=</span> <span class="n">SemanticSelector</span><span class="p">(</span><span class="n">score_threshold</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">top_k</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
 <a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a><span class="n">selected</span> <span class="o">=</span> <span class="n">selector</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="s2">&quot;10 diabetic patients with labs&quot;</span><span class="p">,</span> <span class="n">all_skills</span><span class="p">)</span>
 <a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a>
-<a id="__codelineno-9-12" name="__codelineno-9-12" href="#__codelineno-9-12"></a><span class="c1"># Select with FAISS</span>
-<a id="__codelineno-9-13" name="__codelineno-9-13" href="#__codelineno-9-13"></a><span class="n">faiss_selector</span> <span class="o">=</span> <span class="n">FaissSelector</span><span class="p">(</span><span class="n">score_threshold</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
-<a id="__codelineno-9-14" name="__codelineno-9-14" href="#__codelineno-9-14"></a><span class="n">selected</span> <span class="o">=</span> <span class="n">faiss_selector</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="s2">&quot;10 diabetic patients with labs&quot;</span><span class="p">,</span> <span class="n">all_skills</span><span class="p">)</span>
+<a id="__codelineno-9-12" name="__codelineno-9-12" href="#__codelineno-9-12"></a><span class="c1"># Or use the keyword matcher for zero-ML, deterministic selection</span>
+<a id="__codelineno-9-13" name="__codelineno-9-13" href="#__codelineno-9-13"></a><span class="n">keyword_selector</span> <span class="o">=</span> <span class="n">KeywordSelector</span><span class="p">(</span><span class="n">min_score</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">fuzzy_threshold</span><span class="o">=</span><span class="mf">0.85</span><span class="p">)</span>
+<a id="__codelineno-9-14" name="__codelineno-9-14" href="#__codelineno-9-14"></a><span class="n">selected</span> <span class="o">=</span> <span class="n">keyword_selector</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="s2">&quot;10 diabetic patients with labs&quot;</span><span class="p">,</span> <span class="n">all_skills</span><span class="p">)</span>
 <a id="__codelineno-9-15" name="__codelineno-9-15" href="#__codelineno-9-15"></a>
 <a id="__codelineno-9-16" name="__codelineno-9-16" href="#__codelineno-9-16"></a><span class="c1"># Get skill bodies for LLM context</span>
 <a id="__codelineno-9-17" name="__codelineno-9-17" href="#__codelineno-9-17"></a><span class="n">skill_context</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">body</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">selected</span><span class="p">)</span>
