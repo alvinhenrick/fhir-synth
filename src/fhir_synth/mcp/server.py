@@ -29,12 +29,25 @@ Configuration via environment variables:
                                 "none"       — use the unoptimized DSPy default
     FHIR_SYNTH_EXECUTOR       "local" (default), "docker", "e2b", "blaxel".
     FHIR_SYNTH_RUNS_DIR       Where run artefacts are written. Default: "runs".
+    FHIR_SYNTH_SKILLS_DIR     Extra user-skill directories (PATH-style,
+                              os.pathsep-separated). Explicit override —
+                              always wins over auto-discovered dirs.
+
+Skill auto-discovery:
+    In addition to the built-in skills, the server also picks up agentskills.io
+    SKILL.md folders from:
+      • ``~/.claude/skills/`` (global, Claude Code convention)
+      • ``<root>/.claude/skills/`` and ``<root>/.skills/`` for each workspace
+        root advertised by the MCP client via ``roots/list`` (Claude Code does
+        this automatically; other clients may not).
 """
 
 from __future__ import annotations
 
 import json
+import logging
 import os
+import urllib.parse
 from pathlib import Path
 from typing import Any
 
@@ -46,6 +59,8 @@ from fhir_synth.reporter import MCPReporter
 
 load_dotenv()
 
+logger = logging.getLogger(__name__)
+
 # ── Configuration (read once at startup) ──────────────────────────────────────
 
 _PROVIDER = os.environ.get("FHIR_SYNTH_PROVIDER", "claude-sonnet-4-5")
@@ -55,6 +70,76 @@ _PIPELINE = os.environ.get("FHIR_SYNTH_PIPELINE", "default").lower()
 _COMPILED_DEFAULT = os.environ.get("FHIR_SYNTH_COMPILED", "miprov2")
 _EXECUTOR = os.environ.get("FHIR_SYNTH_EXECUTOR", "local")
 _RUNS_DIR = Path(os.environ.get("FHIR_SYNTH_RUNS_DIR", "runs"))
+_SKILLS_DIR_ENV = os.environ.get("FHIR_SYNTH_SKILLS_DIR", "")
+
+# Subdirectories probed under each MCP workspace root. Matches Claude Code's
+# per-project convention and the broader agentskills.io convention. Bare
+# "skills/" is deliberately omitted — too generic, would false-positive on
+# unrelated repos. Users who want it can opt in via FHIR_SYNTH_SKILLS_DIR.
+_ROOT_SKILL_SUBDIRS: tuple[str, ...] = (".claude/skills", ".skills")
+
+# Global user-level skill dirs, independent of MCP roots.
+_GLOBAL_SKILL_DIRS: tuple[Path, ...] = (Path.home() / ".claude" / "skills",)
+
+
+def _file_uri_to_path(uri: object) -> Path | None:
+    """Convert a ``file://`` URI to a Path; return None for other schemes."""
+    uri_str = str(uri)
+    if not uri_str.startswith("file://"):
+        return None
+    parsed = urllib.parse.urlparse(uri_str)
+    return Path(urllib.parse.unquote(parsed.path))
+
+
+async def _resolve_skill_dirs(ctx: Context[Any, Any, Any] | None) -> list[Path]:
+    """Resolve user-skill directories for this tool invocation.
+
+    Sources, lowest → highest priority (later entries override earlier ones on
+    skill-name collisions inside the loader):
+
+      1. ``~/.claude/skills/`` — global Claude Code skills.
+      2. ``<root>/.claude/skills/`` and ``<root>/.skills/`` for each workspace
+         root advertised by the MCP client via ``roots/list``. Clients that
+         don't support roots are handled gracefully (treated as no roots).
+      3. ``FHIR_SYNTH_SKILLS_DIR`` (os.pathsep-separated) — explicit override.
+    """
+    dirs: list[Path] = []
+    seen: set[Path] = set()
+
+    def _add(path: Path) -> None:
+        try:
+            resolved = path.expanduser().resolve()
+        except OSError:
+            return
+        if resolved in seen or not resolved.is_dir():
+            return
+        seen.add(resolved)
+        dirs.append(resolved)
+
+    for p in _GLOBAL_SKILL_DIRS:
+        _add(p)
+
+    if ctx is not None:
+        try:
+            result = await ctx.session.list_roots()
+        except Exception as exc:
+            logger.debug("Client did not return roots: %s", exc)
+            result = None
+        if result is not None:
+            for root in result.roots:
+                root_path = _file_uri_to_path(root.uri)
+                if root_path is None:
+                    continue
+                for sub in _ROOT_SKILL_SUBDIRS:
+                    _add(root_path / sub)
+
+    if _SKILLS_DIR_ENV:
+        for entry in _SKILLS_DIR_ENV.split(os.pathsep):
+            entry = entry.strip()
+            if entry:
+                _add(Path(entry))
+
+    return dirs
 
 
 # ── MCP server ────────────────────────────────────────────────────────────────
@@ -164,7 +249,8 @@ async def generate_fhir_data(
     total_steps = 6
 
     reset_skills()
-    configure_skills()
+    user_skill_dirs = await _resolve_skill_dirs(ctx)
+    configure_skills(user_dirs=user_skill_dirs or None)
 
     run_dir = create_run_dir(_RUNS_DIR)
     run_name = run_dir.name
@@ -174,6 +260,8 @@ async def generate_fhir_data(
     await reporter.info(f"📂 Run: {run_dir}")
     await reporter.progress(1, total_steps, "run directory created")
 
+    if user_skill_dirs:
+        await reporter.info(f"📁 Skill dirs: {', '.join(str(d) for d in user_skill_dirs)}")
     discovery = get_skill_discovery_summary()
     await reporter.info(
         f"📚 Skills: discovered {discovery['total']} "
@@ -368,7 +456,8 @@ async def list_skills(ctx: Context[Any, Any, Any] | None = None) -> dict[str, An
     from fhir_synth.skills import SkillLoader
 
     reporter = MCPReporter(ctx)
-    loader = SkillLoader()
+    user_skill_dirs = await _resolve_skill_dirs(ctx)
+    loader = SkillLoader(user_dirs=user_skill_dirs or None)
     skills = loader.discover()
     builtin_n = sum(1 for s in skills if s.source == "builtin")
     user_n = sum(1 for s in skills if s.source == "user")
