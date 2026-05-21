@@ -29,21 +29,37 @@ Configuration via environment variables:
                                 "none"       — use the unoptimized DSPy default
     FHIR_SYNTH_EXECUTOR       "local" (default), "docker", "e2b", "blaxel".
     FHIR_SYNTH_RUNS_DIR       Where run artefacts are written. Default: "runs".
+    FHIR_SYNTH_SKILLS_DIR     Extra user-skill directories (PATH-style,
+                              os.pathsep-separated). Explicit override —
+                              always wins over auto-discovered dirs.
+
+Skill auto-discovery:
+    In addition to the built-in skills, the server also picks up agentskills.io
+    SKILL.md folders from:
+      • ``~/.claude/skills/`` (global, Claude Code convention)
+      • ``<root>/.claude/skills/`` and ``<root>/.skills/`` for each workspace
+        root advertised by the MCP client via ``roots/list`` (Claude Code does
+        this automatically; other clients may not).
 """
 
 from __future__ import annotations
 
 import json
+import logging
 import os
+import urllib.parse
 from pathlib import Path
 from typing import Any
 
 from dotenv import load_dotenv
-from mcp.server.fastmcp import FastMCP
+from mcp.server.fastmcp import Context, FastMCP
 
 from fhir_synth.compiled_programs import resolve_compiled_program
+from fhir_synth.reporter import MCPReporter
 
 load_dotenv()
+
+logger = logging.getLogger(__name__)
 
 # ── Configuration (read once at startup) ──────────────────────────────────────
 
@@ -54,6 +70,76 @@ _PIPELINE = os.environ.get("FHIR_SYNTH_PIPELINE", "default").lower()
 _COMPILED_DEFAULT = os.environ.get("FHIR_SYNTH_COMPILED", "miprov2")
 _EXECUTOR = os.environ.get("FHIR_SYNTH_EXECUTOR", "local")
 _RUNS_DIR = Path(os.environ.get("FHIR_SYNTH_RUNS_DIR", "runs"))
+_SKILLS_DIR_ENV = os.environ.get("FHIR_SYNTH_SKILLS_DIR", "")
+
+# Subdirectories probed under each MCP workspace root. Matches Claude Code's
+# per-project convention and the broader agentskills.io convention. Bare
+# "skills/" is deliberately omitted — too generic, would false-positive on
+# unrelated repos. Users who want it can opt in via FHIR_SYNTH_SKILLS_DIR.
+_ROOT_SKILL_SUBDIRS: tuple[str, ...] = (".claude/skills", ".skills")
+
+# Global user-level skill dirs, independent of MCP roots.
+_GLOBAL_SKILL_DIRS: tuple[Path, ...] = (Path.home() / ".claude" / "skills",)
+
+
+def _file_uri_to_path(uri: object) -> Path | None:
+    """Convert a ``file://`` URI to a Path; return None for other schemes."""
+    uri_str = str(uri)
+    if not uri_str.startswith("file://"):
+        return None
+    parsed = urllib.parse.urlparse(uri_str)
+    return Path(urllib.parse.unquote(parsed.path))
+
+
+async def _resolve_skill_dirs(ctx: Context[Any, Any, Any] | None) -> list[Path]:
+    """Resolve user-skill directories for this tool invocation.
+
+    Sources, lowest → highest priority (later entries override earlier ones on
+    skill-name collisions inside the loader):
+
+      1. ``~/.claude/skills/`` — global Claude Code skills.
+      2. ``<root>/.claude/skills/`` and ``<root>/.skills/`` for each workspace
+         root advertised by the MCP client via ``roots/list``. Clients that
+         don't support roots are handled gracefully (treated as no roots).
+      3. ``FHIR_SYNTH_SKILLS_DIR`` (os.pathsep-separated) — explicit override.
+    """
+    dirs: list[Path] = []
+    seen: set[Path] = set()
+
+    def _add(path: Path) -> None:
+        try:
+            resolved = path.expanduser().resolve()
+        except OSError:
+            return
+        if resolved in seen or not resolved.is_dir():
+            return
+        seen.add(resolved)
+        dirs.append(resolved)
+
+    for p in _GLOBAL_SKILL_DIRS:
+        _add(p)
+
+    if ctx is not None:
+        try:
+            result = await ctx.session.list_roots()
+        except Exception as exc:
+            logger.debug("Client did not return roots: %s", exc)
+            result = None
+        if result is not None:
+            for root in result.roots:
+                root_path = _file_uri_to_path(root.uri)
+                if root_path is None:
+                    continue
+                for sub in _ROOT_SKILL_SUBDIRS:
+                    _add(root_path / sub)
+
+    if _SKILLS_DIR_ENV:
+        for entry in _SKILLS_DIR_ENV.split(os.pathsep):
+            entry = entry.strip()
+            if entry:
+                _add(Path(entry))
+
+    return dirs
 
 
 # ── MCP server ────────────────────────────────────────────────────────────────
@@ -77,36 +163,11 @@ def _get_llm() -> Any:
     return get_provider(_PROVIDER, aws_profile=_AWS_PROFILE, aws_region=_AWS_REGION)
 
 
-def _quality_summary(resources: list[dict[str, Any]]) -> dict[str, Any]:
-    from fhir_synth.code_generator.fhir_validation import validate_references, validate_resources
-    from fhir_synth.code_generator.us_core_validation import validate_us_core
-
-    vr = validate_resources(resources)
-    ref_errors = validate_references(resources)
-    broken_refs = sum(len(e.get("errors", [])) for e in ref_errors)
-    ucr = validate_us_core(resources)
-
-    return {
-        "fhir_total": vr.total,
-        "fhir_valid": vr.valid,
-        "fhir_invalid": vr.invalid,
-        "fhir_pass_rate": round(vr.pass_rate, 3),
-        "broken_references": broken_refs,
-        "us_core_total_checked": ucr.total_checked,
-        "us_core_fully_compliant": ucr.fully_compliant,
-        "us_core_compliance_rate": (
-            round(ucr.compliance_rate, 3) if ucr.total_checked > 0 else None
-        ),
-        "fhir_errors_sample": vr.errors[:5],
-        "reference_errors_sample": ref_errors[:3],
-    }
-
-
 # ── Tool 1: generate_fhir_data ───────────────────────────────────────────────
 
 
 @mcp.tool()
-def generate_fhir_data(
+async def generate_fhir_data(
     prompt: str,
     fhir_version: str = "R4B",
     split: bool = False,
@@ -114,6 +175,7 @@ def generate_fhir_data(
     compiled_program: str | None = None,
     meta_config: dict[str, Any] | None = None,
     max_resources_returned: int = 200,
+    ctx: Context[Any, Any, Any] | None = None,
 ) -> dict[str, Any]:
     """Generate synthetic FHIR data from a natural language prompt.
 
@@ -175,25 +237,50 @@ def generate_fhir_data(
     )
     from fhir_synth.code_generator import CodeGenerator, get_executor
     from fhir_synth.code_generator.prompts import (
+        build_metadata_prompt_hints,
         configure_skills,
         get_selected_skill_names,
+        get_skill_discovery_summary,
         reset_skills,
     )
     from fhir_synth.naming import create_run_dir
 
+    reporter = MCPReporter(ctx)
+    total_steps = 6
+
     reset_skills()
-    configure_skills()
+    user_skill_dirs = await _resolve_skill_dirs(ctx)
+    configure_skills(user_dirs=user_skill_dirs or None)
 
     run_dir = create_run_dir(_RUNS_DIR)
     run_name = run_dir.name
     code_path = run_dir / f"{run_name}.py"
     ndjson_path = run_dir / f"{run_name}.ndjson"
     (run_dir / "prompt.txt").write_text(prompt)
+    await reporter.info(f"📂 Run: {run_dir}")
+    await reporter.progress(1, total_steps, "run directory created")
+
+    if user_skill_dirs:
+        await reporter.info(f"📁 Skill dirs: {', '.join(str(d) for d in user_skill_dirs)}")
+    discovery = get_skill_discovery_summary()
+    await reporter.info(
+        f"📚 Skills: discovered {discovery['total']} "
+        f"({discovery['builtin']} built-in, {discovery['user']} user)"
+    )
 
     llm = _get_llm()
     executor = get_executor(_EXECUTOR)
+    await reporter.info(f"🤖 LLM: {_PROVIDER}")
+    await reporter.info(f"   Executor: {_EXECUTOR}")
 
     selected_skills = get_selected_skill_names(prompt)
+    if selected_skills:
+        await reporter.info(
+            f"🎯 Selected {len(selected_skills)}/{discovery['total']} skills: "
+            f"{', '.join(selected_skills)}"
+        )
+    else:
+        await reporter.warning("No skills matched — using all available skills")
 
     effective_pipeline = (pipeline or _PIPELINE).lower()
     effective_compiled_spec = (
@@ -204,28 +291,8 @@ def generate_fhir_data(
     # the caller passed meta_config. The clinical-planning stage of the DSPy
     # pipeline should stay metadata-free (metadata is post-processing), so we
     # only augment the prompt used by the single-stage pipeline.
-    metadata_prompt = prompt
+    metadata_prompt = build_metadata_prompt_hints(prompt, meta_config)
     meta_dict = meta_config.get("meta") if isinstance(meta_config, dict) else None
-    if isinstance(meta_dict, dict):
-        hints: list[str] = []
-        for sec in meta_dict.get("security") or []:
-            hints.append(
-                f"Add security label: system={sec.get('system')}, "
-                f"code={sec.get('code')}, display={sec.get('display', sec.get('code'))}"
-            )
-        for tag in meta_dict.get("tag") or []:
-            hints.append(
-                f"Add tag: system={tag.get('system')}, "
-                f"code={tag.get('code')}, display={tag.get('display', tag.get('code'))}"
-            )
-        for prof in meta_dict.get("profile") or []:
-            hints.append(f"Add profile: {prof}")
-        if meta_dict.get("source"):
-            hints.append(f"Set meta.source to: {meta_dict['source']}")
-        if hints:
-            metadata_prompt = (
-                "METADATA REQUIREMENTS:\n" + "\n".join(f"- {h}" for h in hints) + f"\n\n{prompt}"
-            )
 
     if effective_pipeline == "dspy":
         try:
@@ -238,6 +305,7 @@ def generate_fhir_data(
 
         compiled = resolve_compiled_program(effective_compiled_spec)
         if compiled is not None:
+            await reporter.info(f"⚙  Two-stage pipeline (compiled): loading {compiled} …")
             two_stage = TwoStagePipeline.from_compiled(
                 compiled_path=compiled,
                 llm_provider=llm,
@@ -245,20 +313,39 @@ def generate_fhir_data(
             )
             pipeline_mode = f"dspy (compiled: {compiled.name})"
         else:
+            await reporter.info("⚙  Two-stage pipeline: clinical planning → code synthesis …")
             two_stage = TwoStagePipeline.default(llm_provider=llm, executor=executor)
             pipeline_mode = "dspy (unoptimized)"
 
+        await reporter.progress(2, total_steps, "generating code (DSPy two-stage)")
         # DSPy clinical-planning stage skips metadata hints; metadata is applied
         # as post-processing below for both pipelines.
         result = two_stage.run(prompt)
         code = result.code
         resources = result.resources
         selected_skills = result.selected_skills or selected_skills
+        await reporter.info(f"   Stage 1 plan: {len(result.plan.patients)} patient(s)")
+        await reporter.info(
+            f"   Quality: {result.report.overall_score:.2f} ({result.report.grade})"
+        )
+        await reporter.progress(3, total_steps, "code executed")
     else:
         pipeline_mode = "default"
+        await reporter.info("⚙  Generating code from prompt …")
+        await reporter.progress(2, total_steps, "generating code")
         code_gen = CodeGenerator(llm, executor=executor, fhir_version=fhir_version)
         code = code_gen.generate_code_from_prompt(metadata_prompt)
+        await reporter.info("▶  Executing generated code …")
         resources = code_gen.execute_generated_code(code)
+        await reporter.progress(3, total_steps, "code executed")
+
+    code_path.write_text(code)
+    await reporter.info(f"   Saved code → {code_path}")
+
+    from fhir_synth.validation_report import report_validation_results
+
+    quality = await report_validation_results(resources, reporter, fhir_version=fhir_version)
+    await reporter.progress(4, total_steps, "validation complete")
 
     # Stamp the FHIR Meta on each resource (post-processing, both pipelines).
     if isinstance(meta_dict, dict):
@@ -269,13 +356,16 @@ def generate_fhir_data(
             profile=meta_dict.get("profile"),
             source=meta_dict.get("source"),
         )
-
-    code_path.write_text(code)
+        await reporter.info("   Applied metadata from config")
 
     per_patient = split_resources_by_patient(resources)
     write_ndjson(per_patient, ndjson_path)
+    await reporter.info(f"✓  {len(per_patient)} patient bundles → {ndjson_path}")
     if split:
-        write_split_bundles(per_patient, run_dir)
+        paths = write_split_bundles(per_patient, run_dir)
+        await reporter.info(f"✓  {len(paths)} patient files → {run_dir}/")
+    await reporter.progress(5, total_steps, "output written")
+    await reporter.progress(6, total_steps, "done")
 
     return {
         "run_name": run_name,
@@ -289,7 +379,7 @@ def generate_fhir_data(
         "resource_count": len(resources),
         "patient_count": len(per_patient),
         "selected_skills": selected_skills,
-        "quality": _quality_summary(resources),
+        "quality": quality,
         "resources": resources[:max_resources_returned],
         "resources_truncated": len(resources) > max_resources_returned,
     }
@@ -299,7 +389,9 @@ def generate_fhir_data(
 
 
 @mcp.tool()
-def validate_fhir_bundle(bundle: str) -> dict[str, Any]:
+async def validate_fhir_bundle(
+    bundle: str, ctx: Context[Any, Any, Any] | None = None
+) -> dict[str, Any]:
     """Validate an existing FHIR payload (Bundle, list of resources, or NDJSON).
 
     Runs Pydantic validation, cross-resource reference integrity, and US Core
@@ -312,6 +404,10 @@ def validate_fhir_bundle(bundle: str) -> dict[str, Any]:
                   - a list of resources (``[{...}, {...}]``)
                   - NDJSON (one JSON object per line)
     """
+    from fhir_synth.validation_report import report_validation_results
+
+    reporter = MCPReporter(ctx)
+
     bundle = bundle.strip()
     resources: list[dict[str, Any]] = []
 
@@ -339,14 +435,19 @@ def validate_fhir_bundle(bundle: str) -> dict[str, Any]:
         else:
             resources = [obj]
 
-    return {"input_resource_count": len(resources), **_quality_summary(resources)}
+    await reporter.info(f"📥 Parsed {len(resources)} resource(s) from input")
+    await reporter.progress(1, 2, "input parsed")
+    quality = await report_validation_results(resources, reporter)
+    await reporter.progress(2, 2, "validation done")
+
+    return {"input_resource_count": len(resources), **quality}
 
 
 # ── Tool 3: list_skills ──────────────────────────────────────────────────────
 
 
 @mcp.tool()
-def list_skills() -> dict[str, Any]:
+async def list_skills(ctx: Context[Any, Any, Any] | None = None) -> dict[str, Any]:
     """List all clinical-domain skills fhir-synth knows about.
 
     Useful before writing a prompt — tells you which conditions, resource types,
@@ -354,12 +455,17 @@ def list_skills() -> dict[str, Any]:
     """
     from fhir_synth.skills import SkillLoader
 
-    loader = SkillLoader()
+    reporter = MCPReporter(ctx)
+    user_skill_dirs = await _resolve_skill_dirs(ctx)
+    loader = SkillLoader(user_dirs=user_skill_dirs or None)
     skills = loader.discover()
+    builtin_n = sum(1 for s in skills if s.source == "builtin")
+    user_n = sum(1 for s in skills if s.source == "user")
+    await reporter.info(f"📚 Skills: {len(skills)} total ({builtin_n} built-in, {user_n} user)")
     return {
         "total": len(skills),
-        "builtin": sum(1 for s in skills if s.source == "builtin"),
-        "user": sum(1 for s in skills if s.source == "user"),
+        "builtin": builtin_n,
+        "user": user_n,
         "skills": [
             {
                 "name": s.name,
@@ -377,13 +483,15 @@ def list_skills() -> dict[str, Any]:
 
 
 @mcp.tool()
-def list_runs(limit: int = 20) -> dict[str, Any]:
+async def list_runs(limit: int = 20, ctx: Context[Any, Any, Any] | None = None) -> dict[str, Any]:
     """List recent generation runs in the runs/ directory.
 
     Args:
         limit: Maximum number of runs to return (newest first).
     """
+    reporter = MCPReporter(ctx)
     if not _RUNS_DIR.exists():
+        await reporter.warning(f"Runs directory does not exist: {_RUNS_DIR}")
         return {"runs_dir": str(_RUNS_DIR), "runs": []}
 
     entries = []
@@ -405,6 +513,7 @@ def list_runs(limit: int = 20) -> dict[str, Any]:
         if len(entries) >= limit:
             break
 
+    await reporter.info(f"📂 Found {len(entries)} run(s) in {_RUNS_DIR}")
     return {"runs_dir": str(_RUNS_DIR), "runs": entries}
 
 
@@ -412,7 +521,11 @@ def list_runs(limit: int = 20) -> dict[str, Any]:
 
 
 @mcp.tool()
-def get_run(run_name: str, include_resources: bool = True) -> dict[str, Any]:
+async def get_run(
+    run_name: str,
+    include_resources: bool = True,
+    ctx: Context[Any, Any, Any] | None = None,
+) -> dict[str, Any]:
     """Fetch a previously generated run: prompt, code, and resources.
 
     Args:
@@ -420,8 +533,10 @@ def get_run(run_name: str, include_resources: bool = True) -> dict[str, Any]:
         include_resources: When False, omit the resources array (returns only
             prompt + code + counts). Useful for large runs.
     """
+    reporter = MCPReporter(ctx)
     run_dir = _RUNS_DIR / run_name
     if not run_dir.is_dir():
+        await reporter.warning(f"Run not found: {run_dir}")
         raise ValueError(f"Run not found: {run_dir}")
 
     prompt_file = run_dir / "prompt.txt"
@@ -454,6 +569,7 @@ def get_run(run_name: str, include_resources: bool = True) -> dict[str, Any]:
     }
     if include_resources:
         payload["resources"] = resources
+    await reporter.info(f"📦 Loaded run '{run_name}' — {len(resources)} resource(s)")
     return payload
 
 

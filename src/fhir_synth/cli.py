@@ -1,5 +1,6 @@
 """FHIR Synth CLI - Generate synthetic FHIR data from natural language prompts (supports R4B, STU3)."""
 
+import asyncio
 import json
 import sys
 from pathlib import Path
@@ -7,6 +8,8 @@ from typing import Any
 
 import typer
 from dotenv import load_dotenv
+
+from fhir_synth.reporter import TyperReporter
 
 # Load environment variables from .env
 load_dotenv()
@@ -191,6 +194,52 @@ def generate(
       # Semantic selection (default) with a custom cosine threshold
       fhir-synth generate "5 patients" --score-threshold 0.6
     """
+    asyncio.run(
+        _run_generate(
+            prompt=prompt,
+            provider=provider,
+            fhir_version=fhir_version,
+            empi=empi,
+            persons=persons,
+            systems=systems,
+            no_orgs=no_orgs,
+            meta_config=meta_config,
+            split=split,
+            aws_profile=aws_profile,
+            aws_region=aws_region,
+            executor_backend=executor_backend,
+            skills_dir=skills_dir,
+            selector=selector,
+            score_threshold=score_threshold,
+            context=context,
+            pipeline=pipeline,
+            compiled_program=compiled_program,
+        )
+    )
+
+
+async def _run_generate(
+    *,
+    prompt: str,
+    provider: str,
+    fhir_version: str,
+    empi: bool,
+    persons: int,
+    systems: str,
+    no_orgs: bool,
+    meta_config: str | None,
+    split: bool,
+    aws_profile: str | None,
+    aws_region: str | None,
+    executor_backend: str,
+    skills_dir: str | None,
+    selector: str,
+    score_threshold: float | None,
+    context: str | None,
+    pipeline: str,
+    compiled_program: str | None,
+) -> None:
+    reporter = TyperReporter()
     try:
         from fhir_synth.code_generator import CodeGenerator, get_executor
         from fhir_synth.llm import get_provider
@@ -203,17 +252,19 @@ def generate(
         ndjson_path = run_dir / f"{run_name}.ndjson"
         prompt_path = run_dir / "prompt.txt"
         prompt_path.write_text(prompt)
-        typer.echo(f"📂 Run: {run_dir}")
+        await reporter.info(f"📂 Run: {run_dir}")
 
         # ── Configure skills system ────────────────────────────────
         discovery = _configure_skills(skills_dir, selector, score_threshold)
         builtin_n = discovery["builtin"]
         user_n = discovery["user"]
         total_n = discovery["total"]
-        typer.echo(f"📚 Skills: discovered {total_n} ({builtin_n} built-in, {user_n} user)")
+        await reporter.info(
+            f"📚 Skills: discovered {total_n} ({builtin_n} built-in, {user_n} user)"
+        )
         if user_n:
             user_names = [s["name"] for s in discovery["skills"] if s["source"] == "user"]
-            typer.echo(f"   User skills: {', '.join(user_names)}")
+            await reporter.info(f"   User skills: {', '.join(user_names)}")
 
         # ── Load context resources ──────────────────────────────────
         context_resources: list[dict[str, Any]] = []
@@ -245,10 +296,10 @@ def generate(
                                 context_resources.append(entry["resource"])
                     else:
                         context_resources.append(res)
-                typer.echo(f"   Loaded {len(context_resources)} resources from context")
+                await reporter.info(f"   Loaded {len(context_resources)} resources from context")
 
-        typer.echo(f"🤖 LLM: {provider}")
-        typer.echo(f"   Executor: {executor_backend}")
+        await reporter.info(f"🤖 LLM: {provider}")
+        await reporter.info(f"   Executor: {executor_backend}")
 
         llm = get_provider(provider, aws_profile=aws_profile, aws_region=aws_region)
         executor = get_executor(executor_backend)
@@ -259,51 +310,22 @@ def generate(
             context_resources=context_resources,
         )
 
-        # Load metadata configuration from YAML if provided
+        # Load metadata configuration from YAML if provided. ``dspy_prompt``
+        # stays free of metadata instructions — Stage 1 is clinical planning
+        # only; metadata (security labels, profiles, tags) is applied as
+        # post-processing on the generated resources (step 2.5).
         prompt_text = prompt
-        # dspy_prompt stays free of metadata instructions — Stage 1 is clinical
-        # planning only; metadata (security labels, profiles, tags) is applied
-        # as post-processing on the generated resources (step 2.5).
         dspy_prompt = prompt
         metadata_config = None
 
         if meta_config:
             import yaml
 
+            from fhir_synth.code_generator.prompts import build_metadata_prompt_hints
+
             with open(meta_config) as f:
                 metadata_config = yaml.safe_load(f)
-
-            # Build prompt hints from YAML config
-            metadata_hints: list[str] = []
-            meta = metadata_config.get("meta", {})
-
-            if meta.get("security"):
-                for sec in meta["security"]:
-                    metadata_hints.append(
-                        f"Add security label: system={sec.get('system')}, "
-                        f"code={sec.get('code')}, display={sec.get('display', sec.get('code'))}"
-                    )
-
-            if meta.get("tag"):
-                for tag in meta["tag"]:
-                    metadata_hints.append(
-                        f"Add tag: system={tag.get('system')}, "
-                        f"code={tag.get('code')}, display={tag.get('display', tag.get('code'))}"
-                    )
-
-            if meta.get("profile"):
-                for prof in meta["profile"]:
-                    metadata_hints.append(f"Add profile: {prof}")
-
-            if meta.get("source"):
-                metadata_hints.append(f"Set meta.source to: {meta['source']}")
-
-            if metadata_hints:
-                metadata_instructions = "METADATA REQUIREMENTS:\n" + "\n".join(
-                    f"- {hint}" for hint in metadata_hints
-                )
-                prompt_text = f"{metadata_instructions}\n\n{prompt_text}"
-                # dspy_prompt deliberately not updated here
+            prompt_text = build_metadata_prompt_hints(prompt_text, metadata_config)
 
         # Augment prompt with EMPI hints if requested
         if empi:
@@ -331,7 +353,7 @@ def generate(
 
             compiled_path = resolve_compiled_program(compiled_program)
             if compiled_path is not None:
-                typer.echo(f"⚙  Two-stage pipeline (compiled): loading {compiled_path} …")
+                await reporter.info(f"⚙  Two-stage pipeline (compiled): loading {compiled_path} …")
                 two_stage = TwoStagePipeline.from_compiled(
                     compiled_path=compiled_path,
                     llm_provider=llm,
@@ -339,7 +361,7 @@ def generate(
                     user_skill_dirs=[Path(skills_dir)] if skills_dir else None,
                 )
             else:
-                typer.echo("⚙  Two-stage pipeline: clinical planning → code synthesis …")
+                await reporter.info("⚙  Two-stage pipeline: clinical planning → code synthesis …")
                 two_stage = TwoStagePipeline.default(
                     llm_provider=llm,
                     executor=executor,
@@ -350,89 +372,44 @@ def generate(
             code = pipeline_result.code
             code_path.write_text(code)
             if pipeline_result.selected_skills:
-                typer.echo(
+                await reporter.info(
                     f"   🎯 Selected {len(pipeline_result.selected_skills)}/{pipeline_result.total_skills} skills: "
                     f"{', '.join(pipeline_result.selected_skills)}"
                 )
-            typer.echo(f"   Stage 1 plan: {len(pipeline_result.plan.patients)} patient(s)")
-            typer.echo(f"   Saved code → {code_path}")
-            typer.echo(
+            await reporter.info(f"   Stage 1 plan: {len(pipeline_result.plan.patients)} patient(s)")
+            await reporter.info(f"   Saved code → {code_path}")
+            await reporter.info(
                 f"   Quality: {pipeline_result.report.overall_score:.2f} "
                 f"({pipeline_result.report.grade})"
             )
         else:
             # ── Default single-stage pipeline ────────────────────────────
             # Step 1 — generate code
-            typer.echo("⚙  Generating code from prompt …")
+            await reporter.info("⚙  Generating code from prompt …")
 
             from fhir_synth.code_generator.prompts import get_selected_skill_names
 
             selected_names = get_selected_skill_names(prompt_text)
             if selected_names:
-                typer.echo(
+                await reporter.info(
                     f"   🎯 Selected {len(selected_names)}/{total_n} skills: "
                     f"{', '.join(selected_names)}"
                 )
             else:
-                typer.echo("   ⚠️  No skills matched — using all available skills")
+                await reporter.warning("   ⚠️  No skills matched — using all available skills")
 
             code = code_gen.generate_code_from_prompt(prompt_text)
             code_path.write_text(code)
-            typer.echo(f"   Saved code → {code_path}")
+            await reporter.info(f"   Saved code → {code_path}")
 
             # Step 2 — execute code (self-healing retries built-in)
-            typer.echo("▶  Executing generated code …")
+            await reporter.info("▶  Executing generated code …")
             resources = code_gen.execute_generated_code(code)
 
-        # Step 2.1 — report FHIR validation
-        from fhir_synth.code_generator.fhir_validation import validate_resources
+        # Steps 2.1–2.3 — FHIR / reference / US Core validation reports
+        from fhir_synth.validation_report import report_validation_results
 
-        vr = validate_resources(resources)
-        if vr.is_valid:
-            typer.echo(f"   ✅ {vr.total} resources — all valid FHIR {fhir_version}")
-        else:
-            typer.echo(
-                f"   ⚠️  {vr.total} resources — {vr.valid} valid, "
-                f"{vr.invalid} invalid ({vr.pass_rate:.0%} pass rate)"
-            )
-            for err in vr.errors[:5]:
-                typer.echo(
-                    f"      ❌ {err['resourceType']}/{err['id']}: {'; '.join(err['errors'][:2])}",
-                    err=True,
-                )
-
-        # Step 2.2 — report reference integrity
-        from fhir_synth.code_generator.fhir_validation import validate_references
-
-        ref_errors = validate_references(resources)
-        broken_refs = sum(len(e.get("errors", [])) for e in ref_errors)
-        if broken_refs == 0:
-            typer.echo("   ✅ Reference integrity — all references valid")
-        else:
-            typer.echo(f"   ⚠️  Reference integrity — {broken_refs} broken reference(s)")
-            for entry in ref_errors[:3]:
-                for err in entry.get("errors", [])[:2]:
-                    typer.echo(f"      ↳ {entry['resourceType']}/{entry['id']}: {err}", err=True)
-
-        # Step 2.3 — report US Core compliance
-        from fhir_synth.code_generator.us_core_validation import validate_us_core
-
-        ucr = validate_us_core(resources)
-        if ucr.total_checked > 0:
-            if not ucr.has_warnings:
-                typer.echo(f"   ✅ US Core — {ucr.total_checked} resources fully compliant")
-            else:
-                non_compliant = ucr.total_checked - ucr.fully_compliant
-                typer.echo(
-                    f"   ⚠️  US Core — {non_compliant}/{ucr.total_checked} resources "
-                    f"missing must-support fields ({ucr.compliance_rate:.0%} compliant)"
-                )
-                for w in ucr.warnings[:3]:
-                    missing = ", ".join(w["missing_must_support"][:3])
-                    typer.echo(
-                        f"      ↳ {w['resourceType']}/{w['id']}: missing {missing}",
-                        err=True,
-                    )
+        await report_validation_results(resources, reporter, fhir_version=fhir_version)
 
         # Step 2.5 — apply metadata from YAML config if specified
         if metadata_config and "meta" in metadata_config:
@@ -446,7 +423,7 @@ def generate(
                 profile=meta.get("profile"),
                 source=meta.get("source"),
             )
-            typer.echo("   Applied metadata from config")
+            await reporter.info("   Applied metadata from config")
 
         # Step 3 — output results
         from fhir_synth.bundle import split_resources_by_patient, write_ndjson, write_split_bundles
@@ -455,30 +432,30 @@ def generate(
 
         # Always write NDJSON
         write_ndjson(per_patient_bundles, ndjson_path)
-        typer.echo(f"✓  {len(per_patient_bundles)} patient bundles → {ndjson_path}")
+        await reporter.info(f"✓  {len(per_patient_bundles)} patient bundles → {ndjson_path}")
 
         # --split: also write per-patient JSON files into run directory
         if split:
             paths = write_split_bundles(per_patient_bundles, run_dir)
-            typer.echo(f"✓  {len(paths)} patient files → {run_dir}/")
+            await reporter.info(f"✓  {len(paths)} patient files → {run_dir}/")
 
     except Exception as exc:
         error_msg = str(exc)
 
         # Provide helpful error messages based on error type
         if "No module named" in error_msg or "ImportError" in error_msg or "Import" in error_msg:
-            typer.echo("❌ Import error detected", err=True)
-            typer.echo(f"   {exc}", err=True)
-            typer.echo("\n💡 Suggestions:", err=True)
-            typer.echo("   1. Try a more reliable provider: --provider gpt-4", err=True)
-            typer.echo("   2. Check the saved code in runs/", err=True)
-            typer.echo("   3. The LLM may have used incorrect import paths", err=True)
+            await reporter.error("❌ Import error detected")
+            await reporter.error(f"   {exc}")
+            await reporter.error("\n💡 Suggestions:")
+            await reporter.error("   1. Try a more reliable provider: --provider gpt-4")
+            await reporter.error("   2. Check the saved code in runs/")
+            await reporter.error("   3. The LLM may have used incorrect import paths")
         elif "Code execution failed" in error_msg:
-            typer.echo("❌ Code execution failed after retries", err=True)
-            typer.echo(f"   {exc}", err=True)
-            typer.echo("\n💡 Check the saved code in runs/", err=True)
+            await reporter.error("❌ Code execution failed after retries")
+            await reporter.error(f"   {exc}")
+            await reporter.error("\n💡 Check the saved code in runs/")
         else:
-            typer.echo(f"❌ Error: {exc}", err=True)
+            await reporter.error(f"❌ Error: {exc}")
 
         sys.exit(1)
 
