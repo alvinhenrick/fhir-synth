@@ -2,6 +2,40 @@
 
 <!-- version list -->
 
+## v1.20.0 (2026-05-21)
+
+### Features
+
+- Add comprehensive unit tests for skill-directory resolution in MCP server
+  ([`c8a4bd7`](https://github.com/alvinhenrick/fhir-synth/commit/c8a4bd788bbc6839f26cc13fc1314186ffd82d3e))
+
+- Enhance skill directory resolution and logging for improved user experience
+  ([`58a23c9`](https://github.com/alvinhenrick/fhir-synth/commit/58a23c9a81131d37f8853aab70177b83bd0ee274))
+
+- Introduce async `MCPReporter` for progress tracking, enhance validation and error reporting in
+  generation pipelines
+  ([`f1ec81d`](https://github.com/alvinhenrick/fhir-synth/commit/f1ec81df15bfcf1f2faa5dd39114ac021f8945a4))
+
+### Refactoring
+
+- Extract shared validation logic into `report_validation_results`, update pipelines and CLI for
+  reuse
+  ([`abc33ee`](https://github.com/alvinhenrick/fhir-synth/commit/abc33ee5930578ec011646006686d0e0cbd09c7c))
+
+- Format `validate_fhir_bundle` method signature for improved readability
+  ([`dc44504`](https://github.com/alvinhenrick/fhir-synth/commit/dc445047464240e9d0514b780c3ee2d6bfb9db48))
+
+- Inline multi-line f-strings for improved readability and consistency
+  ([`57c5679`](https://github.com/alvinhenrick/fhir-synth/commit/57c567942a6d34fdedb67b5a54ac4d3151d2a2d8))
+
+- Replace FAISS-based skill selector with `fastembed` semantic selector, update core dependencies
+  and docs
+  ([`b305172`](https://github.com/alvinhenrick/fhir-synth/commit/b3051725d98e20af87063ed2a326f88120756427))
+
+- Update `Context` type annotations for improved type specificity across MCP server methods
+  ([`dd9997e`](https://github.com/alvinhenrick/fhir-synth/commit/dd9997ebb40bc82b98d7856c4e2697186099b799))
+
+
 ## v1.19.0 (2026-05-16)
 
 ### Features
