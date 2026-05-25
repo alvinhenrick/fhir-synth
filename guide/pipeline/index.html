@@ -1615,75 +1615,74 @@
 <li><strong>Stage 2 — Code Synthesis</strong>: Takes the structured <code>ClinicalPlan</code> + FHIR import guidelines and generates Python code. Uses DSPy's <code>ChainOfThought</code> for step-by-step reasoning.</li>
 </ol>
 <h2 id="installation">Installation<a class="headerlink" href="#installation" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>pip<span class="w"> </span>install<span class="w"> </span><span class="s1">&#39;fhir-synth[dspy]&#39;</span>
-</code></pre></div>
+<p>DSPy (&gt;=3.2.1) ships as a core dependency, so the two-stage pipeline is available out of the box — no extra install needed.</p>
 <h2 id="cli-usage">CLI Usage<a class="headerlink" href="#cli-usage" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># Two-stage pipeline</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;5 diabetic patients with HbA1c observations&quot;</span><span class="w"> </span>--pipeline<span class="w"> </span>dspy
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="c1"># With a pre-optimized compiled program</span>
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;5 diabetic patients&quot;</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">  </span>--pipeline<span class="w"> </span>dspy<span class="w"> </span>--compiled-program<span class="w"> </span>optimized_pipeline.json
-<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>
-<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="c1"># Combine with other flags</span>
-<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;10 patients with hypertension&quot;</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="w">  </span>--pipeline<span class="w"> </span>dspy<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="w">  </span>--provider<span class="w"> </span>bedrock/us.anthropic.claude-sonnet-4-5-20250929-v1:0<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="w">  </span>--aws-profile<span class="w"> </span>my-profile<span class="w"> </span>--aws-region<span class="w"> </span>us-east-1<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a><span class="w">  </span>--skills-dir<span class="w"> </span>./skills<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a><span class="w">  </span>--split
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1"># Two-stage pipeline</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;5 diabetic patients with HbA1c observations&quot;</span><span class="w"> </span>--pipeline<span class="w"> </span>dspy
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="c1"># With a pre-optimized compiled program</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;5 diabetic patients&quot;</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">  </span>--pipeline<span class="w"> </span>dspy<span class="w"> </span>--compiled-program<span class="w"> </span>optimized_pipeline.json
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="c1"># Combine with other flags</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;10 patients with hypertension&quot;</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="w">  </span>--pipeline<span class="w"> </span>dspy<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="w">  </span>--provider<span class="w"> </span>bedrock/us.anthropic.claude-sonnet-4-5-20250929-v1:0<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="w">  </span>--aws-profile<span class="w"> </span>my-profile<span class="w"> </span>--aws-region<span class="w"> </span>us-east-1<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="w">  </span>--skills-dir<span class="w"> </span>./skills<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="w">  </span>--split
 </code></pre></div>
 <h2 id="python-api">Python API<a class="headerlink" href="#python-api" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fhir_synth.llm</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_provider</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fhir_synth.pipeline.pipeline</span><span class="w"> </span><span class="kn">import</span> <span class="n">TwoStagePipeline</span>
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>
-<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="n">llm</span> <span class="o">=</span> <span class="n">get_provider</span><span class="p">(</span><span class="s2">&quot;gpt-4&quot;</span><span class="p">)</span>
-<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="n">pipeline</span> <span class="o">=</span> <span class="n">TwoStagePipeline</span><span class="o">.</span><span class="n">default</span><span class="p">(</span><span class="n">llm_provider</span><span class="o">=</span><span class="n">llm</span><span class="p">)</span>
-<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="n">result</span> <span class="o">=</span> <span class="n">pipeline</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s2">&quot;5 diabetic patients with HbA1c observations&quot;</span><span class="p">)</span>
-<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>
-<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="c1"># PipelineResult fields</span>
-<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="n">result</span><span class="o">.</span><span class="n">plan</span>          <span class="c1"># ClinicalPlan (structured clinical data)</span>
-<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="n">result</span><span class="o">.</span><span class="n">code</span>          <span class="c1"># Generated Python source code</span>
-<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a><span class="n">result</span><span class="o">.</span><span class="n">resources</span>     <span class="c1"># list[dict] — FHIR resource dicts</span>
-<a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a><span class="n">result</span><span class="o">.</span><span class="n">report</span>        <span class="c1"># EvaluationReport (quality scores)</span>
-<a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a><span class="n">result</span><span class="o">.</span><span class="n">repair_report</span> <span class="c1"># Reference repair stats</span>
-<a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a><span class="n">result</span><span class="o">.</span><span class="n">selected_skills</span>  <span class="c1"># Skills selected for this prompt</span>
-<a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a><span class="n">result</span><span class="o">.</span><span class="n">total_skills</span>     <span class="c1"># Total available skills</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fhir_synth.llm</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_provider</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fhir_synth.pipeline.pipeline</span><span class="w"> </span><span class="kn">import</span> <span class="n">TwoStagePipeline</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="n">llm</span> <span class="o">=</span> <span class="n">get_provider</span><span class="p">(</span><span class="s2">&quot;gpt-4&quot;</span><span class="p">)</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="n">pipeline</span> <span class="o">=</span> <span class="n">TwoStagePipeline</span><span class="o">.</span><span class="n">default</span><span class="p">(</span><span class="n">llm_provider</span><span class="o">=</span><span class="n">llm</span><span class="p">)</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="n">result</span> <span class="o">=</span> <span class="n">pipeline</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s2">&quot;5 diabetic patients with HbA1c observations&quot;</span><span class="p">)</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="c1"># PipelineResult fields</span>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="n">result</span><span class="o">.</span><span class="n">plan</span>          <span class="c1"># ClinicalPlan (structured clinical data)</span>
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="n">result</span><span class="o">.</span><span class="n">code</span>          <span class="c1"># Generated Python source code</span>
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="n">result</span><span class="o">.</span><span class="n">resources</span>     <span class="c1"># list[dict] — FHIR resource dicts</span>
+<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="n">result</span><span class="o">.</span><span class="n">report</span>        <span class="c1"># EvaluationReport (quality scores)</span>
+<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a><span class="n">result</span><span class="o">.</span><span class="n">repair_report</span> <span class="c1"># Reference repair stats</span>
+<a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a><span class="n">result</span><span class="o">.</span><span class="n">selected_skills</span>  <span class="c1"># Skills selected for this prompt</span>
+<a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a><span class="n">result</span><span class="o">.</span><span class="n">total_skills</span>     <span class="c1"># Total available skills</span>
 </code></pre></div>
 <h2 id="clinicalplan-model">ClinicalPlan Model<a class="headerlink" href="#clinicalplan-model" title="Permanent link">&para;</a></h2>
 <p>The <code>ClinicalPlan</code> is a Pydantic model that acts as the contract between Stage 1 and Stage 2:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fhir_synth.pipeline.models</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>    <span class="n">ClinicalPlan</span><span class="p">,</span> <span class="n">PatientProfile</span><span class="p">,</span> <span class="n">ClinicalFinding</span><span class="p">,</span> <span class="n">Coding</span><span class="p">,</span> <span class="n">MedicationEntry</span><span class="p">,</span>
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="p">)</span>
-<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>
-<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="n">plan</span> <span class="o">=</span> <span class="n">ClinicalPlan</span><span class="p">(</span>
-<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>    <span class="n">patients</span><span class="o">=</span><span class="p">[</span>
-<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>        <span class="n">PatientProfile</span><span class="p">(</span>
-<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>            <span class="n">age</span><span class="o">=</span><span class="mi">55</span><span class="p">,</span>
-<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>            <span class="n">gender</span><span class="o">=</span><span class="s2">&quot;male&quot;</span><span class="p">,</span>
-<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a>            <span class="n">conditions</span><span class="o">=</span><span class="p">[</span>
-<a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a>                <span class="n">ClinicalFinding</span><span class="p">(</span>
-<a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a>                    <span class="n">coding</span><span class="o">=</span><span class="n">Coding</span><span class="p">(</span>
-<a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a>                        <span class="n">system</span><span class="o">=</span><span class="s2">&quot;http://snomed.info/sct&quot;</span><span class="p">,</span>
-<a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a>                        <span class="n">code</span><span class="o">=</span><span class="s2">&quot;44054006&quot;</span><span class="p">,</span>
-<a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a>                        <span class="n">display</span><span class="o">=</span><span class="s2">&quot;Type 2 diabetes mellitus&quot;</span><span class="p">,</span>
-<a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a>                    <span class="p">),</span>
-<a id="__codelineno-4-17" name="__codelineno-4-17" href="#__codelineno-4-17"></a>                    <span class="n">onset_description</span><span class="o">=</span><span class="s2">&quot;5 years ago&quot;</span><span class="p">,</span>
-<a id="__codelineno-4-18" name="__codelineno-4-18" href="#__codelineno-4-18"></a>                <span class="p">)</span>
-<a id="__codelineno-4-19" name="__codelineno-4-19" href="#__codelineno-4-19"></a>            <span class="p">],</span>
-<a id="__codelineno-4-20" name="__codelineno-4-20" href="#__codelineno-4-20"></a>            <span class="n">medications</span><span class="o">=</span><span class="p">[</span>
-<a id="__codelineno-4-21" name="__codelineno-4-21" href="#__codelineno-4-21"></a>                <span class="n">MedicationEntry</span><span class="p">(</span>
-<a id="__codelineno-4-22" name="__codelineno-4-22" href="#__codelineno-4-22"></a>                    <span class="n">rxnorm_code</span><span class="o">=</span><span class="s2">&quot;6809&quot;</span><span class="p">,</span>
-<a id="__codelineno-4-23" name="__codelineno-4-23" href="#__codelineno-4-23"></a>                    <span class="n">display</span><span class="o">=</span><span class="s2">&quot;Metformin 500mg&quot;</span><span class="p">,</span>
-<a id="__codelineno-4-24" name="__codelineno-4-24" href="#__codelineno-4-24"></a>                    <span class="n">dose</span><span class="o">=</span><span class="s2">&quot;500mg&quot;</span><span class="p">,</span>
-<a id="__codelineno-4-25" name="__codelineno-4-25" href="#__codelineno-4-25"></a>                    <span class="n">frequency</span><span class="o">=</span><span class="s2">&quot;twice daily&quot;</span><span class="p">,</span>
-<a id="__codelineno-4-26" name="__codelineno-4-26" href="#__codelineno-4-26"></a>                <span class="p">)</span>
-<a id="__codelineno-4-27" name="__codelineno-4-27" href="#__codelineno-4-27"></a>            <span class="p">],</span>
-<a id="__codelineno-4-28" name="__codelineno-4-28" href="#__codelineno-4-28"></a>        <span class="p">)</span>
-<a id="__codelineno-4-29" name="__codelineno-4-29" href="#__codelineno-4-29"></a>    <span class="p">],</span>
-<a id="__codelineno-4-30" name="__codelineno-4-30" href="#__codelineno-4-30"></a>    <span class="n">care_setting</span><span class="o">=</span><span class="s2">&quot;outpatient clinic&quot;</span><span class="p">,</span>
-<a id="__codelineno-4-31" name="__codelineno-4-31" href="#__codelineno-4-31"></a>    <span class="n">encounter_type</span><span class="o">=</span><span class="s2">&quot;routine visit&quot;</span><span class="p">,</span>
-<a id="__codelineno-4-32" name="__codelineno-4-32" href="#__codelineno-4-32"></a><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fhir_synth.pipeline.models</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>    <span class="n">ClinicalPlan</span><span class="p">,</span> <span class="n">PatientProfile</span><span class="p">,</span> <span class="n">ClinicalFinding</span><span class="p">,</span> <span class="n">Coding</span><span class="p">,</span> <span class="n">MedicationEntry</span><span class="p">,</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="p">)</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="n">plan</span> <span class="o">=</span> <span class="n">ClinicalPlan</span><span class="p">(</span>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>    <span class="n">patients</span><span class="o">=</span><span class="p">[</span>
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>        <span class="n">PatientProfile</span><span class="p">(</span>
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>            <span class="n">age</span><span class="o">=</span><span class="mi">55</span><span class="p">,</span>
+<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>            <span class="n">gender</span><span class="o">=</span><span class="s2">&quot;male&quot;</span><span class="p">,</span>
+<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>            <span class="n">conditions</span><span class="o">=</span><span class="p">[</span>
+<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a>                <span class="n">ClinicalFinding</span><span class="p">(</span>
+<a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a>                    <span class="n">coding</span><span class="o">=</span><span class="n">Coding</span><span class="p">(</span>
+<a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a>                        <span class="n">system</span><span class="o">=</span><span class="s2">&quot;http://snomed.info/sct&quot;</span><span class="p">,</span>
+<a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a>                        <span class="n">code</span><span class="o">=</span><span class="s2">&quot;44054006&quot;</span><span class="p">,</span>
+<a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a>                        <span class="n">display</span><span class="o">=</span><span class="s2">&quot;Type 2 diabetes mellitus&quot;</span><span class="p">,</span>
+<a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a>                    <span class="p">),</span>
+<a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a>                    <span class="n">onset_description</span><span class="o">=</span><span class="s2">&quot;5 years ago&quot;</span><span class="p">,</span>
+<a id="__codelineno-3-18" name="__codelineno-3-18" href="#__codelineno-3-18"></a>                <span class="p">)</span>
+<a id="__codelineno-3-19" name="__codelineno-3-19" href="#__codelineno-3-19"></a>            <span class="p">],</span>
+<a id="__codelineno-3-20" name="__codelineno-3-20" href="#__codelineno-3-20"></a>            <span class="n">medications</span><span class="o">=</span><span class="p">[</span>
+<a id="__codelineno-3-21" name="__codelineno-3-21" href="#__codelineno-3-21"></a>                <span class="n">MedicationEntry</span><span class="p">(</span>
+<a id="__codelineno-3-22" name="__codelineno-3-22" href="#__codelineno-3-22"></a>                    <span class="n">rxnorm_code</span><span class="o">=</span><span class="s2">&quot;6809&quot;</span><span class="p">,</span>
+<a id="__codelineno-3-23" name="__codelineno-3-23" href="#__codelineno-3-23"></a>                    <span class="n">display</span><span class="o">=</span><span class="s2">&quot;Metformin 500mg&quot;</span><span class="p">,</span>
+<a id="__codelineno-3-24" name="__codelineno-3-24" href="#__codelineno-3-24"></a>                    <span class="n">dose</span><span class="o">=</span><span class="s2">&quot;500mg&quot;</span><span class="p">,</span>
+<a id="__codelineno-3-25" name="__codelineno-3-25" href="#__codelineno-3-25"></a>                    <span class="n">frequency</span><span class="o">=</span><span class="s2">&quot;twice daily&quot;</span><span class="p">,</span>
+<a id="__codelineno-3-26" name="__codelineno-3-26" href="#__codelineno-3-26"></a>                <span class="p">)</span>
+<a id="__codelineno-3-27" name="__codelineno-3-27" href="#__codelineno-3-27"></a>            <span class="p">],</span>
+<a id="__codelineno-3-28" name="__codelineno-3-28" href="#__codelineno-3-28"></a>        <span class="p">)</span>
+<a id="__codelineno-3-29" name="__codelineno-3-29" href="#__codelineno-3-29"></a>    <span class="p">],</span>
+<a id="__codelineno-3-30" name="__codelineno-3-30" href="#__codelineno-3-30"></a>    <span class="n">care_setting</span><span class="o">=</span><span class="s2">&quot;outpatient clinic&quot;</span><span class="p">,</span>
+<a id="__codelineno-3-31" name="__codelineno-3-31" href="#__codelineno-3-31"></a>    <span class="n">encounter_type</span><span class="o">=</span><span class="s2">&quot;routine visit&quot;</span><span class="p">,</span>
+<a id="__codelineno-3-32" name="__codelineno-3-32" href="#__codelineno-3-32"></a><span class="p">)</span>
 </code></pre></div>
 <h3 id="key-model-types">Key Model Types<a class="headerlink" href="#key-model-types" title="Permanent link">&para;</a></h3>
 <table>
@@ -1734,28 +1733,28 @@
 </table>
 <h3 id="longitudinal-timelines">Longitudinal Timelines<a class="headerlink" href="#longitudinal-timelines" title="Permanent link">&para;</a></h3>
 <p>For patients with multiple encounters over time, use the <code>timeline</code> field:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">PatientProfile</span><span class="p">(</span>
-<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>    <span class="n">age</span><span class="o">=</span><span class="mi">55</span><span class="p">,</span>
-<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>    <span class="n">gender</span><span class="o">=</span><span class="s2">&quot;male&quot;</span><span class="p">,</span>
-<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>    <span class="n">care_start_date</span><span class="o">=</span><span class="s2">&quot;2024-01-15&quot;</span><span class="p">,</span>
-<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>    <span class="n">timeline</span><span class="o">=</span><span class="p">[</span>
-<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>        <span class="n">EncounterEvent</span><span class="p">(</span>
-<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>            <span class="n">month_offset</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>            <span class="n">encounter_class</span><span class="o">=</span><span class="s2">&quot;AMB&quot;</span><span class="p">,</span>
-<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a>            <span class="n">reason_display</span><span class="o">=</span><span class="s2">&quot;Initial diabetes workup&quot;</span><span class="p">,</span>
-<a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a>            <span class="n">labs</span><span class="o">=</span><span class="p">[</span><span class="n">LabValue</span><span class="p">(</span><span class="n">loinc_code</span><span class="o">=</span><span class="s2">&quot;4548-4&quot;</span><span class="p">,</span> <span class="n">display</span><span class="o">=</span><span class="s2">&quot;HbA1c&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">8.5</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;%&quot;</span><span class="p">)],</span>
-<a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a>            <span class="n">medication_changes</span><span class="o">=</span><span class="p">[</span>
-<a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a>                <span class="n">MedicationAction</span><span class="p">(</span><span class="n">action</span><span class="o">=</span><span class="s2">&quot;start&quot;</span><span class="p">,</span> <span class="n">rxnorm_code</span><span class="o">=</span><span class="s2">&quot;6809&quot;</span><span class="p">,</span> <span class="n">display</span><span class="o">=</span><span class="s2">&quot;Metformin 500mg&quot;</span><span class="p">)</span>
-<a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a>            <span class="p">],</span>
-<a id="__codelineno-5-14" name="__codelineno-5-14" href="#__codelineno-5-14"></a>        <span class="p">),</span>
-<a id="__codelineno-5-15" name="__codelineno-5-15" href="#__codelineno-5-15"></a>        <span class="n">EncounterEvent</span><span class="p">(</span>
-<a id="__codelineno-5-16" name="__codelineno-5-16" href="#__codelineno-5-16"></a>            <span class="n">month_offset</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
-<a id="__codelineno-5-17" name="__codelineno-5-17" href="#__codelineno-5-17"></a>            <span class="n">encounter_class</span><span class="o">=</span><span class="s2">&quot;AMB&quot;</span><span class="p">,</span>
-<a id="__codelineno-5-18" name="__codelineno-5-18" href="#__codelineno-5-18"></a>            <span class="n">reason_display</span><span class="o">=</span><span class="s2">&quot;Quarterly diabetic follow-up&quot;</span><span class="p">,</span>
-<a id="__codelineno-5-19" name="__codelineno-5-19" href="#__codelineno-5-19"></a>            <span class="n">labs</span><span class="o">=</span><span class="p">[</span><span class="n">LabValue</span><span class="p">(</span><span class="n">loinc_code</span><span class="o">=</span><span class="s2">&quot;4548-4&quot;</span><span class="p">,</span> <span class="n">display</span><span class="o">=</span><span class="s2">&quot;HbA1c&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">7.2</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;%&quot;</span><span class="p">)],</span>
-<a id="__codelineno-5-20" name="__codelineno-5-20" href="#__codelineno-5-20"></a>        <span class="p">),</span>
-<a id="__codelineno-5-21" name="__codelineno-5-21" href="#__codelineno-5-21"></a>    <span class="p">],</span>
-<a id="__codelineno-5-22" name="__codelineno-5-22" href="#__codelineno-5-22"></a><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">PatientProfile</span><span class="p">(</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>    <span class="n">age</span><span class="o">=</span><span class="mi">55</span><span class="p">,</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>    <span class="n">gender</span><span class="o">=</span><span class="s2">&quot;male&quot;</span><span class="p">,</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>    <span class="n">care_start_date</span><span class="o">=</span><span class="s2">&quot;2024-01-15&quot;</span><span class="p">,</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>    <span class="n">timeline</span><span class="o">=</span><span class="p">[</span>
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>        <span class="n">EncounterEvent</span><span class="p">(</span>
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>            <span class="n">month_offset</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>            <span class="n">encounter_class</span><span class="o">=</span><span class="s2">&quot;AMB&quot;</span><span class="p">,</span>
+<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>            <span class="n">reason_display</span><span class="o">=</span><span class="s2">&quot;Initial diabetes workup&quot;</span><span class="p">,</span>
+<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a>            <span class="n">labs</span><span class="o">=</span><span class="p">[</span><span class="n">LabValue</span><span class="p">(</span><span class="n">loinc_code</span><span class="o">=</span><span class="s2">&quot;4548-4&quot;</span><span class="p">,</span> <span class="n">display</span><span class="o">=</span><span class="s2">&quot;HbA1c&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">8.5</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;%&quot;</span><span class="p">)],</span>
+<a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a>            <span class="n">medication_changes</span><span class="o">=</span><span class="p">[</span>
+<a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a>                <span class="n">MedicationAction</span><span class="p">(</span><span class="n">action</span><span class="o">=</span><span class="s2">&quot;start&quot;</span><span class="p">,</span> <span class="n">rxnorm_code</span><span class="o">=</span><span class="s2">&quot;6809&quot;</span><span class="p">,</span> <span class="n">display</span><span class="o">=</span><span class="s2">&quot;Metformin 500mg&quot;</span><span class="p">)</span>
+<a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a>            <span class="p">],</span>
+<a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a>        <span class="p">),</span>
+<a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a>        <span class="n">EncounterEvent</span><span class="p">(</span>
+<a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a>            <span class="n">month_offset</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+<a id="__codelineno-4-17" name="__codelineno-4-17" href="#__codelineno-4-17"></a>            <span class="n">encounter_class</span><span class="o">=</span><span class="s2">&quot;AMB&quot;</span><span class="p">,</span>
+<a id="__codelineno-4-18" name="__codelineno-4-18" href="#__codelineno-4-18"></a>            <span class="n">reason_display</span><span class="o">=</span><span class="s2">&quot;Quarterly diabetic follow-up&quot;</span><span class="p">,</span>
+<a id="__codelineno-4-19" name="__codelineno-4-19" href="#__codelineno-4-19"></a>            <span class="n">labs</span><span class="o">=</span><span class="p">[</span><span class="n">LabValue</span><span class="p">(</span><span class="n">loinc_code</span><span class="o">=</span><span class="s2">&quot;4548-4&quot;</span><span class="p">,</span> <span class="n">display</span><span class="o">=</span><span class="s2">&quot;HbA1c&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">7.2</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;%&quot;</span><span class="p">)],</span>
+<a id="__codelineno-4-20" name="__codelineno-4-20" href="#__codelineno-4-20"></a>        <span class="p">),</span>
+<a id="__codelineno-4-21" name="__codelineno-4-21" href="#__codelineno-4-21"></a>    <span class="p">],</span>
+<a id="__codelineno-4-22" name="__codelineno-4-22" href="#__codelineno-4-22"></a><span class="p">)</span>
 </code></pre></div>
 <h2 id="dependency-enrichment-stage-15">Dependency Enrichment (Stage 1.5)<a class="headerlink" href="#dependency-enrichment-stage-15" title="Permanent link">&para;</a></h2>
 <p>The <code>PlanEnricher</code> automatically detects missing resource dependencies by walking the FHIR spec:</p>
@@ -1764,11 +1763,11 @@
 <li>If the plan generates <code>Encounter</code> resources, it checks for <code>serviceProvider</code> (Organization) and <code>participant</code> (Practitioner)</li>
 <li>All enrichment is <strong>spec-driven</strong> — no resource types or field names are hardcoded</li>
 </ul>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fhir_synth.pipeline.plan_enricher</span><span class="w"> </span><span class="kn">import</span> <span class="n">PlanEnricher</span>
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>
-<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="n">enricher</span> <span class="o">=</span> <span class="n">PlanEnricher</span><span class="p">()</span>
-<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="n">enriched_plan</span> <span class="o">=</span> <span class="n">enricher</span><span class="o">.</span><span class="n">enrich</span><span class="p">(</span><span class="n">plan</span><span class="p">)</span>
-<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="c1"># enriched_plan.care_team may now include Practitioner, Organization stubs</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fhir_synth.pipeline.plan_enricher</span><span class="w"> </span><span class="kn">import</span> <span class="n">PlanEnricher</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="n">enricher</span> <span class="o">=</span> <span class="n">PlanEnricher</span><span class="p">()</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="n">enriched_plan</span> <span class="o">=</span> <span class="n">enricher</span><span class="o">.</span><span class="n">enrich</span><span class="p">(</span><span class="n">plan</span><span class="p">)</span>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="c1"># enriched_plan.care_team may now include Practitioner, Organization stubs</span>
 </code></pre></div>
 <h2 id="quality-evaluation">Quality Evaluation<a class="headerlink" href="#quality-evaluation" title="Permanent link">&para;</a></h2>
 <p>The pipeline evaluates generated resources using three composable metrics:</p>
@@ -1798,26 +1797,26 @@
 </tr>
 </tbody>
 </table>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fhir_synth.pipeline.evaluator</span><span class="w"> </span><span class="kn">import</span> <span class="n">GenerationEvaluator</span>
-<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>
-<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="n">evaluator</span> <span class="o">=</span> <span class="n">GenerationEvaluator</span><span class="p">()</span>
-<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="n">report</span> <span class="o">=</span> <span class="n">evaluator</span><span class="o">.</span><span class="n">evaluate</span><span class="p">(</span><span class="n">resources</span><span class="p">)</span>
-<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>
-<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Score: </span><span class="si">{</span><span class="n">report</span><span class="o">.</span><span class="n">overall_score</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">report</span><span class="o">.</span><span class="n">grade</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
-<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="c1"># Grade scale: A+ (≥0.95), A (≥0.90), B+ (≥0.85), B (≥0.80), C (≥0.70), F (&lt;0.70)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fhir_synth.pipeline.evaluator</span><span class="w"> </span><span class="kn">import</span> <span class="n">GenerationEvaluator</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="n">evaluator</span> <span class="o">=</span> <span class="n">GenerationEvaluator</span><span class="p">()</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="n">report</span> <span class="o">=</span> <span class="n">evaluator</span><span class="o">.</span><span class="n">evaluate</span><span class="p">(</span><span class="n">resources</span><span class="p">)</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Score: </span><span class="si">{</span><span class="n">report</span><span class="o">.</span><span class="n">overall_score</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">report</span><span class="o">.</span><span class="n">grade</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="c1"># Grade scale: A+ (≥0.95), A (≥0.90), B+ (≥0.85), B (≥0.80), C (≥0.70), F (&lt;0.70)</span>
 </code></pre></div>
 <h2 id="dspy-optimization">DSPy Optimization<a class="headerlink" href="#dspy-optimization" title="Permanent link">&para;</a></h2>
 <p>Using <code>--pipeline dspy</code> without <code>--compiled-program</code> runs the uncompiled pipeline — fully functional, just without few-shot demos:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="c1"># Uncompiled — works out of the box</span>
-<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;5 diabetic patients with HbA1c labs&quot;</span><span class="w"> </span>--pipeline<span class="w"> </span>dspy
-<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>
-<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="c1"># With a compiled program (from fhir-synth optimize)</span>
-<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;5 diabetic patients with HbA1c labs&quot;</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="w">  </span>--pipeline<span class="w"> </span>dspy<span class="w"> </span>--compiled-program<span class="w"> </span>runs/optimized_pipeline.json
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="c1"># Uncompiled — works out of the box</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;5 diabetic patients with HbA1c labs&quot;</span><span class="w"> </span>--pipeline<span class="w"> </span>dspy
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="c1"># With a compiled program (from fhir-synth optimize)</span>
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;5 diabetic patients with HbA1c labs&quot;</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="w">  </span>--pipeline<span class="w"> </span>dspy<span class="w"> </span>--compiled-program<span class="w"> </span>runs/optimized_pipeline.json
 </code></pre></div>
 <h3 id="custom-optimization">Custom Optimization<a class="headerlink" href="#custom-optimization" title="Permanent link">&para;</a></h3>
 <p>To optimize for your own domain or training data, use the <code>optimize</code> command:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>fhir-synth<span class="w"> </span>optimize<span class="w"> </span>--provider<span class="w"> </span>gpt-4o<span class="w"> </span>--max-demos<span class="w"> </span><span class="m">5</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>fhir-synth<span class="w"> </span>optimize<span class="w"> </span>--provider<span class="w"> </span>gpt-4o<span class="w"> </span>--max-demos<span class="w"> </span><span class="m">5</span>
 </code></pre></div>
 <p>This will:</p>
 <ol>
@@ -1826,7 +1825,7 @@
 <li>Save the compiled program to <code>runs/optimized_pipeline.json</code></li>
 </ol>
 <p>Then use your custom compiled program:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;5 patients&quot;</span><span class="w"> </span>--pipeline<span class="w"> </span>dspy<span class="w"> </span>--compiled-program<span class="w"> </span>runs/optimized_pipeline.json
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;5 patients&quot;</span><span class="w"> </span>--pipeline<span class="w"> </span>dspy<span class="w"> </span>--compiled-program<span class="w"> </span>runs/optimized_pipeline.json
 </code></pre></div>
 <h3 id="optimize-options">Optimize Options<a class="headerlink" href="#optimize-options" title="Permanent link">&para;</a></h3>
 <table>
@@ -1867,12 +1866,12 @@
 <li><strong><code>miprov2.json</code></strong> — A compiled program using the MIPROv2 optimizer</li>
 </ul>
 <p>Use them directly with <code>--compiled-program</code>:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;5 diabetic patients&quot;</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="w">  </span>--pipeline<span class="w"> </span>dspy<span class="w"> </span>--compiled-program<span class="w"> </span>examples/bootstrap_few_shot.json
-<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>
-<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="c1"># Or with MIPROv2</span>
-<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;5 diabetic patients&quot;</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a><span class="w">  </span>--pipeline<span class="w"> </span>dspy<span class="w"> </span>--compiled-program<span class="w"> </span>examples/miprov2.json
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;5 diabetic patients&quot;</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="w">  </span>--pipeline<span class="w"> </span>dspy<span class="w"> </span>--compiled-program<span class="w"> </span>examples/bootstrap_few_shot.json
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="c1"># Or with MIPROv2</span>
+<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;5 diabetic patients&quot;</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a><span class="w">  </span>--pipeline<span class="w"> </span>dspy<span class="w"> </span>--compiled-program<span class="w"> </span>examples/miprov2.json
 </code></pre></div>
 <h3 id="when-to-optimize">When to Optimize<a class="headerlink" href="#when-to-optimize" title="Permanent link">&para;</a></h3>
 <table>

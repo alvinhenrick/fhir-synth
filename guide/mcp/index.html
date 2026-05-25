@@ -790,17 +790,6 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#the-dspy-pipeline-requires-the-optional-dspy-extra" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        "The DSPy pipeline requires the optional dspy extra"
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
   <a href="#authenticationerror-from-litellm" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1458,17 +1447,6 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#the-dspy-pipeline-requires-the-optional-dspy-extra" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        "The DSPy pipeline requires the optional dspy extra"
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
   <a href="#authenticationerror-from-litellm" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1634,7 +1612,7 @@
 <div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>FHIR_SYNTH_PIPELINE=dspy
 <a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>FHIR_SYNTH_COMPILED=miprov2     # or &quot;bootstrap&quot;, or &quot;/path/to/your.json&quot;, or &quot;none&quot;
 </code></pre></div>
-<p>Requires <code>pip install "fhir-synth[mcp,dspy]"</code>.</p>
+<p>Requires <code>pip install "fhir-synth[mcp]"</code> (DSPy is included as a core dependency).</p>
 <p>Override per call from a prompt — the tool also accepts <code>pipeline</code> and <code>compiled_program</code> parameters, so a user can say <em>"regenerate using the bootstrap program"</em> and Claude will pass <code>compiled_program="bootstrap"</code> for that one call without touching the env config.</p>
 <h2 id="environment-variables">Environment variables<a class="headerlink" href="#environment-variables" title="Permanent link">&para;</a></h2>
 <table>
@@ -1700,18 +1678,14 @@
 <a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a>    <span class="k">return</span> <span class="n">generate_resources</span><span class="p">()</span>   <span class="c1"># pure Python, deterministic, no API call</span>
 </code></pre></div>
 <h2 id="troubleshooting">Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permanent link">&para;</a></h2>
-<h3 id="the-dspy-pipeline-requires-the-optional-dspy-extra">"The DSPy pipeline requires the optional dspy extra"<a class="headerlink" href="#the-dspy-pipeline-requires-the-optional-dspy-extra" title="Permanent link">&para;</a></h3>
-<p>You set <code>FHIR_SYNTH_PIPELINE=dspy</code> but installed <code>[mcp]</code> only. Install with both:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>pip<span class="w"> </span>install<span class="w"> </span><span class="s2">&quot;fhir-synth[mcp,dspy]&quot;</span>
-</code></pre></div>
 <h3 id="authenticationerror-from-litellm"><code>AuthenticationError</code> from LiteLLM<a class="headerlink" href="#authenticationerror-from-litellm" title="Permanent link">&para;</a></h3>
 <p>The provider-appropriate env var isn't set or isn't visible to the MCP process. Confirm with:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$ANTHROPIC_API_KEY</span><span class="s2">&quot;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>head<span class="w"> </span>-c<span class="w"> </span><span class="m">10</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$ANTHROPIC_API_KEY</span><span class="s2">&quot;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>head<span class="w"> </span>-c<span class="w"> </span><span class="m">10</span>
 </code></pre></div>
 <p>Then re-launch your Claude client so it picks up the env.</p>
 <h3 id="compiled-program-version-warnings">Compiled program version warnings<a class="headerlink" href="#compiled-program-version-warnings" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>WARNING dspy.primitives.base_module: There is a mismatch of dspy version between
-<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>saved model and current environment.
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>WARNING dspy.primitives.base_module: There is a mismatch of dspy version between
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>saved model and current environment.
 </code></pre></div>
 <p>This is informational — the bundled <code>miprov2.json</code> was compiled against a slightly older DSPy version. Quality is unaffected; suppress by re-running <code>fhir-synth optimize</code> against your current DSPy and pointing <code>FHIR_SYNTH_COMPILED</code> at the result.</p>
 

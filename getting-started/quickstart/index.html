@@ -1442,13 +1442,12 @@ All outputs are auto-saved to <code>runs/</code> with a unique Docker-style name
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;EMPI dataset&quot;</span><span class="w"> </span>--empi<span class="w"> </span>--persons<span class="w"> </span><span class="m">3</span>
 </code></pre></div>
 <h2 id="two-stage-dspy-pipeline">Two-Stage DSPy Pipeline<a class="headerlink" href="#two-stage-dspy-pipeline" title="Permanent link">&para;</a></h2>
-<p>Use the optional DSPy pipeline for structured clinical planning before code generation:</p>
+<p>Use the DSPy pipeline for structured clinical planning before code generation (DSPy ships as a core dependency, no extra install needed):</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1"># Two-stage: clinical planning → code synthesis</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>pip<span class="w"> </span>install<span class="w"> </span><span class="s1">&#39;fhir-synth[dspy]&#39;</span>
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;5 diabetic patients with labs&quot;</span><span class="w"> </span>--pipeline<span class="w"> </span>dspy
-<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>
-<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="c1"># Use a pre-optimized DSPy program</span>
-<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;5 diabetic patients&quot;</span><span class="w"> </span>--pipeline<span class="w"> </span>dspy<span class="w"> </span>--compiled-program<span class="w"> </span>optimized.json
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;5 diabetic patients with labs&quot;</span><span class="w"> </span>--pipeline<span class="w"> </span>dspy
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="c1"># Use a pre-optimized DSPy program</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>fhir-synth<span class="w"> </span>generate<span class="w"> </span><span class="s2">&quot;5 diabetic patients&quot;</span><span class="w"> </span>--pipeline<span class="w"> </span>dspy<span class="w"> </span>--compiled-program<span class="w"> </span>optimized.json
 </code></pre></div>
 <p>See <a href="../../guide/pipeline/">DSPy Pipeline</a> for details.</p>
 <h2 id="use-the-python-api">Use the Python API<a class="headerlink" href="#use-the-python-api" title="Permanent link">&para;</a></h2>
