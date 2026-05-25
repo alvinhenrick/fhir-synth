@@ -36,11 +36,7 @@ fhir-synth generate "10 patients" -p claude-3-opus-20240229
 ## AWS Bedrock
 
 Bedrock uses your existing AWS credentials instead of API keys.
-Install the optional `bedrock` extra for `boto3` support:
-
-```bash
-pip install "fhir-synth[bedrock] @ git+https://github.com/alvinhenrick/fhir-synth.git@main"
-```
+`boto3` ships as a core dependency, so no extra install is needed — just configure your AWS credentials.
 
 FHIR Synth supports **four ways** to authenticate:
 
