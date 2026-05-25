@@ -2,6 +2,83 @@
 
 <!-- version list -->
 
+## v1.20.0 (2026-05-21)
+
+### Features
+
+- Add comprehensive unit tests for skill-directory resolution in MCP server
+  ([`c8a4bd7`](https://github.com/alvinhenrick/fhir-synth/commit/c8a4bd788bbc6839f26cc13fc1314186ffd82d3e))
+
+- Enhance skill directory resolution and logging for improved user experience
+  ([`58a23c9`](https://github.com/alvinhenrick/fhir-synth/commit/58a23c9a81131d37f8853aab70177b83bd0ee274))
+
+- Introduce async `MCPReporter` for progress tracking, enhance validation and error reporting in
+  generation pipelines
+  ([`f1ec81d`](https://github.com/alvinhenrick/fhir-synth/commit/f1ec81df15bfcf1f2faa5dd39114ac021f8945a4))
+
+### Refactoring
+
+- Extract shared validation logic into `report_validation_results`, update pipelines and CLI for
+  reuse
+  ([`abc33ee`](https://github.com/alvinhenrick/fhir-synth/commit/abc33ee5930578ec011646006686d0e0cbd09c7c))
+
+- Format `validate_fhir_bundle` method signature for improved readability
+  ([`dc44504`](https://github.com/alvinhenrick/fhir-synth/commit/dc445047464240e9d0514b780c3ee2d6bfb9db48))
+
+- Inline multi-line f-strings for improved readability and consistency
+  ([`57c5679`](https://github.com/alvinhenrick/fhir-synth/commit/57c567942a6d34fdedb67b5a54ac4d3151d2a2d8))
+
+- Replace FAISS-based skill selector with `fastembed` semantic selector, update core dependencies
+  and docs
+  ([`b305172`](https://github.com/alvinhenrick/fhir-synth/commit/b3051725d98e20af87063ed2a326f88120756427))
+
+- Update `Context` type annotations for improved type specificity across MCP server methods
+  ([`dd9997e`](https://github.com/alvinhenrick/fhir-synth/commit/dd9997ebb40bc82b98d7856c4e2697186099b799))
+
+
+## v1.19.0 (2026-05-16)
+
+### Features
+
+- Add `meta_config` support to MCP server for applying metadata to generated FHIR resources
+  ([`9c25c0f`](https://github.com/alvinhenrick/fhir-synth/commit/9c25c0f6773588bcea0ad1892db6a11ad4087217))
+
+
+## v1.18.0 (2026-05-16)
+
+### Features
+
+- Add MCP server to expose FHIR Synth as Claude tools, update dependencies, and include bundled DSPy
+  programs
+  ([`86bd2be`](https://github.com/alvinhenrick/fhir-synth/commit/86bd2be1b4f0e59f617e8ed8677a777835a7bcec))
+
+- Add retry mechanism for code synthesis and execution in pipeline, enable configurable max_retries
+  ([`c16f3a2`](https://github.com/alvinhenrick/fhir-synth/commit/c16f3a29627e1f33a75790c043fc60c6c16fa675))
+
+### Refactoring
+
+- Delegate API key resolution to LiteLLM, remove redundant env var mapping logic
+  ([`5682651`](https://github.com/alvinhenrick/fhir-synth/commit/5682651ec0b08c58c6c7ce86a774dde54f8a4d31))
+
+- Remove deprecated `keywords` field from all skills, update selectors to rely on `description` and
+  `resource_types` for skill matching
+  ([`09017f1`](https://github.com/alvinhenrick/fhir-synth/commit/09017f15ebf7b9023ea326bfa2701d298281cd55))
+
+- Remove deprecated `keywords` field from all skills, update selectors to rely on `description` and
+  `resource_types` for skill matching
+  ([`2d16ea9`](https://github.com/alvinhenrick/fhir-synth/commit/2d16ea9039a9d4a67c546e7a177205f63d25c692))
+
+- Remove deprecated `keywords` field from all skills, update selectors to rely on `description` and
+  `resource_types` for skill matching
+  ([`9042520`](https://github.com/alvinhenrick/fhir-synth/commit/904252041bcb3b0c43fae649fc2a34da64fa2302))
+
+- Simplify mypy overrides by removing unnecessary wildcard module entries
+  ([`5655409`](https://github.com/alvinhenrick/fhir-synth/commit/5655409796a82cf58d4eca4f9ac16b3a474fd178))
+
+- Simplify mypy overrides by removing unnecessary wildcard module entries
+  ([`4cef860`](https://github.com/alvinhenrick/fhir-synth/commit/4cef860cc8f68e670005c49df5bd58c26d8350fa))
+
+
 ## v1.17.0 (2026-04-11)
 
 ### Features
