@@ -25,11 +25,10 @@ pip install git+https://github.com/alvinhenrick/fhir-synth.git
 
 # Optional extras
 pip install "fhir-synth[mcp] @ git+https://github.com/alvinhenrick/fhir-synth.git@main"       # MCP server (Claude Desktop / Claude Code)
-pip install "fhir-synth[bedrock] @ git+https://github.com/alvinhenrick/fhir-synth.git@main"   # AWS Bedrock
-pip install "fhir-synth[dspy] @ git+https://github.com/alvinhenrick/fhir-synth.git@main"      # DSPy two-stage pipeline
 pip install "fhir-synth[all] @ git+https://github.com/alvinhenrick/fhir-synth.git@main"       # Everything above + sandbox executors
 
-# Semantic skill selection (fastembed + numpy) is now a core dependency — no extra install needed.
+# AWS Bedrock (boto3), the DSPy two-stage pipeline (dspy>=3.2.1), and semantic skill
+# selection (fastembed + numpy) are core dependencies — no extra install needed.
 ```
 
 ## Quick Start
@@ -93,11 +92,9 @@ fhir-synth generate "10 patients with diabetes" --fhir-version stu3
 
 ### Two-Stage DSPy Pipeline (Optional)
 
-For higher quality output, use the two-stage pipeline powered by [DSPy](https://dspy.ai/):
+For higher quality output, use the two-stage pipeline powered by [DSPy](https://dspy.ai/) (included by default):
 
 ```bash
-pip install 'fhir-synth[dspy]'
-
 # Two-stage: clinical planning → code synthesis
 fhir-synth generate "5 diabetic patients with HbA1c observations" --pipeline dspy
 

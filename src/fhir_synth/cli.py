@@ -107,7 +107,7 @@ def generate(
     pipeline: str = typer.Option(
         "default",
         "--pipeline",
-        help="Generation pipeline: 'default' (single-stage) or 'dspy' (two-stage clinical planning, requires fhir-synth[dspy])",
+        help="Generation pipeline: 'default' (single-stage) or 'dspy' (two-stage clinical planning)",
     ),
     compiled_program: str | None = typer.Option(
         None,
@@ -597,18 +597,12 @@ def optimize(
 
         fhir-synth generate "..." --pipeline dspy --compiled-program runs/optimized_pipeline.json
 
-    Requires: pip install 'fhir-synth[dspy]'
-
     Examples:
 
         fhir-synth optimize --provider gpt-4o-mini --max-demos 3
         fhir-synth optimize --optimizer miprov2 --provider deepseek/deepseek-chat --auto light
     """
-    try:
-        import dspy
-    except ImportError:
-        typer.echo("❌ DSPy not installed: pip install 'fhir-synth[dspy]'", err=True)
-        raise typer.Exit(1)
+    import dspy
 
     from fhir_synth.pipeline.evaluator import GenerationEvaluator
     from fhir_synth.pipeline.pipeline import TwoStagePipeline

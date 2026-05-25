@@ -59,11 +59,10 @@ fhir-synth generate "EMPI dataset" --empi --persons 3
 
 ## Two-Stage DSPy Pipeline
 
-Use the optional DSPy pipeline for structured clinical planning before code generation:
+Use the DSPy pipeline for structured clinical planning before code generation (DSPy ships as a core dependency, no extra install needed):
 
 ```bash
 # Two-stage: clinical planning → code synthesis
-pip install 'fhir-synth[dspy]'
 fhir-synth generate "5 diabetic patients with labs" --pipeline dspy
 
 # Use a pre-optimized DSPy program

@@ -34,12 +34,11 @@ dependencies = [
     "coolname~=2.0",
     "fastembed~=0.8",
     "numpy~=2.0",
+    "boto3>=1.28",
+    "dspy>=3.2.1",
 ]
 
 [project.optional-dependencies]
-bedrock = [
-    "boto3>=1.28",
-]
 docker = [
     "smolagents[docker]",
 ]
@@ -49,14 +48,11 @@ e2b = [
 blaxel = [
     "smolagents[blaxel]",
 ]
-dspy = [
-    "dspy-ai>=2.0",
-]
 mcp = [
     "mcp>=1.0",
 ]
 all = [
-    "fhir-synth[bedrock,docker,e2b,blaxel,dspy,mcp]",
+    "fhir-synth[docker,e2b,blaxel,mcp]",
 ]
 docs = [
     "mkdocs>=1.6,<2",
@@ -86,7 +82,7 @@ packages = ["src/fhir_synth"]
 [tool.hatch.envs.default]
 installer = "uv"
 dependency-groups = ["dev"]
-features = ["docker", "e2b", "blaxel", "dspy"]
+features = ["docker", "e2b", "blaxel"]
 
 [tool.hatch.envs.default.scripts]
 test = "pytest {args}"

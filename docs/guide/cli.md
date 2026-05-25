@@ -155,7 +155,7 @@ fhir-synth optimize --provider deepseek/deepseek-chat --output runs/my_compiled.
 | `--training-dir` / `-t` | auto | Directory with `*_prompt.txt` training pairs |
 | `--output` / `-o` | `runs/optimized_pipeline.json` | Output path for compiled program |
 
-Requires: `pip install 'fhir-synth[dspy]'`
+DSPy (`>=3.2.1`) ships as a core dependency, so no extra install is needed.
 
 ---
 
