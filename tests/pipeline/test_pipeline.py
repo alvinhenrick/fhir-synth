@@ -148,8 +148,8 @@ def test_skill_context_builder_empty_prompt_returns_all_skills() -> None:
 
 
 def test_pipeline_default_factory_requires_dspy() -> None:
-    """default() raises ImportError with a helpful message when dspy-ai is not installed."""
-    pytest.importorskip("dspy", reason="dspy-ai not installed")  # skip if not installed
+    """default() raises ImportError with a helpful message when dspy is not installed."""
+    pytest.importorskip("dspy", reason="dspy not installed")  # skip if not installed
     # If we get here dspy IS installed — factory should succeed
     mock_llm = MagicMock()
     mock_llm.model = "mock"

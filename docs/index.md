@@ -39,11 +39,9 @@ FHIR Bundles (JSON + NDJSON) — R4B or STU3
 ## Install
 
 ```bash
-# Install from GitHub (latest release)
+# Install from GitHub (latest release) — includes AWS Bedrock (boto3) and the
+# DSPy two-stage pipeline (dspy>=3.2.1) as core dependencies.
 pip install git+https://github.com/alvinhenrick/fhir-synth.git@main
-
-# With AWS Bedrock support
-pip install "fhir-synth[bedrock] @ git+https://github.com/alvinhenrick/fhir-synth.git@main"
 ```
 
 ## Quick Example

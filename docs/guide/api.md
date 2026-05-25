@@ -128,15 +128,11 @@ code_gen = CodeGenerator(llm, executor=executor)
 
 ## Two-Stage DSPy Pipeline
 
-The optional DSPy pipeline splits generation into two stages for higher quality output:
+The DSPy pipeline splits generation into two stages for higher quality output (DSPy `>=3.2.1` ships as a core dependency):
 
 - **Stage 1 — Clinical Planning**: prompt + skills → structured `ClinicalPlan` (Pydantic model)
 - **Stage 1.5 — Dependency Enrichment**: auto-adds missing resource companions (Practitioner, Organization, etc.)
 - **Stage 2 — Code Synthesis**: `ClinicalPlan` + FHIR guidelines → Python code → FHIR resources
-
-```bash
-pip install 'fhir-synth[dspy]'
-```
 
 ```python
 from fhir_synth.llm import get_provider

@@ -205,7 +205,7 @@ def test_pipeline_plan_captured_in_result() -> None:
     assert result.plan.patients == plan.patients
 
 
-# ── Tier 2: DSPy structure (dspy-ai must be installed) ────────────────────────
+# ── Tier 2: DSPy structure (dspy must be installed) ───────────────────────────
 
 
 @pytest.mark.slow

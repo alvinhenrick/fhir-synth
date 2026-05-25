@@ -26,9 +26,7 @@ The default single-stage pipeline sends your prompt directly to the LLM as one b
 
 ## Installation
 
-```bash
-pip install 'fhir-synth[dspy]'
-```
+DSPy (>=3.2.1) ships as a core dependency, so the two-stage pipeline is available out of the box — no extra install needed.
 
 ## CLI Usage
 

@@ -1,7 +1,6 @@
 """DSPy signatures and modules for the two-stage pipeline.
 
-Requires the optional `dspy-ai` dependency:
-    pip install 'fhir-synth[dspy]'
+Uses `dspy>=3.2.1`, which ships as a core dependency of fhir-synth.
 
 Design decisions
 ----------------
@@ -11,9 +10,8 @@ Design decisions
 - `CodeFromPlanSignature`: ChainOfThought lets the model reason step-by-step
   before emitting code — empirically better for structured code generation.
 - Both `DSPyClinicalPlanner` and `DSPyCodeSynthesizer` use a `__new__`
-  factory to return genuine `dspy.Module` subclass instances.  This keeps
-  DSPy as an optional dependency while giving the optimizer full traceability
-  and enabling `dspy.save` / `dspy.load` round-trips.
+  factory to return genuine `dspy.Module` subclass instances. This gives the
+  optimizer full traceability and enables `dspy.save` / `dspy.load` round-trips.
 - `FHIRSynthProgram` is the *composite* module used for optimization.  It
   wraps both stages so ``BootstrapFewShot`` / ``MIPROv2`` can optimize them
   jointly.  After optimization, save with `dspy.save(program, path)` and
@@ -31,15 +29,9 @@ logger = logging.getLogger(__name__)
 
 
 def _require_dspy() -> Any:
-    try:
-        import dspy
+    import dspy
 
-        return dspy
-    except ImportError as exc:
-        raise ImportError(
-            "DSPy is required for the two-stage pipeline. "
-            "Install it with: pip install 'fhir-synth[dspy]'"
-        ) from exc
+    return dspy
 
 
 # ── Signatures ────────────────────────────────────────────────────────────────

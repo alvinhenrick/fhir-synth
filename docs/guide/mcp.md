@@ -117,7 +117,7 @@ FHIR_SYNTH_PIPELINE=dspy
 FHIR_SYNTH_COMPILED=miprov2     # or "bootstrap", or "/path/to/your.json", or "none"
 ```
 
-Requires `pip install "fhir-synth[mcp,dspy]"`.
+Requires `pip install "fhir-synth[mcp]"` (DSPy is included as a core dependency).
 
 Override per call from a prompt — the tool also accepts `pipeline` and `compiled_program` parameters, so a user can say *"regenerate using the bootstrap program"* and Claude will pass `compiled_program="bootstrap"` for that one call without touching the env config.
 
@@ -150,14 +150,6 @@ def fhir_patients():
 ```
 
 ## Troubleshooting
-
-### "The DSPy pipeline requires the optional dspy extra"
-
-You set `FHIR_SYNTH_PIPELINE=dspy` but installed `[mcp]` only. Install with both:
-
-```bash
-pip install "fhir-synth[mcp,dspy]"
-```
 
 ### `AuthenticationError` from LiteLLM
 

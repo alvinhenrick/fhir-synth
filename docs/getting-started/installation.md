@@ -13,16 +13,11 @@ pip install git+https://github.com/alvinhenrick/fhir-synth.git
 
 ## Optional Extras
 
+AWS Bedrock (`boto3`), the DSPy two-stage pipeline (`dspy>=3.2.1`), and semantic skill
+selection (`fastembed` + `numpy`) are now core dependencies — no extra install needed.
+Use `--selector keyword` to opt out of semantic selection at runtime.
+
 ```bash
-# AWS Bedrock support (requires boto3)
-pip install "fhir-synth[bedrock] @ git+https://github.com/alvinhenrick/fhir-synth.git@main"
-
-# DSPy two-stage pipeline (clinical planning → code synthesis)
-pip install "fhir-synth[dspy] @ git+https://github.com/alvinhenrick/fhir-synth.git@main"
-
-# Note: semantic skill selection (fastembed + numpy) is now a core dependency
-# — no extra install needed. Use `--selector keyword` to opt out at runtime.
-
 # Docker sandbox executor
 pip install "fhir-synth[docker] @ git+https://github.com/alvinhenrick/fhir-synth.git@main"
 
