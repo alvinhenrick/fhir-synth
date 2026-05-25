@@ -188,9 +188,9 @@ async def generate_fhir_data(
         fhir_version: "R4B" (default) or "STU3".
         split: Also write per-patient JSON files in the run directory.
         pipeline: Override the default pipeline. Accepts:
-            "default" — single-stage code generation (no DSPy required, fastest)
+            "default" — single-stage code generation (fastest)
             "dspy"    — two-stage clinical planning → code synthesis (higher
-                        quality, requires `pip install fhir-synth[dspy]`)
+                        quality; DSPy ships as a core dependency)
             Leave None to use the FHIR_SYNTH_PIPELINE env var (default: "default").
             Override only when the user explicitly asks for higher quality, the
             two-stage / clinical planning pipeline, or names a compiled program.
@@ -295,13 +295,7 @@ async def generate_fhir_data(
     meta_dict = meta_config.get("meta") if isinstance(meta_config, dict) else None
 
     if effective_pipeline == "dspy":
-        try:
-            from fhir_synth.pipeline.pipeline import TwoStagePipeline
-        except ImportError as exc:  # pragma: no cover
-            raise RuntimeError(
-                "The DSPy pipeline requires the optional dspy extra. "
-                "Install with:  pip install 'fhir-synth[dspy]'"
-            ) from exc
+        from fhir_synth.pipeline.pipeline import TwoStagePipeline
 
         compiled = resolve_compiled_program(effective_compiled_spec)
         if compiled is not None:

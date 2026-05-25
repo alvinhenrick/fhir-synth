@@ -157,20 +157,3 @@ def test_pipeline_default_factory_requires_dspy() -> None:
     assert isinstance(pipeline, TwoStagePipeline)
 
 
-def test_pipeline_default_factory_raises_helpful_error_without_dspy(monkeypatch: Any) -> None:
-    """When dspy import fails, the error message tells the user how to install it."""
-    import builtins
-
-    real_import = builtins.__import__
-
-    def _block_dspy(name: str, *args: Any, **kwargs: Any) -> Any:
-        if name == "dspy":
-            raise ModuleNotFoundError("No module named 'dspy'")
-        return real_import(name, *args, **kwargs)
-
-    monkeypatch.setattr(builtins, "__import__", _block_dspy)
-
-    mock_llm = MagicMock()
-    mock_llm.model = "mock"
-    with pytest.raises(ImportError, match="fhir-synth\\[dspy\\]"):
-        TwoStagePipeline.default(llm_provider=mock_llm)
